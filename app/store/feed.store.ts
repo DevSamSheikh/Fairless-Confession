@@ -63,23 +63,31 @@ const dummyPosts: Post[] = [
   },
 ];
 
-export const useFeedStore = create<FeedState>((set) => ({
-  posts: dummyPosts,
-  trendingPosts: [...dummyPosts].sort((a, b) => {
+const sortByTrending = (posts: Post[]): Post[] => {
+  return [...posts].sort((a, b) => {
     const aTotal = Object.values(a.reactions).reduce((sum, v) => sum + v, 0);
     const bTotal = Object.values(b.reactions).reduce((sum, v) => sum + v, 0);
     return bTotal - aTotal;
-  }),
+  });
+};
+
+export const useFeedStore = create<FeedState>((set) => ({
+  posts: dummyPosts,
+  trendingPosts: sortByTrending(dummyPosts),
   loading: false,
-  setPosts: (posts) => set({ posts }),
+  setPosts: (posts) => set({ posts, trendingPosts: sortByTrending(posts) }),
   setTrendingPosts: (posts) => set({ trendingPosts: posts }),
   setLoading: (loading) => set({ loading }),
   addReaction: (postId, reaction) =>
-    set((state) => ({
-      posts: state.posts.map((post) =>
+    set((state) => {
+      const updatedPosts = state.posts.map((post) =>
         post.id === postId
           ? { ...post, reactions: { ...post.reactions, [reaction]: post.reactions[reaction] + 1 } }
           : post
-      ),
-    })),
+      );
+      return {
+        posts: updatedPosts,
+        trendingPosts: sortByTrending(updatedPosts),
+      };
+    }),
 }));
