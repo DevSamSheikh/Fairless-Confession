@@ -56,7 +56,9 @@ export const OnboardingScreen: React.FC = ({ navigation }: any) => {
   const renderSlide = ({ item }: { item: typeof SLIDES[0] }) => {
     return (
       <View style={styles.slide}>
-        <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+        <View style={styles.imageContainer}>
+           <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+        </View>
         <View style={styles.textContainer}>
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -112,7 +114,7 @@ export const OnboardingScreen: React.FC = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#0F1115',
   },
   skipButton: {
     position: 'absolute',
@@ -121,39 +123,48 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   skipText: {
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     fontSize: 16,
+    fontFamily: 'Poppins_400Regular',
   },
   slide: {
     width,
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: 80,
+  },
+  imageContainer: {
+    width: width * 0.85,
+    height: height * 0.45,
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginBottom: 40,
+    backgroundColor: '#1A1D23',
   },
   image: {
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: 20,
-    marginBottom: 40,
+    width: '100%',
+    height: '100%',
   },
   textContainer: {
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
   },
   title: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
     marginBottom: 16,
+    lineHeight: 40,
   },
   subtitle: {
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+    fontFamily: 'Poppins_400Regular',
   },
   footer: {
-    paddingBottom: 40,
+    paddingBottom: 60,
     alignItems: 'center',
   },
   indicatorContainer: {
@@ -168,7 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   activeIndicator: {
-    backgroundColor: COLORS.text,
+    backgroundColor: '#FFFFFF',
     width: 20,
   },
   navigationRow: {
@@ -182,13 +193,12 @@ const styles = StyleSheet.create({
     borderColor: '#2A2E37',
   },
   navButton: {
-    width: 40,
+    width: 50,
     alignItems: 'center',
   },
   navButtonText: {
-    color: COLORS.text,
+    color: '#FFFFFF',
     fontSize: 24,
-    fontWeight: 'bold',
   },
   disabledText: {
     color: '#2A2E37',
