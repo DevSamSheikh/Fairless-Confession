@@ -9,9 +9,13 @@
 - [x] Initial project migration.
 - [x] Dependency installation.
 - [x] Development server setup.
+- [x] Asset setup (Logo, Fonts).
+- [x] Splash Screen enhancement.
+- [x] Onboarding Slider enhancement.
+- [x] Welcome Screen enhancement.
 
 ## In Progress
-- [ ] Setting up initial application structure.
+- [ ] Login/Register UI refinements.
 
 ## Planned Tasks
 - [ ] Core feature development.

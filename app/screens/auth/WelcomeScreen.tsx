@@ -1,132 +1,143 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS } from '../../utils/constants';
+import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export const WelcomeScreen: React.FC = ({ navigation }: any) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          {/* Using a placeholder for the logo as seen in reference */}
-          <View style={styles.logoCircle}>
-             <Text style={styles.logoIcon}>∆</Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>Welcome to</Text>
-        <Text style={styles.brand}>BrainBox</Text>
-
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.buttonText}>Log in</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('Register')}
-        >
-          <Text style={styles.buttonText}>Sign up</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.continueText}>Continue With Accounts</Text>
+        <Image 
+          source={require('../../../assets/images/logo.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
         
-        <View style={styles.socialRow}>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3D1B1B' }]}>
-            <Text style={[styles.socialText, { color: '#FF4B4B' }]}>GOOGLE</Text>
+        <Text style={styles.title}>Welcome to{"\n"}BrainBox</Text>
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.loginButton} 
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.loginButtonText}>Log in</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1B213D' }]}>
-            <Text style={[styles.socialText, { color: '#4B7BFF' }]}>PHONE NUMBER</Text>
+          
+          <TouchableOpacity 
+            style={styles.signUpButton}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.signUpButtonText}>Sign up</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>Continue With Accounts</Text>
+          <View style={styles.divider} />
+        </View>
+        
+        <View style={styles.socialContainer}>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
+            <Text style={[styles.socialButtonText, { color: '#E57373' }]}>GOOGLE</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
+            <Text style={[styles.socialButtonText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: '#0F1115',
   },
   content: {
+    flex: 1,
     alignItems: 'center',
-  },
-  logoContainer: {
-    marginBottom: 40,
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 30,
   },
-  logoIcon: {
-    fontSize: 40,
-    color: '#000',
-  },
-  title: {
-    color: COLORS.text,
-    fontSize: 32,
-    fontWeight: '700',
-  },
-  brand: {
-    color: COLORS.text,
-    fontSize: 48,
-    fontWeight: '800',
+  logo: {
+    width: 150,
+    height: 150,
     marginBottom: 60,
   },
-  primaryButton: {
+  title: {
+    color: '#FFFFFF',
+    fontSize: 40,
+    fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
+    marginBottom: 60,
+    lineHeight: 50,
+  },
+  buttonContainer: {
     width: '100%',
-    height: 56,
+    marginBottom: 40,
+  },
+  loginButton: {
     backgroundColor: '#1A1D23',
-    borderRadius: 28,
-    justifyContent: 'center',
+    height: 60,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#2A2E37',
   },
-  secondaryButton: {
-    width: '100%',
-    height: 56,
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  signUpButton: {
     backgroundColor: '#1A1D23',
-    borderRadius: 28,
-    justifyContent: 'center',
+    height: 60,
+    borderRadius: 16,
     alignItems: 'center',
-    marginBottom: 40,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#2A2E37',
   },
-  buttonText: {
-    color: COLORS.text,
+  signUpButtonText: {
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
-  continueText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    marginBottom: 24,
-  },
-  socialRow: {
+  dividerContainer: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    marginBottom: 30,
     width: '100%',
   },
-  socialButton: {
+  divider: {
     flex: 1,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 1,
+    backgroundColor: '#2A2E37',
   },
-  socialText: {
-    fontWeight: 'bold',
+  dividerText: {
+    color: '#6B7280',
+    paddingHorizontal: 16,
     fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+  },
+  socialContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  socialButton: {
+    width: (width - 76) / 2,
+    height: 60,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  socialButtonText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
