@@ -13,11 +13,9 @@ interface Activity {
 }
 
 const dummyActivities: Activity[] = [
-  { id: '1', type: 'reaction', emoji: '❤️', message: 'Someone loved your confession', time: '2m ago' },
-  { id: '2', type: 'comment', message: 'Someone commented on your confession', time: '15m ago' },
-  { id: '3', type: 'reaction', emoji: '😂', message: 'Someone found your confession funny', time: '1h ago' },
-  { id: '4', type: 'reaction', emoji: '😮', message: 'Your confession surprised someone', time: '3h ago' },
-  { id: '5', type: 'comment', message: 'Someone replied to your comment', time: '5h ago' },
+  { id: '1', type: 'reaction', message: 'Someone empathized with your confession', time: '2m ago' },
+  { id: '2', type: 'comment', message: 'Someone reflected on your confession', time: '15m ago' },
+  { id: '3', type: 'reaction', message: 'Someone resonated with your confession', time: '1h ago' },
 ];
 
 export const ActivityScreen: React.FC = () => {
@@ -26,7 +24,6 @@ export const ActivityScreen: React.FC = () => {
       <AnonymousAvatar size={40} />
       <View style={styles.activityContent}>
         <Text style={styles.activityText}>
-          {item.emoji && <Text style={styles.emoji}>{item.emoji} </Text>}
           {item.message}
         </Text>
         <Text style={styles.activityTime}>{item.time}</Text>
@@ -37,8 +34,7 @@ export const ActivityScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Ionicons name="notifications" size={24} color={COLORS.primary} />
-        <Text style={styles.header}>Activity</Text>
+        <Text style={styles.header}>Interactions</Text>
       </View>
       <FlatList
         data={dummyActivities}

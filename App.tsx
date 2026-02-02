@@ -25,17 +25,17 @@ export default function App() {
               case 'Home':
                 iconName = focused ? 'home' : 'home-outline';
                 break;
-              case 'Trending':
-                iconName = focused ? 'flame' : 'flame-outline';
+              case 'Societies':
+                iconName = focused ? 'people' : 'people-outline';
                 break;
-              case 'Post':
+              case 'Confess':
                 iconName = focused ? 'add-circle' : 'add-circle-outline';
                 break;
-              case 'Activity':
-                iconName = focused ? 'notifications' : 'notifications-outline';
+              case 'Interactions':
+                iconName = focused ? 'heart-half' : 'heart-half-outline';
                 break;
-              case 'More':
-                iconName = focused ? 'menu' : 'menu-outline';
+              case 'Profile':
+                iconName = focused ? 'person' : 'person-outline';
                 break;
               default:
                 iconName = 'home';
@@ -56,10 +56,10 @@ export default function App() {
         })}
       >
         <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Trending" component={TrendingScreen} />
-        <Tab.Screen name="Post" component={PostScreen} />
-        <Tab.Screen name="Activity" component={ActivityScreen} />
-        <Tab.Screen name="More" component={MoreScreen} />
+        <Tab.Screen name="Societies" component={TrendingScreen} />
+        <Tab.Screen name="Confess" component={PostScreen} />
+        <Tab.Screen name="Interactions" component={ActivityScreen} />
+        <Tab.Screen name="Profile" component={MoreScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

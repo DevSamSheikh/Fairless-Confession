@@ -1,9 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnonymousAvatar } from './AnonymousAvatar';
-import { CategoryChip } from './CategoryChip';
-import { ReactionBar } from './ReactionBar';
 import { Post } from '../store/feed.store';
 import { COLORS, Reaction } from '../utils/constants';
 
@@ -22,27 +20,50 @@ const formatTime = (date: Date): string => {
 };
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLongText = post.content.length > 200;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <AnonymousAvatar size={36} />
         <View style={styles.headerInfo}>
-          <Text style={styles.anonymous}>Anonymous</Text>
-          <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+          <Text style={styles.anonymous}>Anonymous • <Text style={styles.time}>{formatTime(post.createdAt)}</Text></Text>
         </View>
-        <CategoryChip category={post.category} />
+        <TouchableOpacity>
+          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textSecondary} />
+        </TouchableOpacity>
       </View>
       
-      <Text style={styles.content}>{post.content}</Text>
+      <Text 
+        style={styles.content}
+        numberOfLines={expanded ? undefined : 4}
+      >
+        {post.content}
+      </Text>
       
-      <View style={styles.footer}>
-        <View style={styles.commentCount}>
-          <Ionicons name="chatbubble-outline" size={16} color={COLORS.textSecondary} />
-          <Text style={styles.commentText}>{post.commentCount} comments</Text>
-        </View>
+      {isLongText && !expanded && (
+        <TouchableOpacity onPress={() => setExpanded(true)}>
+          <Text style={styles.seeMore}>See more</Text>
+        </TouchableOpacity>
+      )}
+      
+      <View style={styles.interactionRow}>
+        <TouchableOpacity style={styles.interactionButton}>
+          <Ionicons name="heart-outline" size={22} color={COLORS.textSecondary} />
+          <Text style={styles.interactionLabel}>Empathy</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.interactionButton}>
+          <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.interactionLabel}>Reflect</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.interactionButton}>
+          <Ionicons name="share-outline" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.interactionLabel}>Resonate</Text>
+        </TouchableOpacity>
       </View>
-      
-      <ReactionBar reactions={post.reactions} onReact={onReact} />
     </View>
   );
 };
@@ -53,12 +74,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 16,
-    marginVertical: 8,
-    shadowColor: COLORS.primary,
+    marginVertical: 6,
+    // Subtle shadow
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+    elevation: 3,
   },
   header: {
     flexDirection: 'row',
@@ -70,31 +92,41 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   anonymous: {
-    color: COLORS.text,
-    fontWeight: '600',
+    color: COLORS.textSecondary,
     fontSize: 14,
   },
   time: {
     color: COLORS.textSecondary,
-    fontSize: 12,
+    fontSize: 14,
   },
   content: {
     color: COLORS.text,
     fontSize: 16,
     lineHeight: 24,
+    marginBottom: 8,
+  },
+  seeMore: {
+    color: COLORS.accent,
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 12,
   },
-  footer: {
+  interactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  interactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
-  commentCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  commentText: {
+  interactionLabel: {
     color: COLORS.textSecondary,
-    fontSize: 12,
-    marginLeft: 6,
+    fontSize: 14,
+    marginLeft: 8,
   },
 });

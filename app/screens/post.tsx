@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
-import { CategoryChip } from '../components/CategoryChip';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { CATEGORIES, Category, COLORS, RATE_LIMITS } from '../utils/constants';
 import { useUserStore } from '../store/user.store';
 
@@ -52,12 +51,19 @@ export const PostScreen: React.FC = () => {
       <Text style={styles.sectionTitle}>Select Category</Text>
       <View style={styles.categories}>
         {CATEGORIES.map((category) => (
-          <CategoryChip
+          <TouchableOpacity
             key={category}
-            category={category}
-            selected={selectedCategory === category}
+            style={[
+              styles.categoryChip,
+              selectedCategory === category && styles.selectedChip
+            ]}
             onPress={() => setSelectedCategory(category)}
-          />
+          >
+            <Text style={[
+              styles.categoryText,
+              selectedCategory === category && styles.selectedCategoryText
+            ]}>{category}</Text>
+          </TouchableOpacity>
         ))}
       </View>
 
@@ -129,8 +135,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
   },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.cardBackground,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  selectedChip: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.accent,
+  },
+  categoryText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  selectedCategoryText: {
+    color: COLORS.text,
+    fontWeight: '600',
+  },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

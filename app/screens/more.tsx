@@ -22,7 +22,7 @@ export const MoreScreen: React.FC = () => {
   const renderItem = (item: SettingsItem, index: number) => (
     <Pressable key={index} style={styles.settingsItem}>
       <View style={styles.iconContainer}>
-        <Ionicons name={item.icon} size={24} color={COLORS.primary} />
+        <Ionicons name={item.icon} size={24} color={COLORS.accent} />
       </View>
       <View style={styles.itemContent}>
         <Text style={styles.itemTitle}>{item.title}</Text>
@@ -34,7 +34,7 @@ export const MoreScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Settings</Text>
+      <Text style={styles.header}>Profile</Text>
       
       <View style={styles.card}>
         {settingsItems.map((item, index) => renderItem(item, index))}

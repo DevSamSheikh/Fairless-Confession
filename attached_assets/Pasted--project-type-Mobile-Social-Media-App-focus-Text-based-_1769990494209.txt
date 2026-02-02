@@ -1,0 +1,188 @@
+{
+  "project": {
+    "type": "Mobile Social Media App",
+    "focus": "Text-based feed with psychological engagement",
+    "theme": "Dark UI (inspired by provided reference screens)",
+    "platform": "Mobile (iOS & Android)"
+  },
+
+  "design_reference": {
+    "screens_provided": true,
+    "instruction": "Follow uploaded app screens for spacing, dark theme, typography, card style, and bottom navigation appearance. Redesign the Home Page UI using the same visual language."
+  },
+
+  "layout_structure": {
+    "screen_distribution": {
+      "top_navigation": "8-10%",
+      "feed_area": "82-84%",
+      "bottom_navigation": "8-10%"
+    }
+  },
+
+  "top_navigation": {
+    "style": "Minimal, clean, dark",
+    "elements": [
+      {
+        "type": "profile_avatar",
+        "position": "left",
+        "size": "36-40px"
+      },
+      {
+        "type": "screen_title",
+        "value": "Home / Confessions",
+        "alignment": "center"
+      },
+      {
+        "type": "icons",
+        "position": "right",
+        "icons": ["search", "notifications"]
+      }
+    ],
+    "behavior": {
+      "sticky": true,
+      "hide_on_scroll": true
+    }
+  },
+
+  "feed_design": {
+    "layout": "Card-based vertical feed",
+    "card_style": {
+      "border_radius": "12-16px",
+      "padding": "14-18px",
+      "margin_bottom": "10-14px",
+      "background": "slightly lighter than app background",
+      "shadow": "soft, subtle"
+    }
+  },
+
+  "post_card_structure": {
+    "vertical_ratio": {
+      "author_row": "15%",
+      "content": "65%",
+      "interaction_row": "20%"
+    },
+
+    "author_row": {
+      "elements": ["anonymous_avatar_or_profile", "username_or_alias", "timestamp"],
+      "style": "muted, minimal emphasis"
+    },
+
+    "content_area": {
+      "text_focus": true,
+      "font_size": "15-17px",
+      "line_height": "1.5-1.7",
+      "max_lines": 4,
+      "overflow_behavior": {
+        "label": "See more",
+        "expand_on_tap": true
+      }
+    }
+  },
+
+  "interaction_row": {
+    "goal": "Psychological engagement & emotional response",
+    "buttons": [
+      {
+        "icon": "heart",
+        "label": "Empathy",
+        "gesture": {
+          "tap": "toggle reaction",
+          "long_press": {
+            "action": "open_facebook_style_reaction_bar",
+            "reactions": [
+              "Empathy",
+              "Relate",
+              "Support",
+              "Respect",
+              "Strength"
+            ]
+          }
+        }
+      },
+      {
+        "icon": "comment",
+        "label": "Reflect"
+      },
+      {
+        "icon": "share",
+        "label": "Resonate"
+      }
+    ],
+    "icon_style": {
+      "default": "outline",
+      "active": "filled with accent color"
+    }
+  },
+
+  "bottom_navigation": {
+    "style": "Same as reference UI, dark, minimal, icon-first",
+    "tabs": [
+      {
+        "icon": "home",
+        "label": "Confessions",
+        "purpose": "Main feed"
+      },
+      {
+        "icon": "users",
+        "label": "Societies",
+        "purpose": "Groups & communities"
+      },
+      {
+        "icon": "plus_circle",
+        "label": "Confess",
+        "purpose": "Create new post",
+        "highlight": true
+      },
+      {
+        "icon": "heart_handshake",
+        "label": "Interactions",
+        "purpose": "Reactions, replies, mentions"
+      },
+      {
+        "icon": "user",
+        "label": "Profile",
+        "purpose": "User account"
+      }
+    ]
+  },
+
+  "color_and_visual_balance": {
+    "ratio": {
+      "neutral_background": "70%",
+      "content_text": "20%",
+      "accent_color": "10%"
+    },
+    "accent_usage": [
+      "active icons",
+      "reaction highlights",
+      "primary CTA (Confess)"
+    ],
+    "theme_match": "Follow uploaded dark UI screens exactly for tone and contrast"
+  },
+
+  "typography": {
+    "preferred_fonts": [
+      "Inter",
+      "SF Pro",
+      "Plus Jakarta Sans",
+      "Roboto"
+    ],
+    "style": "Readable, calm, emotionally safe"
+  },
+
+  "scroll_behavior": {
+    "infinite_scroll": true,
+    "smooth_animation": true
+  },
+
+  "constraints": {
+    "no_read_more": true,
+    "use_label": "See more",
+    "avoid_visual_clutter": true,
+    "text_first_experience": true
+  },
+
+  "final_instruction": {
+    "goal": "Redesign the Home Page UI using uploaded screens as visual reference, applying psychological naming, emotional reactions, and a calm dark theme optimized for reading and emotional engagement."
+  }
+}
