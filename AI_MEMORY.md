@@ -2,29 +2,20 @@
 
 ## Project Strategy
 - User prefers Fast Mode for all tasks.
-- Project is being migrated to Expo SDK 54.
-- High focus on psychological engagement and text-based social features.
-- Visual theme is dark, following reference screens.
-- Memory file name: AI_MEMORY.md
+- Framework: Expo SDK 54 (React Native 0.81).
+- Theme: Premium Dark (`#0F1115` background, `#1E222B` cards).
+- Typography: Poppins (SemiBold/Regular).
 
-## Technical Preferences
-- Using Expo SDK 54.
-- React 19 / React Native 0.81.
-- Dark UI theme with specific hex codes provided.
-- Fonts: Poppins (SemiBold/Regular), Urbanist (Bold).
+## Key Implementation Details
+- **Navigation:** Using `native-stack` for high-performance transitions.
+- **Header:** Sticky header logic in `home.tsx` using `Animated.FlatList` and `headerAnim`.
+- **Interactions:** PostCard uses custom reaction picker triggered by `onLongPress`.
+- **Assets:** Logo located at `assets/images/logo.png`.
 
 ## Recent Changes (2026-02-02)
-- Upgraded project to Expo SDK 54.
-- Implemented active like button color (#E0245E) and logic in PostCard.
-- Created Auth Screens: Welcome, Login, Register, and Forget Password to match reference design.
-- Implemented Onboarding slider with animations and navigation flow.
-- Configured full navigation stack (Auth + Main Tabs).
-- Fixed navigation dependency issue (@react-navigation/native-stack).
-- Fixed PostScreen crash by adding safety checks for store access.
-- Finalized migration to Expo SDK 54 with latest dependencies.
-- Added AI_MEMORY.md for persistent context tracking.
-- Enhanced Splash Screen and Onboarding Screen UI to match design assets.
-- Updated Welcome Screen UI with the new logo and styling.
 - Fixed eye button (show/hide password) in Login and Register screens.
 - Enhanced Splash Screen with polished layout and typography.
 - Optimized navigation with native-stack for smoother transitions.
+- Implemented reaction picker with custom emojis: 👍, 👌, 🥂, 🤯, 🤔, 😡.
+- Added real-time reaction and comment counts to PostCard.
+- Fixed header overlap with mobile top bar and added slide animations.
