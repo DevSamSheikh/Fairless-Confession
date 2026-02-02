@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { COLORS } from '../utils/constants';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { COLORS } from '../../utils/constants';
 
 export const WelcomeScreen: React.FC = ({ navigation }: any) => {
   return (
