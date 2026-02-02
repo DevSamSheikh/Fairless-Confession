@@ -1,9 +1,17 @@
-import React from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PostCard } from '../components/PostCard';
-import { useFeedStore } from '../store/feed.store';
-import { COLORS, Reaction } from '../utils/constants';
+import React from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { PostCard } from "../components/PostCard";
+import { useFeedStore } from "../store/feed.store";
+import { COLORS, Reaction } from "../utils/constants";
 
 export const HomeScreen: React.FC = () => {
   const { posts, addReaction } = useFeedStore();
@@ -13,16 +21,26 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
-        <View style={styles.avatarPlaceholder} />
-        <Text style={styles.header}>Home / Confessions</Text>
+        <View style={styles.logoInfo}>
+          <Image 
+            source={require("../../assets/images/logo.png")} 
+            style={styles.logo} 
+            resizeMode="contain"
+          />
+          <Text style={styles.header}>BrainBox</Text>
+        </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="search" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={COLORS.text}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -30,12 +48,15 @@ export const HomeScreen: React.FC = () => {
         data={posts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <PostCard post={item} onReact={(reaction) => handleReact(item.id, reaction)} />
+          <PostCard
+            post={item}
+            onReact={(reaction) => handleReact(item.id, reaction)}
+          />
         )}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -45,31 +66,39 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
     backgroundColor: COLORS.background,
   },
-  avatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.cardBackground,
+  logoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
   },
   header: {
     color: COLORS.text,
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 24,
+    fontFamily: "Poppins_600SemiBold",
   },
   headerIcons: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   iconButton: {
     marginLeft: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   list: {
     paddingBottom: 100,

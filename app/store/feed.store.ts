@@ -1,11 +1,14 @@
 import { create } from 'zustand';
-import { Category, Reaction } from '../utils/constants';
+import { Category } from '../utils/constants';
+
+// We'll use emojis as keys for reactions as per requirements
+export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
 
 export interface Post {
   id: string;
   content: string;
   category: Category;
-  reactions: Record<Reaction, number>;
+  reactions: Record<string, number>;
   commentCount: number;
   createdAt: Date;
 }
@@ -17,7 +20,7 @@ interface FeedState {
   setPosts: (posts: Post[]) => void;
   setTrendingPosts: (posts: Post[]) => void;
   setLoading: (loading: boolean) => void;
-  addReaction: (postId: string, reaction: Reaction) => void;
+  addReaction: (postId: string, reaction: string) => void;
 }
 
 const dummyPosts: Post[] = [
@@ -82,7 +85,7 @@ export const useFeedStore = create<FeedState>((set) => ({
     set((state) => {
       const updatedPosts = state.posts.map((post) =>
         post.id === postId
-          ? { ...post, reactions: { ...post.reactions, [reaction]: post.reactions[reaction] + 1 } }
+          ? { ...post, reactions: { ...post.reactions, [reaction]: (post.reactions[reaction] || 0) + 1 } }
           : post
       );
       return {
