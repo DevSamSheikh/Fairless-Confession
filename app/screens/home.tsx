@@ -23,22 +23,27 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
-        <View style={styles.logoInfo}>
-          <Image 
-            source={require("../../assets/images/logo.png")} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
-          <Text style={styles.header}>BrainBox</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.avatarButton}>
+            <Image 
+              source={require("../../assets/images/logo.png")} 
+              style={styles.avatarLogo} 
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <View style={styles.textContainer}>
+            <Text style={styles.greeting}>Good Morning,</Text>
+            <Text style={styles.header}>BrainBox</Text>
+          </View>
         </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search" size={24} color={COLORS.text} />
+            <Ionicons name="search-outline" size={22} color={COLORS.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons
               name="notifications-outline"
-              size={24}
+              size={22}
               color={COLORS.text}
             />
           </TouchableOpacity>
@@ -74,28 +79,47 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     backgroundColor: COLORS.background,
   },
-  logoInfo: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logo: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
+  avatarButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  avatarLogo: {
+    width: 30,
+    height: 30,
+  },
+  textContainer: {
+    justifyContent: 'center',
+  },
+  greeting: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontFamily: "Poppins_400Regular",
   },
   header: {
     color: COLORS.text,
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: "Poppins_600SemiBold",
+    lineHeight: 24,
   },
   headerIcons: {
     flexDirection: "row",
   },
   iconButton: {
-    marginLeft: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    marginLeft: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
