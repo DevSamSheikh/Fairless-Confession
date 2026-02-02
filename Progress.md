@@ -16,9 +16,12 @@
 - [x] Login UI refinements.
 - [x] Register UI refinements.
 - [x] Forget Password UI refinements.
+- [x] Eye button functionality for password fields.
+- [x] Smooth navigation transitions.
+- [x] Polished Splash Screen UI.
 
 ## In Progress
-- [ ] Final UI audit and cleanup.
+- [ ] Optimization and performance review.
 
 ## Planned Tasks
 - [ ] Core feature development.

@@ -25,3 +25,6 @@
 - Added AI_MEMORY.md for persistent context tracking.
 - Enhanced Splash Screen and Onboarding Screen UI to match design assets.
 - Updated Welcome Screen UI with the new logo and styling.
+- Fixed eye button (show/hide password) in Login and Register screens.
+- Enhanced Splash Screen with polished layout and typography.
+- Optimized navigation with native-stack for smoother transitions.

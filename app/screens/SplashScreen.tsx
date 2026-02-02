@@ -6,12 +6,12 @@ const { width, height } = Dimensions.get('window');
 export const SplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Image 
-          source={require('../../assets/images/logo.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
+      <View style={styles.logoContainer}>
+         <Image 
+            source={require('../../assets/images/logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+         />
       </View>
       <View style={styles.footer}>
         <Text style={styles.brandName}>BrainBox</Text>
@@ -28,29 +28,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: {
-    flex: 1,
+  logoContainer: {
+    width: 200,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: '100%',
+    height: '100%',
   },
   footer: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 60,
     alignItems: 'center',
   },
   brandName: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 32,
     fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 4,
+    letterSpacing: 1,
+    marginBottom: 8,
   },
   version: {
     color: '#6B7280',
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Poppins_400Regular',
   },
 });

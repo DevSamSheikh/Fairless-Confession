@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
 export const RegisterScreen: React.FC = ({ navigation }: any) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -41,10 +43,10 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#6B7280"
-            secureTextEntry
+            secureTextEntry={!showPassword}
           />
-          <TouchableOpacity>
-            <Ionicons name="eye-off-outline" size={20} color="#6B7280" />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
