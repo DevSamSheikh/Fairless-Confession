@@ -36,10 +36,8 @@ export const HomeScreen: React.FC = () => {
       listener: (event: any) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         
-        // Only trigger if we've scrolled more than 10 pixels to avoid jitter
         if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
           if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-            // Scrolling down - hide header
             if (headerVisible) {
               setHeaderVisible(false);
               Animated.timing(headerAnim, {
@@ -49,7 +47,6 @@ export const HomeScreen: React.FC = () => {
               }).start();
             }
           } else {
-            // Scrolling up - show header
             if (!headerVisible) {
               setHeaderVisible(true);
               Animated.timing(headerAnim, {
@@ -145,7 +142,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 10 : 10,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 10) + 10 : 10,
     paddingBottom: 15,
   },
   headerLeft: {
