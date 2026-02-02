@@ -36,7 +36,9 @@
 - [x] Eye button functionality for password fields.
 - [x] Smooth navigation transitions.
 - [x] Polished Splash Screen UI.
-- [x] Enhanced PostCard UI.
+- [x] Enhanced PostCard UI with modern, elevated design.
+- [x] Improved post meta information and interaction layout.
+- [x] Optimized content readability and typography.
 
 ## Planned Tasks
 - [ ] Core feature development.
