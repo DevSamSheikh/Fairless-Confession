@@ -13,9 +13,12 @@
 - [x] Splash Screen enhancement.
 - [x] Onboarding Slider enhancement.
 - [x] Welcome Screen enhancement.
+- [x] Login UI refinements.
+- [x] Register UI refinements.
+- [x] Forget Password UI refinements.
 
 ## In Progress
-- [ ] Login/Register UI refinements.
+- [ ] Final UI audit and cleanup.
 
 ## Planned Tasks
 - [ ] Core feature development.
