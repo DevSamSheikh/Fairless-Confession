@@ -27,11 +27,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <AnonymousAvatar size={36} />
+        <AnonymousAvatar size={40} />
         <View style={styles.headerInfo}>
-          <Text style={styles.anonymous}>Anonymous • <Text style={styles.time}>{formatTime(post.createdAt)}</Text></Text>
+          <Text style={styles.anonymous}>Anonymous</Text>
+          <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity style={styles.moreButton}>
           <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -44,7 +45,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
       </Text>
       
       {isLongText && !expanded && (
-        <TouchableOpacity onPress={() => setExpanded(true)}>
+        <TouchableOpacity onPress={() => setExpanded(true)} style={styles.seeMoreContainer}>
           <Text style={styles.seeMore}>See more</Text>
         </TouchableOpacity>
       )}
@@ -82,63 +83,67 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: '#1A1D23',
+    borderRadius: 24,
+    padding: 20,
     marginHorizontal: 16,
-    marginVertical: 6,
-    // Subtle shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#2A2E37',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   headerInfo: {
     flex: 1,
     marginLeft: 12,
   },
   anonymous: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
   },
   time: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
+    color: '#8E9196',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+  },
+  moreButton: {
+    padding: 4,
   },
   content: {
-    color: COLORS.text,
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
     lineHeight: 24,
-    marginBottom: 8,
+    fontFamily: 'Poppins_400Regular',
+    marginBottom: 12,
+  },
+  seeMoreContainer: {
+    marginBottom: 16,
   },
   seeMore: {
-    color: COLORS.accent,
+    color: '#6B5CE7',
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
   interactionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: '#2A2E37',
   },
   interactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
+    paddingVertical: 4,
   },
   interactionLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    marginLeft: 8,
+    color: '#8E9196',
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    marginLeft: 6,
   },
 });
