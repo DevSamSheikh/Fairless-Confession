@@ -36,4 +36,5 @@ export const COLORS = {
   border: '#2A2E37',
   success: '#4ADE80',
   error: '#F87171',
+  likeActive: '#E0245E', // Active Like Button (Red/Pink)
 };

@@ -21,6 +21,7 @@ const formatTime = (date: Date): string => {
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
   const [expanded, setExpanded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const isLongText = post.content.length > 200;
 
   return (
@@ -49,9 +50,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
       )}
       
       <View style={styles.interactionRow}>
-        <TouchableOpacity style={styles.interactionButton}>
-          <Ionicons name="heart-outline" size={22} color={COLORS.textSecondary} />
-          <Text style={styles.interactionLabel}>Empathy</Text>
+        <TouchableOpacity 
+          style={styles.interactionButton}
+          onPress={() => setIsLiked(!isLiked)}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name={isLiked ? "heart" : "heart-outline"} 
+            size={22} 
+            color={isLiked ? COLORS.likeActive : COLORS.textSecondary} 
+          />
+          <Text style={[
+            styles.interactionLabel,
+            isLiked && { color: COLORS.likeActive }
+          ]}>Empathy</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.interactionButton}>

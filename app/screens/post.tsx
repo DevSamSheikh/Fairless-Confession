@@ -6,10 +6,14 @@ import { useUserStore } from '../store/user.store';
 export const PostScreen: React.FC = () => {
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const { postsToday, incrementPosts } = useUserStore();
+  const userStore = useUserStore();
+  
+  const postsToday = userStore?.postsToday ?? 0;
+  const incrementPosts = userStore?.incrementPosts ?? (() => {});
 
-  const canPost = postsToday < RATE_LIMITS.POSTS_PER_DAY;
-  const remainingPosts = RATE_LIMITS.POSTS_PER_DAY - postsToday;
+  const limits = RATE_LIMITS || { POSTS_PER_DAY: 10 };
+  const canPost = postsToday < limits.POSTS_PER_DAY;
+  const remainingPosts = limits.POSTS_PER_DAY - postsToday;
 
   const handleSubmit = () => {
     if (!content.trim()) {
