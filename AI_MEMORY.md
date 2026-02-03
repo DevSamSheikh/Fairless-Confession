@@ -13,10 +13,10 @@
 - **Assets:** Logo located at `assets/images/logo.png`.
 
 ## Recent Changes (2026-02-03)
-- Fixed Header overlap by adjusting `paddingTop` in `home.tsx` and adding `SafeAreaView` context.
+- Fixed Header overlap by adding `paddingTop: 40` to `SafeAreaView` in `home.tsx` and `trending.tsx`.
+- Implemented Rules Agreement checkbox in `RegisterScreen.tsx`.
+- Disabled Register button unless the user agrees to the Rules & Regulations.
+- Optimized header layout for better mobile status bar compatibility.
 - Implemented Societies Explore page (`trending.tsx`) with a search bar and society cards.
 - Created `SocietyDetailScreen.tsx` for viewing specific society feeds.
 - Configured navigation for Societies to allow exploring and joining groups.
-- Ensured all society names end with "Society" as per requirements.
-- Followed Premium Dark theme design pattern for the new Societies page.
-- Optimized header layout for better mobile status bar compatibility.

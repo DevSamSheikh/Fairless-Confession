@@ -6,6 +6,7 @@ const { width } = Dimensions.get('window');
 
 export const RegisterScreen: React.FC = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,7 +51,27 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.replace('Main')}>
+        <View style={styles.agreementContainer}>
+          <TouchableOpacity 
+            style={styles.checkbox} 
+            onPress={() => setAgreed(!agreed)}
+          >
+            <Ionicons 
+              name={agreed ? "checkbox" : "square-outline"} 
+              size={24} 
+              color={agreed ? '#6B5CE7' : '#6B7280'} 
+            />
+          </TouchableOpacity>
+          <Text style={styles.agreementText}>
+            I agree to the <Text style={styles.linkText}>Rules & Regulations</Text> of BrainBox
+          </Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.registerButton, !agreed && styles.disabledButton]} 
+          onPress={() => agreed && navigation.replace('Main')}
+          disabled={!agreed}
+        >
           <Text style={styles.registerButtonText}>Register</Text>
         </TouchableOpacity>
 
@@ -138,6 +159,28 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     borderWidth: 1,
     borderColor: '#2A2E37',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  agreementContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  agreementText: {
+    color: '#6B7280',
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    flex: 1,
+  },
+  linkText: {
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
   },
   registerButtonText: {
     color: '#FFFFFF',
