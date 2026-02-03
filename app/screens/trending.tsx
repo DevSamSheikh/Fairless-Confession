@@ -62,27 +62,12 @@ export const TrendingScreen: React.FC = () => {
             <Ionicons name="search" size={22} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <View style={styles.notificationBadge} />
-            <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.content}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search societies..."
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>Explore Societies</Text>
-
         <FlatList
           data={MOCK_SOCIETIES}
           renderItem={renderSocietyCard}
@@ -170,6 +155,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    marginTop: 10,
   },
   searchContainer: {
     flexDirection: 'row',

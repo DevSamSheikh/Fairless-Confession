@@ -110,8 +110,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 5,
     paddingBottom: 15,
-    backgroundColor: COLORS.background,
     zIndex: 100,
+    position: "absolute",
+    top: 40,
+    left: 0,
+    right: 0,
   },
   headerLeft: {
     flexDirection: "row",
