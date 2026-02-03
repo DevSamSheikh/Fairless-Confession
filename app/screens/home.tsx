@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     borderColor: "#1E222B",
   },
   list: {
-    paddingTop: 10,
+    paddingTop: 80,
     paddingBottom: 100,
   },
 });

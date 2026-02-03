@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, SafeAreaView, StatusBar, Image } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, TextInput, SafeAreaView, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,19 @@ const MOCK_SOCIETIES = [
 export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation<any>();
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, -100],
+    extrapolate: "clamp",
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
 
   const renderSocietyCard = ({ item }: { item: typeof MOCK_SOCIETIES[0] }) => (
     <TouchableOpacity 
@@ -38,11 +51,19 @@ export const TrendingScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Home Style Header */}
-      <View style={styles.headerContainer}>
+      {/* Home Style Animated Header */}
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            transform: [{ translateY: headerTranslateY }],
+            opacity: headerOpacity,
+          },
+        ]}
+      >
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image
@@ -65,18 +86,22 @@ export const TrendingScreen: React.FC = () => {
             <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
       <View style={styles.content}>
-        <FlatList
+        <Animated.FlatList
           data={MOCK_SOCIETIES}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
           renderItem={renderSocietyCard}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -90,10 +115,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 5,
     paddingBottom: 15,
     backgroundColor: COLORS.background,
     zIndex: 100,
+    position: "absolute",
+    top: 40,
+    left: 0,
+    right: 0,
   },
   headerLeft: {
     flexDirection: "row",
@@ -154,8 +183,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    marginTop: 10,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -181,6 +208,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   listContainer: {
+    paddingTop: 100,
+    paddingHorizontal: 20,
     paddingBottom: 100,
   },
   card: {
