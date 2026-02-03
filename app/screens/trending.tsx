@@ -41,12 +41,31 @@ export const TrendingScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Societies</Text>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
-        </TouchableOpacity>
+      {/* Home Style Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greetingText}>Explore,</Text>
+            <Text style={styles.brandText}>Societies</Text>
+          </View>
+        </View>
+
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="search" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.notificationBadge} />
+            <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -80,31 +99,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingTop: 40,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 5,
+    paddingTop: 50,
     paddingBottom: 15,
+    backgroundColor: COLORS.background,
+    zIndex: 100,
   },
-  headerTitle: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontWeight: '800',
-    fontFamily: 'Poppins_700Bold',
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  headerIcon: {
+  logoContainer: {
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: COLORS.cardBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#1E222B",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  logo: {
+    width: 28,
+    height: 28,
+  },
+  greetingContainer: {
+    marginLeft: 12,
+  },
+  greetingText: {
+    color: "#8E9196",
+    fontSize: 12,
+  },
+  brandText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1E222B",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FF4B4B",
+    zIndex: 1,
+    borderWidth: 1.5,
+    borderColor: "#1E222B",
   },
   content: {
     flex: 1,

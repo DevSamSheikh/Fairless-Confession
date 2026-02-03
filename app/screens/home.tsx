@@ -21,13 +21,13 @@ export const HomeScreen: React.FC = () => {
 
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, 100],
-    outputRange: [0, -10],
+    outputRange: [0, -100],
     extrapolate: "clamp",
   });
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 50],
-    outputRange: [1, 0.9],
+    outputRange: [1, 0],
     extrapolate: "clamp",
   });
 
