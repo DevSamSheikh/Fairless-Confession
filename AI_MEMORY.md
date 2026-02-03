@@ -12,10 +12,12 @@
 - **Interactions:** PostCard uses custom reaction picker triggered by `onLongPress`.
 - **Assets:** Logo located at `assets/images/logo.png`.
 
-## Recent Changes (2026-02-02)
-- Fixed eye button (show/hide password) in Login and Register screens.
-- Enhanced Splash Screen with polished layout and typography.
-- Optimized navigation with native-stack for smoother transitions.
-- Implemented reaction picker with custom emojis: 👍, 👌, 🥂, 🤯, 🤔, 😡.
-- Added real-time reaction and comment counts to PostCard.
-- Fixed header overlap with mobile top bar and added slide animations.
+## Recent Changes (2026-02-03)
+- Fixed Expo Go compatibility by syncing `@expo/metro-runtime` and `@expo/vector-icons` versions.
+- Cleaned up duplicate imports in `App.tsx` and resolved LSP diagnostics.
+- Upgraded project to Expo SDK 54.
+- Implemented active like button color (#E0245E) and logic in PostCard.
+- Created Auth Screens: Welcome, Login, Register, and Forget Password.
+- Implemented Onboarding slider with animations and navigation flow.
+- Configured full navigation stack (Auth + Main Tabs).
+- Finalized migration to Expo SDK 54 with latest dependencies.
