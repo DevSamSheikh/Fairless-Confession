@@ -13,6 +13,7 @@ import { LoginScreen } from './app/screens/auth/LoginScreen';
 import { RegisterScreen } from './app/screens/auth/RegisterScreen';
 import { ForgetPasswordScreen } from './app/screens/auth/ForgetPasswordScreen';
 import { OnboardingScreen } from './app/screens/OnboardingScreen';
+import { SocietyDetailScreen } from './app/screens/SocietyDetailScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -80,6 +81,7 @@ export default function App() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -13,11 +13,10 @@
 - **Assets:** Logo located at `assets/images/logo.png`.
 
 ## Recent Changes (2026-02-03)
-- Fixed Expo Go compatibility by syncing `@expo/metro-runtime` and `@expo/vector-icons` versions.
-- Cleaned up duplicate imports in `App.tsx` and resolved LSP diagnostics.
-- Upgraded project to Expo SDK 54.
-- Implemented active like button color (#E0245E) and logic in PostCard.
-- Created Auth Screens: Welcome, Login, Register, and Forget Password.
-- Implemented Onboarding slider with animations and navigation flow.
-- Configured full navigation stack (Auth + Main Tabs).
-- Finalized migration to Expo SDK 54 with latest dependencies.
+- Fixed Header overlap by adjusting `paddingTop` in `home.tsx` and adding `SafeAreaView` context.
+- Implemented Societies Explore page (`trending.tsx`) with a search bar and society cards.
+- Created `SocietyDetailScreen.tsx` for viewing specific society feeds.
+- Configured navigation for Societies to allow exploring and joining groups.
+- Ensured all society names end with "Society" as per requirements.
+- Followed Premium Dark theme design pattern for the new Societies page.
+- Optimized header layout for better mobile status bar compatibility.
