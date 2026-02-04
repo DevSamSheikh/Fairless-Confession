@@ -60,43 +60,43 @@ export const TrendingScreen: React.FC = () => {
       <StatusBar barStyle="light-content" />
       
       {/* Home Style Animated Header */}
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            transform: [{ translateY: headerTranslateY }],
-            opacity: headerOpacity,
-          },
-        ]}
-      >
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+      <View style={styles.headerFixedContainer}>
+        <Animated.View
+          style={[
+            styles.headerContainer,
+            {
+              transform: [{ translateY: headerTranslateY }],
+              opacity: headerOpacity,
+            },
+          ]}
+        >
+          <View style={styles.headerLeft}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/images/logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.greetingContainer}>
+              <Text style={styles.greetingText}>Explore,</Text>
+              <Text style={styles.brandText}>Societies</Text>
+            </View>
           </View>
-          <View style={styles.greetingContainer}>
-            <Text style={styles.greetingText}>Explore,</Text>
-            <Text style={styles.brandText}>Societies</Text>
+
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="add" size={26} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="search" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="add" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-
-      <View style={styles.content}>
         <View style={styles.tabsWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
             {tabs.map((tab) => (
@@ -110,7 +110,9 @@ export const TrendingScreen: React.FC = () => {
             ))}
           </ScrollView>
         </View>
+      </View>
 
+      <View style={styles.content}>
         <Animated.FlatList
           data={MOCK_SOCIETIES}
           onScroll={Animated.event(
@@ -141,10 +143,14 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     backgroundColor: COLORS.background,
     zIndex: 100,
-    position: "absolute",
+  },
+  headerFixedContainer: {
+    position: 'absolute',
     top: 40,
     left: 0,
     right: 0,
+    zIndex: 100,
+    backgroundColor: COLORS.background,
   },
   headerLeft: {
     flexDirection: "row",
@@ -195,8 +201,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabsWrapper: {
-    paddingTop: 110,
     backgroundColor: COLORS.background,
+    zIndex: 90,
   },
   tabsContainer: {
     paddingHorizontal: 20,
@@ -210,7 +216,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBackground,
   },
   activeTab: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
   },
   tabText: {
     color: COLORS.textSecondary,
@@ -221,7 +227,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   listContainer: {
-    paddingTop: 10,
+    paddingTop: 170,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },

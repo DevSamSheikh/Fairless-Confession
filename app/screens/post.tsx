@@ -36,9 +36,11 @@ export const PostScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>New Confession</Text>
-      <Text style={styles.subtitle}>Share your secret anonymously</Text>
+    <ScrollView style={styles.container} stickyHeaderIndices={[0]}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>New Confession</Text>
+        <Text style={styles.subtitle}>Share your secret anonymously</Text>
+      </View>
 
       <TextInput
         style={styles.input}
@@ -92,6 +94,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     padding: 16,
     paddingTop: 60,
+  },
+  headerContainer: {
+    backgroundColor: COLORS.background,
+    paddingBottom: 8,
   },
   header: {
     color: COLORS.text,
@@ -161,11 +167,13 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: 12,
+    borderRadius: 30, // More rounded for theme consistency
     padding: 16,
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   disabledButton: {
     opacity: 0.5,

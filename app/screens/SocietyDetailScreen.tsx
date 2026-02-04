@@ -179,6 +179,8 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 15,
     backgroundColor: COLORS.cardBackground,
+    borderWidth: 1,
+    borderColor: 'rgba(107, 92, 231, 0.3)',
   },
   headerTitleContainer: {
     flexDirection: 'row',

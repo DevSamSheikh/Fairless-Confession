@@ -13,10 +13,9 @@
 - **Assets:** Logo located at `assets/images/logo.png`.
 
 ## Recent Changes (2026-02-03)
-- Fixed Header overlap by adding `paddingTop: 40` to `SafeAreaView` in `home.tsx` and `trending.tsx`.
-- Implemented Rules Agreement checkbox in `RegisterScreen.tsx`.
-- Disabled Register button unless the user agrees to the Rules & Regulations.
+- Updated active color to theme purple (#6B5CE7) for Like buttons and primary CTAs.
+- Implemented `Modal` based reaction picker in `PostCard.tsx` that hides when clicking outside.
+- Fixed Society "lock screen" (official warning) and added purple borders to notifications for consistency.
+- Fixed sticky headers and tab bars in Societies page using `stickyHeaderIndices`.
+- Added Rules Agreement checkbox in `RegisterScreen.tsx`.
 - Optimized header layout for better mobile status bar compatibility.
-- Implemented Societies Explore page (`trending.tsx`) with a search bar and society cards.
-- Created `SocietyDetailScreen.tsx` for viewing specific society feeds.
-- Configured navigation for Societies to allow exploring and joining groups.

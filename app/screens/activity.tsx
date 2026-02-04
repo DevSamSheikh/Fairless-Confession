@@ -73,6 +73,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(107, 92, 231, 0.2)',
   },
   activityContent: {
     flex: 1,

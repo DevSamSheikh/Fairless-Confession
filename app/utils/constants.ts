@@ -32,9 +32,9 @@ export const COLORS = {
   primary: '#FFFFFF',
   text: '#FFFFFF',
   textSecondary: '#8E9196', // Muted, minimal emphasis
-  accent: '#6B5CE7', // Active icons, primary CTA
+  accent: '#6B5CE7', // Active icons, primary CTA, theme purple
   border: '#2A2E37',
   success: '#4ADE80',
   error: '#F87171',
-  likeActive: '#E0245E', // Active Like Button (Red/Pink)
+  likeActive: '#6B5CE7', // Changed to theme purple
 };

@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Animated,
   PanResponder,
+  TouchableWithoutFeedback,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
@@ -116,17 +118,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
         <View style={styles.leftInteractions}>
           <View style={styles.reactionButtonWrapper}>
             {showReactions && (
-              <View style={styles.reactionPicker}>
-                {REACTIONS.map((r) => (
-                  <TouchableOpacity
-                    key={r.emoji}
-                    onPress={() => handleSelectReaction(r.emoji)}
-                    style={styles.reactionOption}
-                  >
-                    <Text style={styles.reactionEmoji}>{r.emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <Modal
+                transparent={true}
+                visible={showReactions}
+                onRequestClose={() => setShowReactions(false)}
+              >
+                <TouchableWithoutFeedback onPress={() => setShowReactions(false)}>
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.reactionPicker}>
+                      {REACTIONS.map((r) => (
+                        <TouchableOpacity
+                          key={r.emoji}
+                          onPress={() => handleSelectReaction(r.emoji)}
+                          style={styles.reactionOption}
+                        >
+                          <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              </Modal>
             )}
 
             <TouchableOpacity
@@ -311,8 +323,8 @@ const styles = StyleSheet.create({
   },
   reactionPicker: {
     position: "absolute",
-    bottom: 50,
-    left: 0,
+    bottom: 100,
+    alignSelf: 'center',
     backgroundColor: "#1E222B",
     borderRadius: 30,
     flexDirection: "row",
@@ -325,6 +337,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+    paddingBottom: 200,
   },
   reactionOption: {
     marginHorizontal: 6,
