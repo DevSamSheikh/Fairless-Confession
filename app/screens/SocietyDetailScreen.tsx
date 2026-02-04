@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -88,35 +88,42 @@ export const SocietyDetailScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{society.name}</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>{society.name}</Text>
+          {isJoined && (
+            <View style={styles.memberBadge}>
+              <Text style={styles.memberBadgeText}>Member</Text>
+            </View>
+          )}
+        </View>
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          <View style={styles.societyIconLarge}>
-            <Ionicons name={society.icon} size={50} color={COLORS.accent} />
-          </View>
-          <Text style={styles.hookText} numberOfLines={5}>
-            Welcome to {society.name}. This is a safe space where the truth comes out. 
-            No filters, no judgment, just raw confessions from people who understand.
-            Join the inner circle today.
-          </Text>
-          
-          <View style={styles.heroButtons}>
-            {!isJoined ? (
-              <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin}>
-                <Text style={styles.heroButtonText}>Join Society</Text>
+          <Image 
+            source={require("../../assets/images/logo.png")} 
+            style={styles.heroBgOverlay}
+            resizeMode="contain"
+          />
+          <View style={styles.heroOverlayContent}>
+            <Text style={styles.hookText} numberOfLines={5}>
+              Welcome to {society.name}. This is a safe space where the truth comes out. 
+              No filters, no judgment, just raw confessions from people who understand.
+              Join the inner circle today.
+            </Text>
+            
+            <View style={styles.heroButtons}>
+              {!isJoined ? (
+                <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin}>
+                  <Text style={styles.heroButtonText}>Join Society</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={styles.secondaryHeroButton}>
+                <Text style={styles.heroButtonText}>Guidelines</Text>
               </TouchableOpacity>
-            ) : (
-              <View style={[styles.primaryHeroButton, { backgroundColor: COLORS.success }]}>
-                <Text style={styles.heroButtonText}>Member Joined</Text>
-              </View>
-            )}
-            <TouchableOpacity style={styles.secondaryHeroButton}>
-              <Text style={styles.heroButtonText}>Guidelines</Text>
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -173,29 +180,54 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     backgroundColor: COLORS.cardBackground,
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
+  memberBadge: {
+    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+  },
+  memberBadgeText: {
+    color: COLORS.success,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   scrollContent: {
     paddingBottom: 40,
   },
   heroSection: {
-    padding: 24,
-    alignItems: 'center',
+    height: 250,
     backgroundColor: COLORS.cardBackground,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-  },
-  societyIconLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(247, 37, 133, 0.1)',
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 24,
+  },
+  heroBgOverlay: {
+    position: 'absolute',
+    width: '150%',
+    height: '150%',
+    opacity: 0.1,
+    zIndex: 0,
+  },
+  heroOverlayContent: {
+    zIndex: 1,
+    width: '100%',
+    alignItems: 'center',
   },
   hookText: {
     color: COLORS.text,
@@ -207,9 +239,10 @@ const styles = StyleSheet.create({
   heroButtons: {
     flexDirection: 'row',
     gap: 12,
+    width: '100%',
   },
   primaryHeroButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
@@ -217,15 +250,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryHeroButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.cardBackground,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
     flex: 1,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   heroButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text,
     fontWeight: '700',
     fontSize: 14,
   },

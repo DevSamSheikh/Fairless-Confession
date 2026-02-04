@@ -191,28 +191,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
   },
-  notificationBadge: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FF4B4B",
-    zIndex: 1,
-    borderWidth: 1.5,
-    borderColor: "#1E222B",
-  },
   content: {
     flex: 1,
   },
   tabsWrapper: {
-    paddingTop: 100,
+    paddingTop: 110,
     backgroundColor: COLORS.background,
   },
   tabsContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 15,
   },
   tab: {
     paddingHorizontal: 20,
