@@ -13,9 +13,9 @@
 - **Assets:** Logo located at `assets/images/logo.png`.
 
 ## Recent Changes (2026-02-03)
+- Refactored UI elements into reusable components: `Button`, `Card`, `Header`, and `Tabs`.
+- Optimized `HomeScreen` and `TrendingScreen` by utilizing the new atomic components.
+- Improved code maintainability and reduced redundancy across the codebase.
 - Updated active color to theme purple (#6B5CE7) for Like buttons and primary CTAs.
 - Implemented `Modal` based reaction picker in `PostCard.tsx` that hides when clicking outside.
-- Fixed Society "lock screen" (official warning) and added purple borders to notifications for consistency.
-- Fixed sticky headers and tab bars in Societies page using `stickyHeaderIndices`.
-- Added Rules Agreement checkbox in `RegisterScreen.tsx`.
-- Optimized header layout for better mobile status bar compatibility.
+- Fixed sticky headers and tab bars in Societies page using atomic UI components.

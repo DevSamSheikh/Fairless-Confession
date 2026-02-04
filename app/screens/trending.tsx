@@ -1,8 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet, Animated, StatusBar, Text, TouchableOpacity } from 'react-native';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
+import { Header } from '../components/ui/Header';
+import { Tabs } from '../components/ui/Tabs';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Ionicons } from '@expo/vector-icons';
 
 const MOCK_SOCIETIES = [
   { id: '1', name: 'Midnight Society', members: 1240, description: 'Confessions for the night owls.', icon: 'moon' },
@@ -32,84 +36,63 @@ export const TrendingScreen: React.FC = () => {
   const tabs = ['Confessions', 'Discover', 'Your Societies'];
 
   const renderSocietyCard = ({ item }: { item: typeof MOCK_SOCIETIES[0] }) => (
-    <TouchableOpacity 
+    <Card 
       style={styles.card}
-      onPress={() => navigation.navigate('SocietyDetail', { society: item })}
+      variant="outline"
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('SocietyDetail', { society: item })}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.iconContainer}>
+            <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+          </View>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardName}>{item.name}</Text>
+            <Text style={styles.cardMembers}>{item.members} members</Text>
+          </View>
+          <Button 
+            title="Join" 
+            size="small"
+            onPress={() => navigation.navigate('SocietyDetail', { society: item })}
+          />
         </View>
-        <View style={styles.cardTitleContainer}>
-          <Text style={styles.cardName}>{item.name}</Text>
-          <Text style={styles.cardMembers}>{item.members} members</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.joinButton} 
-          onPress={() => navigation.navigate('SocietyDetail', { society: item })}
-        >
-          <Text style={styles.joinButtonText}>Join</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.cardDescription}>{item.description}</Text>
-    </TouchableOpacity>
+        <Text style={styles.cardDescription}>{item.description}</Text>
+      </TouchableOpacity>
+    </Card>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Home Style Animated Header */}
       <View style={styles.headerFixedContainer}>
         <Animated.View
           style={[
-            styles.headerContainer,
+            styles.headerWrapper,
             {
               transform: [{ translateY: headerTranslateY }],
               opacity: headerOpacity,
             },
           ]}
         >
-          <View style={styles.headerLeft}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../assets/images/logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greetingText}>Explore,</Text>
-              <Text style={styles.brandText}>Societies</Text>
-            </View>
-          </View>
-
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="add" size={26} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="search" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <Header
+            title="Societies"
+            subtitle="Explore,"
+            rightIcons={[
+              { name: "add", onPress: () => {} },
+              { name: "search", onPress: () => {} },
+              { name: "bookmark-outline", onPress: () => {} },
+            ]}
+          />
         </Animated.View>
 
-        <View style={styles.tabsWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.tab, activeTab === tab && styles.activeTab]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <Tabs 
+          tabs={tabs} 
+          activeTab={activeTab} 
+          onTabPress={setActiveTab} 
+          style={styles.tabsWrapper}
+        />
       </View>
 
       <View style={styles.content}>
@@ -134,16 +117,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 15,
-    backgroundColor: COLORS.background,
-    zIndex: 100,
-  },
   headerFixedContainer: {
     position: 'absolute',
     top: 40,
@@ -152,79 +125,15 @@ const styles = StyleSheet.create({
     zIndex: 100,
     backgroundColor: COLORS.background,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logoContainer: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#1E222B",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  greetingContainer: {
-    marginLeft: 12,
-  },
-  greetingText: {
-    color: "#8E9196",
-    fontSize: 12,
-  },
-  brandText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1E222B",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-  },
-  content: {
-    flex: 1,
+  headerWrapper: {
+    zIndex: 100,
   },
   tabsWrapper: {
     backgroundColor: COLORS.background,
     zIndex: 90,
   },
-  tabsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-  },
-  tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginRight: 10,
-    borderRadius: 20,
-    backgroundColor: COLORS.cardBackground,
-  },
-  activeTab: {
-    backgroundColor: COLORS.accent,
-  },
-  tabText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
+  content: {
+    flex: 1,
   },
   listContainer: {
     paddingTop: 170,
@@ -232,12 +141,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   card: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 20,
-    padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -260,25 +164,17 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
   },
   cardMembers: {
     color: COLORS.textSecondary,
     fontSize: 12,
-  },
-  joinButton: {
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  joinButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Poppins_400Regular',
   },
   cardDescription: {
     color: COLORS.textSecondary,
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: 'Poppins_400Regular',
   },
 });

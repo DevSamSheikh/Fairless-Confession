@@ -1,17 +1,13 @@
 import React, { useRef } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   Animated,
-  Image,
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
+import { Header } from "../components/ui/Header";
 import { useFeedStore } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 
@@ -21,13 +17,13 @@ export const HomeScreen: React.FC = () => {
 
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, 100],
-    outputRange: [0, -100],
+    outputRange: [0, -10],
     extrapolate: "clamp",
   });
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 50],
-    outputRange: [1, 0],
+    outputRange: [1, 0.9],
     extrapolate: "clamp",
   });
 
@@ -41,36 +37,21 @@ export const HomeScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <Animated.View
           style={[
-            styles.headerContainer,
+            styles.headerWrapper,
             {
               transform: [{ translateY: headerTranslateY }],
               opacity: headerOpacity,
             },
           ]}
         >
-          <View style={styles.headerLeft}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../assets/images/logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greetingText}>Good Morning,</Text>
-              <Text style={styles.brandText}>BrainBox</Text>
-            </View>
-          </View>
-
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="search" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <View style={styles.notificationBadge} />
-              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <Header
+            title="BrainBox"
+            subtitle="Good Morning,"
+            rightIcons={[
+              { name: "search", onPress: () => {} },
+              { name: "notifications-outline", onPress: () => {}, badge: true },
+            ]}
+          />
         </Animated.View>
 
         <Animated.FlatList
@@ -103,79 +84,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 40,
   },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 15,
+  headerWrapper: {
     zIndex: 100,
-    position: "absolute",
-    top: 40,
-    left: 0,
-    right: 0,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logoContainer: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#1E222B",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  greetingContainer: {
-    marginLeft: 12,
-  },
-  greetingText: {
-    color: "#8E9196",
-    fontSize: 12,
-    fontFamily: "Poppins_400Regular",
-  },
-  brandText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Poppins_600SemiBold",
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1E222B",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FF4B4B",
-    zIndex: 1,
-    borderWidth: 1.5,
-    borderColor: "#1E222B",
   },
   list: {
-    paddingTop: 80,
+    paddingTop: 10,
     paddingBottom: 100,
   },
 });
