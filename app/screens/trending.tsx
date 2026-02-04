@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, TextInput, SafeAreaView, StatusBar, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +13,7 @@ const MOCK_SOCIETIES = [
 ];
 
 export const TrendingScreen: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('Confessions');
   const navigation = useNavigation<any>();
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -29,6 +29,8 @@ export const TrendingScreen: React.FC = () => {
     extrapolate: "clamp",
   });
 
+  const tabs = ['Confessions', 'Discover', 'Your Societies'];
+
   const renderSocietyCard = ({ item }: { item: typeof MOCK_SOCIETIES[0] }) => (
     <TouchableOpacity 
       style={styles.card}
@@ -42,7 +44,10 @@ export const TrendingScreen: React.FC = () => {
           <Text style={styles.cardName}>{item.name}</Text>
           <Text style={styles.cardMembers}>{item.members} members</Text>
         </View>
-        <TouchableOpacity style={styles.joinButton}>
+        <TouchableOpacity 
+          style={styles.joinButton} 
+          onPress={() => navigation.navigate('SocietyDetail', { society: item })}
+        >
           <Text style={styles.joinButtonText}>Join</Text>
         </TouchableOpacity>
       </View>
@@ -80,6 +85,9 @@ export const TrendingScreen: React.FC = () => {
 
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="add" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="search" size={22} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
@@ -89,6 +97,20 @@ export const TrendingScreen: React.FC = () => {
       </Animated.View>
 
       <View style={styles.content}>
+        <View style={styles.tabsWrapper}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+            {tabs.map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, activeTab === tab && styles.activeTab]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         <Animated.FlatList
           data={MOCK_SOCIETIES}
           onScroll={Animated.event(
@@ -184,31 +206,34 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  tabsWrapper: {
+    paddingTop: 100,
+    backgroundColor: COLORS.background,
+  },
+  tabsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  tab: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 10,
+    borderRadius: 20,
     backgroundColor: COLORS.cardBackground,
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    height: 50,
-    marginBottom: 25,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  searchInput: {
-    flex: 1,
-    color: COLORS.text,
-    marginLeft: 10,
-    fontSize: 16,
+  activeTab: {
+    backgroundColor: COLORS.primary,
   },
-  sectionTitle: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 15,
+  tabText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
   },
   listContainer: {
-    paddingTop: 100,
+    paddingTop: 10,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },

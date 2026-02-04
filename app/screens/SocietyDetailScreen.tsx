@@ -1,56 +1,161 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { PostCard } from '../components/PostCard';
-import { useFeedStore } from '../store/feed.store';
 
-export const SocietyDetailScreen: React.FC = ({ route, navigation }: any) => {
-  const { society } = route.params || { society: { name: 'Midnight Society', members: 1240 } };
-  const { posts } = useFeedStore();
+const SOCIETY_CONFESSIONS = [
+  {
+    id: 's1',
+    content: 'I joined this society just to see if anyone would recognize my stories.',
+    category: 'Secrets' as any,
+    reactions: { '❤️': 12, '😮': 2, '😢': 0, '😡': 0, '😂': 5 },
+    commentCount: 3,
+    createdAt: new Date(),
+  },
+  {
+    id: 's2',
+    content: 'The hook text for this society is actually true, and that scares me.',
+    category: 'Drama' as any,
+    reactions: { '❤️': 5, '😮': 15, '😢': 1, '😡': 0, '😂': 2 },
+    commentCount: 8,
+    createdAt: new Date(Date.now() - 3600000),
+  }
+];
+
+export const SocietyDetailScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const society = route.params?.society || { name: 'Society', icon: 'people', members: 0 };
   
-  // Filter posts for this society (mock filter for now)
-  const societyPosts = posts.filter(p => p.category === 'Dark' || p.category === 'Secrets');
+  const [isJoined, setIsJoined] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningTimer, setWarningTimer] = useState(6);
+  const [confession, setConfession] = useState('');
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{society.name}</Text>
-          <Text style={styles.headerSubtitle}>{society.members} members • Anonymous</Text>
-        </View>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
+  useEffect(() => {
+    let interval: any;
+    if (showWarning && warningTimer > 0) {
+      interval = setInterval(() => {
+        setWarningTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showWarning, warningTimer]);
+
+  const handleJoin = () => {
+    setShowWarning(true);
+    setWarningTimer(6);
+  };
+
+  const confirmJoin = () => {
+    setShowWarning(false);
+    setIsJoined(true);
+  };
+
+  if (showWarning) {
+    return (
+      <View style={styles.warningContainer}>
+        <StatusBar barStyle="light-content" />
+        <Ionicons name="warning" size={80} color={COLORS.error} />
+        <Text style={styles.warningTitle}>OFFICIAL WARNING</Text>
+        <Text style={styles.warningText}>
+          By joining this society, you agree to maintain absolute anonymity and respect the privacy of others.{"\n\n"}
+          Violating someone's privacy, harassment, or doxxing will result in an immediate and permanent ban.{"\n\n"}
+          You are responsible for the content you share.
+        </Text>
+        
+        <TouchableOpacity 
+          style={[styles.acceptButton, warningTimer > 0 && styles.disabledButton]} 
+          onPress={confirmJoin}
+          disabled={warningTimer > 0}
+        >
+          <Text style={styles.acceptButtonText}>
+            {warningTimer > 0 ? `Please read (${warningTimer}s)` : "I Accept & Join"}
+          </Text>
         </TouchableOpacity>
       </View>
+    );
+  }
 
-      <FlatList
-        data={societyPosts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onReact={() => {}}
-          />
-        )}
-        ListHeaderComponent={() => (
-          <View style={styles.societyInfo}>
-            <Text style={styles.infoText}>Welcome to {society.name}. Everything posted here is 100% anonymous. Be kind and relate.</Text>
-            <TouchableOpacity style={styles.joinedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
-              <Text style={styles.joinedText}>Member</Text>
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{society.name}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.societyIconLarge}>
+            <Ionicons name={society.icon} size={50} color={COLORS.accent} />
+          </View>
+          <Text style={styles.hookText} numberOfLines={5}>
+            Welcome to {society.name}. This is a safe space where the truth comes out. 
+            No filters, no judgment, just raw confessions from people who understand.
+            Join the inner circle today.
+          </Text>
+          
+          <View style={styles.heroButtons}>
+            {!isJoined ? (
+              <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin}>
+                <Text style={styles.heroButtonText}>Join Society</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={[styles.primaryHeroButton, { backgroundColor: COLORS.success }]}>
+                <Text style={styles.heroButtonText}>Member Joined</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.secondaryHeroButton}>
+              <Text style={styles.heroButtonText}>Guidelines</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {isJoined ? (
+          <View style={styles.unlockedContent}>
+            {/* Confess Section */}
+            <View style={styles.confessBox}>
+              <TextInput
+                style={styles.confessInput}
+                placeholder="Share your secret with this society..."
+                placeholderTextColor={COLORS.textSecondary}
+                multiline
+                value={confession}
+                onChangeText={setConfession}
+              />
+              <TouchableOpacity style={styles.confessButton} onPress={() => {
+                if (confession.trim()) {
+                  setConfession('');
+                  alert('Confession posted to society!');
+                }
+              }}>
+                <Text style={styles.confessButtonText}>CONFESS</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Society Feed */}
+            <Text style={styles.feedTitle}>Society Confessions</Text>
+            {SOCIETY_CONFESSIONS.map((post) => (
+              <PostCard key={post.id} post={post as any} onReact={() => {}} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.lockedContainer}>
+            <Ionicons name="lock-closed" size={40} color={COLORS.textSecondary} />
+            <Text style={styles.lockedText}>Join this society to unlock confessions and post your own.</Text>
+          </View>
         )}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -62,57 +167,149 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backButton: {
-    marginRight: 12,
-  },
-  headerTitleContainer: {
-    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
+    backgroundColor: COLORS.cardBackground,
   },
   headerTitle: {
-    color: COLORS.text,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
-  headerSubtitle: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-  },
-  headerIcon: {
-    padding: 4,
-  },
-  list: {
+  scrollContent: {
     paddingBottom: 40,
   },
-  societyInfo: {
-    padding: 20,
+  heroSection: {
+    padding: 24,
+    alignItems: 'center',
     backgroundColor: COLORS.cardBackground,
-    marginBottom: 10,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  societyIconLarge: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(247, 37, 133, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  hookText: {
+    color: COLORS.text,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  heroButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  primaryHeroButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
     alignItems: 'center',
   },
-  infoText: {
+  secondaryHeroButton: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
+    alignItems: 'center',
+  },
+  heroButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  warningContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  warningTitle: {
+    color: COLORS.error,
+    fontSize: 28,
+    fontWeight: '900',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  warningText: {
+    color: COLORS.text,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  acceptButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 40,
+    paddingVertical: 18,
+    borderRadius: 15,
+    width: '100%',
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: COLORS.border,
+  },
+  acceptButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  lockedContainer: {
+    padding: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedText: {
     color: COLORS.textSecondary,
     textAlign: 'center',
+    marginTop: 15,
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
   },
-  joinedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(74, 222, 128, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  unlockedContent: {
+    padding: 20,
+  },
+  confessBox: {
+    backgroundColor: COLORS.cardBackground,
     borderRadius: 15,
+    padding: 15,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  joinedText: {
-    color: COLORS.success,
-    fontSize: 12,
+  confessInput: {
+    color: COLORS.text,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+  },
+  confessButton: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  confessButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  feedTitle: {
+    color: COLORS.text,
+    fontSize: 18,
     fontWeight: '700',
-    marginLeft: 6,
-  },
+    marginBottom: 15,
+  }
 });

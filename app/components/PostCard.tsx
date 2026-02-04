@@ -1,5 +1,12 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  PanResponder,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
 import { Post } from "../store/feed.store";
@@ -11,12 +18,12 @@ interface PostCardProps {
 }
 
 const REACTIONS = [
-  { emoji: '👍', label: 'Like' },
-  { emoji: '👌', label: 'Appreciation' },
-  { emoji: '🥂', label: 'Supportive' },
-  { emoji: '🤯', label: 'Unbelievable' },
-  { emoji: '🤔', label: 'Thought' },
-  { emoji: '😡', label: 'Anger' },
+  { emoji: "👍", label: "Like" },
+  { emoji: "🤣", label: "Funny" },
+  { emoji: "🥂", label: "Supportive" },
+  { emoji: "🤯", label: "Unbelievable" },
+  { emoji: "🤔", label: "Thought" },
+  { emoji: "😡", label: "Anger" },
 ];
 
 const formatTime = (date: Date): string => {
@@ -37,7 +44,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
   const [showReactions, setShowReactions] = useState(false);
   const isLongText = post.content.length > 150;
 
-  const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
+  const totalReactions = Object.values(post.reactions).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   const handleLongPress = () => {
     setShowReactions(true);
@@ -58,8 +68,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
     if (selectedReaction) {
       setSelectedReaction(null);
     } else {
-      setSelectedReaction('👍');
-      onReact('👍');
+      setSelectedReaction("👍");
+      onReact("👍");
     }
   };
 
@@ -78,7 +88,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
           </View>
         </View>
         <TouchableOpacity style={styles.moreButton} activeOpacity={0.6}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textSecondary} />
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={20}
+            color={COLORS.textSecondary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -88,7 +102,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
         </Text>
 
         {isLongText && !expanded && (
-          <TouchableOpacity onPress={() => setExpanded(true)} style={styles.seeMoreContainer} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => setExpanded(true)}
+            style={styles.seeMoreContainer}
+            activeOpacity={0.7}
+          >
             <Text style={styles.seeMore}>Read more</Text>
           </TouchableOpacity>
         )}
@@ -100,9 +118,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
             {showReactions && (
               <View style={styles.reactionPicker}>
                 {REACTIONS.map((r) => (
-                  <TouchableOpacity 
-                    key={r.emoji} 
-                    onPress={() => handleSelectReaction(r.emoji)} 
+                  <TouchableOpacity
+                    key={r.emoji}
+                    onPress={() => handleSelectReaction(r.emoji)}
                     style={styles.reactionOption}
                   >
                     <Text style={styles.reactionEmoji}>{r.emoji}</Text>
@@ -110,32 +128,53 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
                 ))}
               </View>
             )}
-            
+
             <TouchableOpacity
               style={styles.interactionButton}
               onPress={toggleLike}
               onLongPress={handleLongPress}
               activeOpacity={0.7}
             >
-              <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
+              <View
+                style={[
+                  styles.iconWrapper,
+                  selectedReaction && styles.activeIconWrapper,
+                ]}
+              >
                 {selectedReaction ? (
                   <Text style={{ fontSize: 20 }}>{selectedReaction}</Text>
                 ) : (
-                  <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />
+                  <Ionicons
+                    name="thumbs-up-outline"
+                    size={22}
+                    color={COLORS.textSecondary}
+                  />
                 )}
               </View>
-              <Text style={[
-                styles.interactionLabel,
-                selectedReaction && { color: COLORS.accent, fontFamily: 'Poppins_600SemiBold' }
-              ]}>
+              <Text
+                style={[
+                  styles.interactionLabel,
+                  selectedReaction && {
+                    color: COLORS.accent,
+                    fontFamily: "Poppins_600SemiBold",
+                  },
+                ]}
+              >
                 {totalReactions + (selectedReaction ? 1 : 0)}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.interactionButton}
+            activeOpacity={0.7}
+          >
             <View style={styles.iconWrapper}>
-              <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons
+                name="chatbubble-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
             </View>
             <Text style={styles.interactionLabel}>{post.commentCount}</Text>
           </TouchableOpacity>
@@ -143,7 +182,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
 
         <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7}>
           <View style={styles.iconWrapper}>
-            <Ionicons name="share-social-outline" size={20} color={COLORS.textSecondary} />
+            <Ionicons
+              name="share-social-outline"
+              size={20}
+              color={COLORS.textSecondary}
+            />
           </View>
         </TouchableOpacity>
       </View>
@@ -255,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     backgroundColor: "rgba(255,255,255,0.03)",
     justifyContent: "center",
-    alignItems: 'center',
+    alignItems: "center",
   },
   activeIconWrapper: {
     backgroundColor: "rgba(107, 92, 231, 0.1)",
@@ -267,18 +310,18 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   reactionPicker: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 50,
     left: 0,
-    backgroundColor: '#1E222B',
+    backgroundColor: "#1E222B",
     borderRadius: 30,
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
     zIndex: 2000,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -287,8 +330,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
     width: 36,
     height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   reactionEmoji: {
     fontSize: 22,
