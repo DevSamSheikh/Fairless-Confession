@@ -4,7 +4,8 @@
 - Initial setup and core UI migration completed.
 - Authentication flow fully implemented and styled.
 - Post interactions system enhanced with reaction picker.
-- Home screen optimized with native animations.
+- Home screen optimized with native animations and header hide/show logic.
+- Societies screen updated with animated header and layout refinements.
 
 ## Completed Tasks
 - [x] Initial project migration.
@@ -24,9 +25,15 @@
     - [x] Logo integration.
     - [x] Sticky scroll animations (Show/Hide).
     - [x] Native status bar spacing.
+    - [x] Added `paddingTop` to prevent header overlaying cards.
+- [x] Societies (Trending) Screen Optimization:
+    - [x] Implemented animated header (matching Home style).
+    - [x] Removed search bar and explore heading.
+    - [x] Replaced bell icon with bookmark icon.
 
 ## Planned Tasks
 - [ ] Comment section implementation.
 - [ ] User profile customization.
 - [ ] Category-based filtering.
 - [ ] Push notification setup.
+- [ ] Backend integration with FastAPI + MongoDB.
