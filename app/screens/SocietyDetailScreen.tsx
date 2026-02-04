@@ -119,7 +119,11 @@ export const SocietyDetailScreen: React.FC = () => {
                 <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin}>
                   <Text style={styles.heroButtonText}>Join Society</Text>
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                <TouchableOpacity style={styles.primaryHeroButton} onPress={() => navigation.navigate('Confess', { society: society.name })}>
+                  <Text style={styles.heroButtonText}>Share Secret</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.secondaryHeroButton}>
                 <Text style={styles.heroButtonText}>Guidelines</Text>
               </TouchableOpacity>
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   primaryHeroButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.accent,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

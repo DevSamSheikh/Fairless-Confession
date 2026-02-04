@@ -27,6 +27,12 @@ export const TrendingScreen: React.FC = () => {
     extrapolate: "clamp",
   });
 
+  const tabsTranslateY = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, -100],
+    extrapolate: "clamp",
+  });
+
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 50],
     outputRange: [1, 0],
@@ -87,12 +93,14 @@ export const TrendingScreen: React.FC = () => {
           />
         </Animated.View>
 
-        <Tabs 
-          tabs={tabs} 
-          activeTab={activeTab} 
-          onTabPress={setActiveTab} 
-          style={styles.tabsWrapper}
-        />
+        <Animated.View style={{ transform: [{ translateY: tabsTranslateY }] }}>
+          <Tabs 
+            tabs={tabs} 
+            activeTab={activeTab} 
+            onTabPress={setActiveTab} 
+            style={styles.tabsWrapper}
+          />
+        </Animated.View>
       </View>
 
       <View style={styles.content}>
