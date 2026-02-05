@@ -1,13 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
-  PanResponder,
   TouchableWithoutFeedback,
   Modal,
+  SafeAreaView,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
@@ -41,10 +41,12 @@ const formatTime = (date: Date): string => {
 };
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
   const [showReactions, setShowReactions] = useState(false);
-  const isLongText = post.content.length > 150;
+  const [showFullView, setShowFullView] = useState(false);
+  const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+  
+  const contentPreview = post.content.length > 120 ? post.content.substring(0, 120) + "..." : post.content;
+  const isLongText = post.content.length > 120;
 
   const totalReactions = Object.values(post.reactions).reduce(
     (a, b) => a + b,
@@ -99,13 +101,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.content} numberOfLines={expanded ? undefined : 5}>
-          {post.content}
+        {post.title && <Text style={styles.title}>{post.title}</Text>}
+        <Text style={styles.content}>
+          {contentPreview}
         </Text>
 
-        {isLongText && !expanded && (
+        {isLongText && (
           <TouchableOpacity
-            onPress={() => setExpanded(true)}
+            onPress={() => setShowFullView(true)}
             style={styles.seeMoreContainer}
             activeOpacity={0.7}
           >
@@ -113,6 +116,111 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Full View Modal */}
+      <Modal
+        visible={showFullView}
+        animationType="slide"
+        onRequestClose={() => setShowFullView(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowFullView(false)}>
+              <Ionicons name="close" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.modalHeaderText}>Confession</Text>
+            <View style={{ width: 28 }} />
+          </View>
+          
+          <FlatList
+            data={[]}
+            keyExtractor={() => "dummy"}
+            ListHeaderComponent={() => (
+              <View style={styles.modalContent}>
+                <View style={styles.header}>
+                  <View style={styles.userInfo}>
+                    <AnonymousAvatar size={44} />
+                    <View style={styles.headerText}>
+                      <Text style={styles.anonymous}>Anonymous</Text>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+                        <View style={styles.dot} />
+                        <Text style={styles.category}>{post.category || "General"}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                
+                {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
+                <Text style={styles.fullContent}>{post.content}</Text>
+                
+                <View style={styles.interactionRow}>
+                  <View style={styles.leftInteractions}>
+                    <TouchableOpacity
+                      style={styles.interactionButton}
+                      onPress={toggleLike}
+                      onLongPress={handleLongPress}
+                    >
+                      <View
+                        style={[
+                          styles.iconWrapper,
+                          selectedReaction && styles.activeIconWrapper,
+                        ]}
+                      >
+                        {selectedReaction ? (
+                          <Text style={{ fontSize: 20 }}>
+                            {selectedReaction}
+                          </Text>
+                        ) : (
+                          <Ionicons
+                            name="thumbs-up-outline"
+                            size={22}
+                            color={COLORS.textSecondary}
+                          />
+                        )}
+                      </View>
+                      <Text style={styles.interactionLabel}>
+                        {totalReactions + (selectedReaction ? 1 : 0)}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.interactionButton}>
+                      <View style={styles.iconWrapper}>
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={20}
+                          color={COLORS.textSecondary}
+                        />
+                      </View>
+                      <Text style={styles.interactionLabel}>
+                        {post.commentCount}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+            ListFooterComponent={() => (
+              <View style={styles.commentSection}>
+                <Text style={styles.commentTitle}>Comments ({post.commentCount})</Text>
+                <View style={styles.noComments}>
+                  <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
+                  <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
+                </View>
+              </View>
+            )}
+          />
+          
+          <View style={styles.commentInputContainer}>
+            <View style={styles.commentInput}>
+              <Text style={styles.commentPlaceholder}>Add a supportive comment...</Text>
+            </View>
+            <TouchableOpacity style={styles.sendButton}>
+              <Ionicons name="send" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
       <View style={styles.interactionRow}>
         <View style={styles.leftInteractions}>
@@ -270,11 +378,104 @@ const styles = StyleSheet.create({
   contentContainer: {
     marginBottom: 20,
   },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 8,
+  },
   content: {
     color: "#E1E1E1",
     fontSize: 16,
-    lineHeight: 26,
+    lineHeight: 24,
     fontFamily: "Poppins_400Regular",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+  },
+  modalHeaderText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  modalContent: {
+    padding: 20,
+  },
+  fullTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontFamily: "Poppins_700Bold",
+    marginBottom: 12,
+  },
+  fullContent: {
+    color: "#E1E1E1",
+    fontSize: 17,
+    lineHeight: 28,
+    fontFamily: "Poppins_400Regular",
+    marginBottom: 24,
+  },
+  commentSection: {
+    padding: 20,
+    borderTopWidth: 8,
+    borderTopColor: "rgba(0,0,0,0.2)",
+  },
+  commentTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 20,
+  },
+  noComments: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  noCommentsText: {
+    color: "#8E9196",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    marginTop: 12,
+    textAlign: "center",
+  },
+  commentInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "#1E222B",
+  },
+  commentInput: {
+    flex: 1,
+    height: 44,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 22,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    marginRight: 12,
+  },
+  commentPlaceholder: {
+    color: "#8E9196",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.accent,
+    justifyContent: "center",
+    alignItems: "center",
   },
   seeMoreContainer: {
     marginTop: 8,

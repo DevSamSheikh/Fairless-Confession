@@ -6,6 +6,7 @@ export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
 
 export interface Post {
   id: string;
+  title?: string;
   content: string;
   category: Category;
   reactions: Record<string, number>;
@@ -26,7 +27,8 @@ interface FeedState {
 const dummyPosts: Post[] = [
   {
     id: '1',
-    content: 'I secretly hate group projects but always end up doing all the work anyway.',
+    title: 'Group project nightmare',
+    content: 'I secretly hate group projects but always end up doing all the work anyway. It\'s so frustrating when people just slack off.',
     category: 'College',
     reactions: { '❤️': 234, '😮': 45, '😢': 12, '😡': 89, '😂': 156 },
     commentCount: 67,
@@ -34,7 +36,8 @@ const dummyPosts: Post[] = [
   },
   {
     id: '2',
-    content: 'My boss thinks I work from home but I actually work from the beach most days.',
+    title: 'Beach work life',
+    content: 'My boss thinks I work from home but I actually work from the beach most days. The view is amazing and I\'m more productive here.',
     category: 'Work',
     reactions: { '❤️': 567, '😮': 123, '😢': 8, '😡': 34, '😂': 445 },
     commentCount: 89,
@@ -42,7 +45,8 @@ const dummyPosts: Post[] = [
   },
   {
     id: '3',
-    content: 'Still in love with someone who doesn\'t even know I exist.',
+    title: 'Secret crush',
+    content: 'Still in love with someone who doesn\'t even know I exist. I see them every day and my heart just melts.',
     category: 'Love',
     reactions: { '❤️': 890, '😮': 23, '😢': 456, '😡': 12, '😂': 34 },
     commentCount: 234,
@@ -50,7 +54,8 @@ const dummyPosts: Post[] = [
   },
   {
     id: '4',
-    content: 'I started a rumor about myself just to see who would believe it.',
+    title: 'Testing the waters',
+    content: 'I started a rumor about myself just to see who would believe it. It turned out to be quite revealing about my friends.',
     category: 'Drama',
     reactions: { '❤️': 123, '😮': 567, '😢': 23, '😡': 45, '😂': 678 },
     commentCount: 156,
@@ -58,7 +63,8 @@ const dummyPosts: Post[] = [
   },
   {
     id: '5',
-    content: 'Sometimes I laugh at completely inappropriate moments and can\'t stop.',
+    title: 'Uncontrollable laughter',
+    content: 'Sometimes I laugh at completely inappropriate moments and can\'t stop. It\'s a problem, especially during serious meetings.',
     category: 'Funny',
     reactions: { '❤️': 345, '😮': 67, '😢': 12, '😡': 8, '😂': 890 },
     commentCount: 78,
@@ -68,8 +74,8 @@ const dummyPosts: Post[] = [
 
 const sortByTrending = (posts: Post[]): Post[] => {
   return [...posts].sort((a, b) => {
-    const aTotal = Object.values(a.reactions).reduce((sum, v) => sum + v, 0);
-    const bTotal = Object.values(b.reactions).reduce((sum, v) => sum + v, 0);
+    const aTotal = Object.values(a.reactions).reduce((sum, v) => sum + v, 0) + a.commentCount * 2;
+    const bTotal = Object.values(b.reactions).reduce((sum, v) => sum + v, 0) + b.commentCount * 2;
     return bTotal - aTotal;
   });
 };
