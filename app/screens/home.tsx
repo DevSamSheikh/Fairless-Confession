@@ -1,53 +1,35 @@
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
-  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
-  Animated,
   Image,
   SafeAreaView,
   StatusBar,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
 import { useFeedStore } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
+import { Tabs } from "../components/ui/Tabs";
 
 export const HomeScreen: React.FC = () => {
-  const { posts, addReaction } = useFeedStore();
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -10],
-    extrapolate: "clamp",
-  });
-
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
-    outputRange: [1, 0.9],
-    extrapolate: "clamp",
-  });
+  const { posts, trendingPosts, addReaction } = useFeedStore();
+  const [activeTab, setActiveTab] = useState("Latest");
 
   const handleReact = (postId: string, reaction: string) => {
     addReaction(postId, reaction as any);
   };
 
+  const displayPosts = activeTab === "Latest" ? posts : trendingPosts;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
-        <Animated.View
-          style={[
-            styles.headerContainer,
-            {
-              transform: [{ translateY: headerTranslateY }],
-              opacity: headerOpacity,
-            },
-          ]}
-        >
+        <View style={styles.headerContainer}>
           <View style={styles.headerLeft}>
             <View style={styles.logoContainer}>
               <Image
@@ -68,18 +50,26 @@ export const HomeScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton}>
               <View style={styles.notificationBadge} />
-              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
 
-        <Animated.FlatList
-          data={posts}
+        <View style={styles.tabsContainer}>
+          <Tabs
+            tabs={["Latest", "Trending"]}
+            activeTab={activeTab}
+            onTabPress={setActiveTab}
+          />
+        </View>
+
+        <FlatList
+          data={displayPosts}
           keyExtractor={(item) => item.id}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
           renderItem={({ item }) => (
             <PostCard
               post={item}
@@ -109,9 +99,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 5,
-    paddingBottom: 15,
+    paddingBottom: 10,
     backgroundColor: COLORS.background,
-    zIndex: 100,
   },
   headerLeft: {
     flexDirection: "row",
@@ -170,6 +159,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
     borderWidth: 1.5,
     borderColor: "#1E222B",
+  },
+  tabsContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: COLORS.background,
   },
   list: {
     paddingTop: 10,
