@@ -22,19 +22,13 @@ export const TrendingScreen: React.FC = () => {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -100],
-    extrapolate: "clamp",
-  });
-
-  const tabsTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -100],
+    inputRange: [0, 80],
+    outputRange: [0, -80],
     extrapolate: "clamp",
   });
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
+    inputRange: [0, 60],
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
@@ -93,14 +87,13 @@ export const TrendingScreen: React.FC = () => {
           />
         </Animated.View>
 
-        <Animated.View style={{ transform: [{ translateY: tabsTranslateY }] }}>
+        <View style={styles.tabsWrapper}>
           <Tabs 
             tabs={tabs} 
             activeTab={activeTab} 
             onTabPress={setActiveTab} 
-            style={styles.tabsWrapper}
           />
-        </Animated.View>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -127,24 +120,28 @@ const styles = StyleSheet.create({
   },
   headerFixedContainer: {
     position: 'absolute',
-    top: 40,
+    top: 0,
     left: 0,
     right: 0,
     zIndex: 100,
     backgroundColor: COLORS.background,
+    paddingTop: 40,
   },
   headerWrapper: {
-    zIndex: 100,
+    zIndex: 102,
+    backgroundColor: COLORS.background,
   },
   tabsWrapper: {
     backgroundColor: COLORS.background,
-    zIndex: 90,
+    zIndex: 101,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   content: {
     flex: 1,
   },
   listContainer: {
-    paddingTop: 170,
+    paddingTop: 180,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
