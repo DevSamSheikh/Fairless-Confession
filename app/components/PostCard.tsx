@@ -17,6 +17,7 @@ import { COLORS } from "../utils/constants";
 interface PostCardProps {
   post: Post;
   onReact: (reaction: string) => void;
+  rank?: number;
 }
 
 const REACTIONS = [
@@ -40,13 +41,10 @@ const formatTime = (date: Date): string => {
   return `${Math.floor(hours / 24)}d ago`;
 };
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
-  
-  const contentPreview = post.content.length > 120 ? post.content.substring(0, 120) + "..." : post.content;
-  const isLongText = post.content.length > 120;
 
   const totalReactions = Object.values(post.reactions).reduce(
     (a, b) => a + b,
@@ -59,7 +57,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
 
   const handleSelectReaction = (reaction: string) => {
     if (selectedReaction === reaction) {
-      // Undo
       setSelectedReaction(null);
     } else {
       setSelectedReaction(reaction);
@@ -77,150 +74,55 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
     }
   };
 
+  const contentPreview =
+    post.content.length > 120
+      ? post.content.substring(0, 120) + "..."
+      : post.content;
+  const isLongText = post.content.length > 120;
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <AnonymousAvatar size={44} />
-          <View style={styles.headerText}>
-            <Text style={styles.anonymous}>Anonymous</Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
-              <View style={styles.dot} />
-              <Text style={styles.category}>{post.category || "General"}</Text>
-            </View>
+      {rank !== undefined && (
+        <View style={styles.rankBadge}>
+          <View style={styles.rankIconContainer}>
+            <Ionicons name="flame" size={14} color="#FFFFFF" />
+            <Text style={styles.rankText}>{rank}{rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th'}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.moreButton} activeOpacity={0.6}>
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={20}
-            color={COLORS.textSecondary}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.contentContainer}>
-        {post.title && <Text style={styles.title}>{post.title}</Text>}
-        <Text style={styles.content}>
-          {contentPreview}
-        </Text>
-
-        {isLongText && (
-          <TouchableOpacity
-            onPress={() => setShowFullView(true)}
-            style={styles.seeMoreContainer}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.seeMore}>Read more</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Full View Modal */}
-      <Modal
-        visible={showFullView}
-        animationType="slide"
-        onRequestClose={() => setShowFullView(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowFullView(false)}>
-              <Ionicons name="close" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderText}>Confession</Text>
-            <View style={{ width: 28 }} />
-          </View>
-          
-          <FlatList
-            data={[]}
-            keyExtractor={() => "dummy"}
-            ListHeaderComponent={() => (
-              <View style={styles.modalContent}>
-                <View style={styles.header}>
-                  <View style={styles.userInfo}>
-                    <AnonymousAvatar size={44} />
-                    <View style={styles.headerText}>
-                      <Text style={styles.anonymous}>Anonymous</Text>
-                      <View style={styles.metaRow}>
-                        <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
-                        <View style={styles.dot} />
-                        <Text style={styles.category}>{post.category || "General"}</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-                
-                {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
-                <Text style={styles.fullContent}>{post.content}</Text>
-                
-                <View style={styles.interactionRow}>
-                  <View style={styles.leftInteractions}>
-                    <TouchableOpacity
-                      style={styles.interactionButton}
-                      onPress={toggleLike}
-                      onLongPress={handleLongPress}
-                    >
-                      <View
-                        style={[
-                          styles.iconWrapper,
-                          selectedReaction && styles.activeIconWrapper,
-                        ]}
-                      >
-                        {selectedReaction ? (
-                          <Text style={{ fontSize: 20 }}>
-                            {selectedReaction}
-                          </Text>
-                        ) : (
-                          <Ionicons
-                            name="thumbs-up-outline"
-                            size={22}
-                            color={COLORS.textSecondary}
-                          />
-                        )}
-                      </View>
-                      <Text style={styles.interactionLabel}>
-                        {totalReactions + (selectedReaction ? 1 : 0)}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.interactionButton}>
-                      <View style={styles.iconWrapper}>
-                        <Ionicons
-                          name="chatbubble-outline"
-                          size={20}
-                          color={COLORS.textSecondary}
-                        />
-                      </View>
-                      <Text style={styles.interactionLabel}>
-                        {post.commentCount}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+      )}
+      
+      <TouchableOpacity activeOpacity={0.9} onPress={() => setShowFullView(true)}>
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <AnonymousAvatar size={44} />
+            <View style={styles.headerText}>
+              <Text style={styles.anonymous}>Anonymous</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+                <View style={styles.dot} />
+                <Text style={styles.category}>{post.category || "General"}</Text>
               </View>
-            )}
-            ListFooterComponent={() => (
-              <View style={styles.commentSection}>
-                <Text style={styles.commentTitle}>Comments ({post.commentCount})</Text>
-                <View style={styles.noComments}>
-                  <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
-                  <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
-                </View>
-              </View>
-            )}
-          />
-          
-          <View style={styles.commentInputContainer}>
-            <View style={styles.commentInput}>
-              <Text style={styles.commentPlaceholder}>Add a supportive comment...</Text>
             </View>
-            <TouchableOpacity style={styles.sendButton}>
-              <Ionicons name="send" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </Modal>
+          <TouchableOpacity style={styles.moreButton} activeOpacity={0.6}>
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color={COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.contentContainer}>
+          {post.title && <Text style={styles.title}>{post.title}</Text>}
+          <Text style={styles.content}>{contentPreview}</Text>
+          {isLongText && (
+            <View style={styles.seeMoreContainer}>
+              <Text style={styles.seeMore}>Read more</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.interactionRow}>
         <View style={styles.leftInteractions}>
@@ -255,31 +157,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
               onLongPress={handleLongPress}
               activeOpacity={0.7}
             >
-              <View
-                style={[
-                  styles.iconWrapper,
-                  selectedReaction && styles.activeIconWrapper,
-                ]}
-              >
+              <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
                 {selectedReaction ? (
                   <Text style={{ fontSize: 20 }}>{selectedReaction}</Text>
                 ) : (
-                  <Ionicons
-                    name="thumbs-up-outline"
-                    size={22}
-                    color={COLORS.textSecondary}
-                  />
+                  <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />
                 )}
               </View>
-              <Text
-                style={[
-                  styles.interactionLabel,
-                  selectedReaction && {
-                    color: COLORS.accent,
-                    fontFamily: "Poppins_600SemiBold",
-                  },
-                ]}
-              >
+              <Text style={[styles.interactionLabel, selectedReaction && { color: COLORS.accent, fontFamily: "Poppins_600SemiBold" }]}>
                 {totalReactions + (selectedReaction ? 1 : 0)}
               </Text>
             </TouchableOpacity>
@@ -288,13 +173,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
           <TouchableOpacity
             style={styles.interactionButton}
             activeOpacity={0.7}
+            onPress={() => setShowFullView(true)}
           >
             <View style={styles.iconWrapper}>
-              <Ionicons
-                name="chatbubble-outline"
-                size={20}
-                color={COLORS.textSecondary}
-              />
+              <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
             </View>
             <Text style={styles.interactionLabel}>{post.commentCount}</Text>
           </TouchableOpacity>
@@ -302,14 +184,99 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact }) => {
 
         <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7}>
           <View style={styles.iconWrapper}>
-            <Ionicons
-              name="share-social-outline"
-              size={20}
-              color={COLORS.textSecondary}
-            />
+            <Ionicons name="share-social-outline" size={20} color={COLORS.textSecondary} />
           </View>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showFullView}
+        animationType="slide"
+        onRequestClose={() => setShowFullView(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowFullView(false)}>
+              <Ionicons name="close" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.modalHeaderText}>Confession</Text>
+            <View style={{ width: 28 }} />
+          </View>
+          
+          <FlatList
+            data={post.comments || []}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={() => (
+              <View style={styles.modalContent}>
+                <View style={styles.header}>
+                  <View style={styles.userInfo}>
+                    <AnonymousAvatar size={44} />
+                    <View style={styles.headerText}>
+                      <Text style={styles.anonymous}>Anonymous</Text>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+                        <View style={styles.dot} />
+                        <Text style={styles.category}>{post.category || "General"}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
+                <Text style={styles.fullContent}>{post.content}</Text>
+                
+                <View style={styles.interactionRow}>
+                  <View style={styles.leftInteractions}>
+                    <TouchableOpacity style={styles.interactionButton} onPress={toggleLike} onLongPress={handleLongPress}>
+                      <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
+                        {selectedReaction ? <Text style={{ fontSize: 20 }}>{selectedReaction}</Text> : <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />}
+                      </View>
+                      <Text style={styles.interactionLabel}>{totalReactions + (selectedReaction ? 1 : 0)}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.interactionButton}>
+                      <View style={styles.iconWrapper}>
+                        <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
+                      </View>
+                      <Text style={styles.interactionLabel}>{post.commentCount}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <View style={styles.commentItem}>
+                <View style={styles.commentHeader}>
+                  <AnonymousAvatar size={32} />
+                  <View style={styles.commentInfo}>
+                    <Text style={styles.commentUser}>Anonymous</Text>
+                    <Text style={styles.commentTime}>{formatTime(item.createdAt)}</Text>
+                  </View>
+                </View>
+                <Text style={styles.commentContent}>{item.content}</Text>
+              </View>
+            )}
+            ListFooterComponent={() => (
+              <View style={styles.commentSection}>
+                <Text style={styles.commentTitle}>Comments ({post.commentCount})</Text>
+                {(!post.comments || post.comments.length === 0) && (
+                  <View style={styles.noComments}>
+                    <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
+                    <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          />
+          
+          <View style={styles.commentInputContainer}>
+            <View style={styles.commentInput}>
+              <Text style={styles.commentPlaceholder}>Add a supportive comment...</Text>
+            </View>
+            <TouchableOpacity style={styles.sendButton}>
+              <Ionicons name="send" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 };
@@ -328,6 +295,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 8,
+  },
+  rankBadge: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    zIndex: 10,
+  },
+  rankIconContainer: {
+    backgroundColor: COLORS.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  rankText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Poppins_700Bold',
+    marginLeft: 4,
   },
   header: {
     flexDirection: "row",
@@ -390,6 +382,84 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontFamily: "Poppins_400Regular",
   },
+  seeMoreContainer: {
+    marginTop: 8,
+  },
+  seeMore: {
+    color: "#6B5CE7",
+    fontSize: 15,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  interactionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  leftInteractions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  reactionButtonWrapper: {
+    zIndex: 1000,
+  },
+  interactionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 20,
+  },
+  iconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activeIconWrapper: {
+    backgroundColor: "rgba(107, 92, 231, 0.1)",
+  },
+  interactionLabel: {
+    color: "#8E9196",
+    fontSize: 14,
+    fontFamily: "Poppins_500Medium",
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+    paddingBottom: 200,
+  },
+  reactionPicker: {
+    position: "absolute",
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: "#1E222B",
+    borderRadius: 30,
+    flexDirection: "row",
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    zIndex: 2000,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  reactionOption: {
+    marginHorizontal: 6,
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  reactionEmoji: {
+    fontSize: 22,
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -423,6 +493,37 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     fontFamily: "Poppins_400Regular",
     marginBottom: 24,
+  },
+  commentItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.03)',
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentInfo: {
+    marginLeft: 10,
+  },
+  commentUser: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  commentTime: {
+    color: '#8E9196',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+  },
+  commentContent: {
+    color: '#E1E1E1',
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: 'Poppins_400Regular',
+    marginLeft: 42,
   },
   commentSection: {
     padding: 20,
@@ -476,83 +577,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     justifyContent: "center",
     alignItems: "center",
-  },
-  seeMoreContainer: {
-    marginTop: 8,
-  },
-  seeMore: {
-    color: "#6B5CE7",
-    fontSize: 15,
-    fontFamily: "Poppins_600SemiBold",
-  },
-  interactionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 18,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
-  },
-  leftInteractions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  reactionButtonWrapper: {
-    zIndex: 1000,
-  },
-  interactionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 20,
-  },
-  iconWrapper: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activeIconWrapper: {
-    backgroundColor: "rgba(107, 92, 231, 0.1)",
-  },
-  interactionLabel: {
-    color: "#8E9196",
-    fontSize: 14,
-    fontFamily: "Poppins_500Medium",
-    marginLeft: 8,
-  },
-  reactionPicker: {
-    position: "absolute",
-    bottom: 100,
-    alignSelf: 'center',
-    backgroundColor: "#1E222B",
-    borderRadius: 30,
-    flexDirection: "row",
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    zIndex: 2000,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
-    paddingBottom: 200,
-  },
-  reactionOption: {
-    marginHorizontal: 6,
-    width: 36,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  reactionEmoji: {
-    fontSize: 22,
   },
 });

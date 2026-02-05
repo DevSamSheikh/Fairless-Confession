@@ -70,9 +70,10 @@ export const HomeScreen: React.FC = () => {
         <FlatList
           data={displayPosts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <PostCard
               post={item}
+              rank={activeTab === "Trending" ? index + 1 : undefined}
               onReact={(reaction) => handleReact(item.id, reaction)}
             />
           )}

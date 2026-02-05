@@ -33,6 +33,9 @@ export const SocietyDetailScreen: React.FC = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [warningTimer, setWarningTimer] = useState(6);
   const [confession, setConfession] = useState('');
+  const [title, setTitle] = useState('');
+  const [showPostBox, setShowPostBox] = useState(false);
+  const [activeTab, setActiveTab] = useState("Latest");
 
   useEffect(() => {
     let interval: any;
@@ -120,8 +123,8 @@ export const SocietyDetailScreen: React.FC = () => {
                   <Text style={styles.heroButtonText}>Join Society</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={styles.primaryHeroButton} onPress={() => navigation.navigate('Confess', { society: society.name })}>
-                  <Text style={styles.heroButtonText}>Share Secret</Text>
+                <TouchableOpacity style={styles.primaryHeroButton} onPress={() => setShowPostBox(!showPostBox)}>
+                  <Text style={styles.heroButtonText}>{showPostBox ? "Cancel" : "Share Secret"}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={styles.secondaryHeroButton}>
@@ -131,32 +134,68 @@ export const SocietyDetailScreen: React.FC = () => {
           </View>
         </View>
 
+        {isJoined && (
+          <View style={styles.societyTabs}>
+            <TouchableOpacity 
+              style={[styles.societyTab, activeTab === "Latest" && styles.activeSocietyTab]}
+              onPress={() => setActiveTab("Latest")}
+            >
+              <Text style={[styles.societyTabText, activeTab === "Latest" && styles.activeSocietyTabText]}>Latest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.societyTab, activeTab === "Trending" && styles.activeSocietyTab]}
+              onPress={() => setActiveTab("Trending")}
+            >
+              <Text style={[styles.societyTabText, activeTab === "Trending" && styles.activeSocietyTabText]}>Trending</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {isJoined ? (
           <View style={styles.unlockedContent}>
             {/* Confess Section */}
-            <View style={styles.confessBox}>
-              <TextInput
-                style={styles.confessInput}
-                placeholder="Share your secret with this society..."
-                placeholderTextColor={COLORS.textSecondary}
-                multiline
-                value={confession}
-                onChangeText={setConfession}
-              />
-              <TouchableOpacity style={styles.confessButton} onPress={() => {
-                if (confession.trim()) {
-                  setConfession('');
-                  alert('Confession posted to society!');
-                }
-              }}>
-                <Text style={styles.confessButtonText}>CONFESS</Text>
-              </TouchableOpacity>
-            </View>
+            {showPostBox && (
+              <View style={styles.confessBox}>
+                <TextInput
+                  style={styles.titleInput}
+                  placeholder="Confession Title (optional)"
+                  placeholderTextColor={COLORS.textSecondary}
+                  maxLength={25}
+                  value={title}
+                  onChangeText={setTitle}
+                />
+                <View style={styles.textAreaContainer}>
+                  <TextInput
+                    style={styles.confessInput}
+                    placeholder="Share your secret with this society..."
+                    placeholderTextColor={COLORS.textSecondary}
+                    multiline
+                    value={confession}
+                    onChangeText={setConfession}
+                  />
+                </View>
+                <TouchableOpacity style={styles.confessButton} onPress={() => {
+                  if (confession.trim()) {
+                    setConfession('');
+                    setTitle('');
+                    setShowPostBox(false);
+                    alert('Confession posted to society!');
+                  }
+                }}>
+                  <Text style={styles.confessButtonText}>CONFESS</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Society Feed */}
             <Text style={styles.feedTitle}>Society Confessions</Text>
-            {SOCIETY_CONFESSIONS.map((post) => (
-              <PostCard key={post.id} post={post as any} onReact={() => {}} />
+            {SOCIETY_CONFESSIONS.map((post, index) => (
+              <PostCard 
+                key={post.id} 
+                post={post as any} 
+                rank={activeTab === "Trending" ? index + 1 : undefined}
+                onReact={() => {}} 
+              />
             ))}
           </View>
         ) : (
@@ -322,19 +361,29 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   confessBox: {
+    backgroundColor: 'transparent',
+    marginBottom: 30,
+  },
+  titleInput: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+    paddingVertical: 10,
+    borderWidth: 0,
+  },
+  textAreaContainer: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 15,
     padding: 15,
-    marginBottom: 30,
     borderWidth: 1,
     borderColor: COLORS.border,
+    marginBottom: 15,
   },
   confessInput: {
     color: COLORS.text,
     fontSize: 16,
-    minHeight: 80,
+    minHeight: 120,
     textAlignVertical: 'top',
-    marginBottom: 10,
   },
   confessButton: {
     backgroundColor: COLORS.accent,
@@ -352,5 +401,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 15,
-  }
+  },
+  societyTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
+    gap: 15,
+  },
+  societyTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  activeSocietyTab: {
+    backgroundColor: 'rgba(107, 92, 231, 0.1)',
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+  },
+  societyTabText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  activeSocietyTabText: {
+    color: COLORS.accent,
+  },
 });

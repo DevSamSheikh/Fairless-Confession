@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { Category } from '../utils/constants';
-
-// We'll use emojis as keys for reactions as per requirements
-export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
+export interface Comment {
+  id: string;
+  content: string;
+  createdAt: Date;
+}
 
 export interface Post {
   id: string;
@@ -12,7 +12,14 @@ export interface Post {
   reactions: Record<string, number>;
   commentCount: number;
   createdAt: Date;
+  comments?: Comment[];
 }
+
+import { create } from 'zustand';
+import { Category } from '../utils/constants';
+
+// We'll use emojis as keys for reactions as per requirements
+export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
 
 interface FeedState {
   posts: Post[];
@@ -24,6 +31,11 @@ interface FeedState {
   addReaction: (postId: string, reaction: string) => void;
 }
 
+const dummyComments: Comment[] = [
+  { id: 'c1', content: 'This is so relatable!', createdAt: new Date(Date.now() - 1800000) },
+  { id: 'c2', content: 'Stay strong, things will get better.', createdAt: new Date(Date.now() - 900000) },
+];
+
 const dummyPosts: Post[] = [
   {
     id: '1',
@@ -33,6 +45,7 @@ const dummyPosts: Post[] = [
     reactions: { '❤️': 234, '😮': 45, '😢': 12, '😡': 89, '😂': 156 },
     commentCount: 67,
     createdAt: new Date(Date.now() - 3600000),
+    comments: dummyComments,
   },
   {
     id: '2',
@@ -42,6 +55,7 @@ const dummyPosts: Post[] = [
     reactions: { '❤️': 567, '😮': 123, '😢': 8, '😡': 34, '😂': 445 },
     commentCount: 89,
     createdAt: new Date(Date.now() - 7200000),
+    comments: dummyComments,
   },
   {
     id: '3',
@@ -51,6 +65,7 @@ const dummyPosts: Post[] = [
     reactions: { '❤️': 890, '😮': 23, '😢': 456, '😡': 12, '😂': 34 },
     commentCount: 234,
     createdAt: new Date(Date.now() - 10800000),
+    comments: dummyComments,
   },
   {
     id: '4',
@@ -60,6 +75,7 @@ const dummyPosts: Post[] = [
     reactions: { '❤️': 123, '😮': 567, '😢': 23, '😡': 45, '😂': 678 },
     commentCount: 156,
     createdAt: new Date(Date.now() - 14400000),
+    comments: dummyComments,
   },
   {
     id: '5',
@@ -69,6 +85,7 @@ const dummyPosts: Post[] = [
     reactions: { '❤️': 345, '😮': 67, '😢': 12, '😡': 8, '😂': 890 },
     commentCount: 78,
     createdAt: new Date(Date.now() - 18000000),
+    comments: dummyComments,
   },
 ];
 
