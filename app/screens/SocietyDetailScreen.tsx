@@ -36,6 +36,7 @@ export const SocietyDetailScreen: React.FC = () => {
   const [title, setTitle] = useState('');
   const [showPostBox, setShowPostBox] = useState(false);
   const [activeTab, setActiveTab] = useState("Latest");
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   useEffect(() => {
     let interval: any;
@@ -127,7 +128,7 @@ export const SocietyDetailScreen: React.FC = () => {
                   <Text style={styles.heroButtonText}>{showPostBox ? "Cancel" : "Share Secret"}</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.secondaryHeroButton}>
+              <TouchableOpacity style={styles.secondaryHeroButton} onPress={() => setShowGuidelines(true)}>
                 <Text style={styles.heroButtonText}>Guidelines</Text>
               </TouchableOpacity>
             </View>
@@ -156,18 +157,18 @@ export const SocietyDetailScreen: React.FC = () => {
             {/* Confess Section */}
             {showPostBox && (
               <View style={styles.confessBox}>
-                <TextInput
-                  style={styles.titleInput}
-                  placeholder="Confession Title (optional)"
-                  placeholderTextColor={COLORS.textSecondary}
-                  maxLength={25}
-                  value={title}
-                  onChangeText={setTitle}
-                />
                 <View style={styles.textAreaContainer}>
                   <TextInput
+                    style={styles.titleInput}
+                    placeholder="Title (Optional)"
+                    placeholderTextColor={COLORS.textSecondary}
+                    maxLength={25}
+                    value={title}
+                    onChangeText={setTitle}
+                  />
+                  <TextInput
                     style={styles.confessInput}
-                    placeholder="Share your secret with this society..."
+                    placeholder="Share Your Secret, Regret, Failer, Story. Fair Less with 100% anonymous..."
                     placeholderTextColor={COLORS.textSecondary}
                     multiline
                     value={confession}
@@ -182,7 +183,7 @@ export const SocietyDetailScreen: React.FC = () => {
                     alert('Confession posted to society!');
                   }
                 }}>
-                  <Text style={styles.confessButtonText}>CONFESS</Text>
+                  <Text style={styles.confessButtonText}>Confess</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -205,7 +206,55 @@ export const SocietyDetailScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      <GuidelinesModal visible={showGuidelines} onClose={() => setShowGuidelines(false)} />
     </View>
+  );
+};
+
+const GuidelinesModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+  return (
+    <Modal visible={visible} animationType="slide" transparent={false}>
+      <SafeAreaView style={styles.guidelinesContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.modalHeaderText}>Community Guidelines</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <ScrollView contentContainerStyle={styles.guidelinesContent}>
+          <View style={styles.guidelineItem}>
+            <Ionicons name="shield-checkmark" size={24} color={COLORS.accent} />
+            <View style={styles.guidelineTextContainer}>
+              <Text style={styles.guidelineTitle}>Absolute Anonymity</Text>
+              <Text style={styles.guidelineText}>Never reveal your own or others' real identities. We are 100% anonymous.</Text>
+            </View>
+          </View>
+          <View style={styles.guidelineItem}>
+            <Ionicons name="heart" size={24} color="#FF4B4B" />
+            <View style={styles.guidelineTextContainer}>
+              <Text style={styles.guidelineTitle}>Respect & Empathy</Text>
+              <Text style={styles.guidelineText}>Be supportive. Harassment, hate speech, or bullying will lead to an immediate ban.</Text>
+            </View>
+          </View>
+          <View style={styles.guidelineItem}>
+            <Ionicons name="alert-circle" size={24} color="#FFD700" />
+            <View style={styles.guidelineTextContainer}>
+              <Text style={styles.guidelineTitle}>No Sensitive Info</Text>
+              <Text style={styles.guidelineText}>Do not share personal phone numbers, addresses, or private links.</Text>
+            </View>
+          </View>
+          <View style={styles.guidelineItem}>
+            <Ionicons name="chatbubbles" size={24} color="#4ADE80" />
+            <View style={styles.guidelineTextContainer}>
+              <Text style={styles.guidelineTitle}>Authentic Stories</Text>
+              <Text style={styles.guidelineText}>Share raw, real experiences. This is a safe space for the truth.</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 };
 
@@ -368,33 +417,35 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 18,
     fontFamily: 'Poppins_600SemiBold',
-    paddingVertical: 10,
-    borderWidth: 0,
+    marginBottom: 8,
+    padding: 0,
   },
   textAreaContainer: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 15,
-    padding: 15,
+    backgroundColor: '#1A1D23',
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 15,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 16,
   },
   confessInput: {
-    color: COLORS.text,
-    fontSize: 16,
+    color: '#E1E1E1',
+    fontSize: 15,
     minHeight: 120,
     textAlignVertical: 'top',
+    fontFamily: 'Poppins_400Regular',
   },
   confessButton: {
     backgroundColor: COLORS.accent,
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confessButtonText: {
     color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
   },
   feedTitle: {
     color: COLORS.text,
@@ -427,5 +478,50 @@ const styles = StyleSheet.create({
   },
   activeSocietyTabText: {
     color: COLORS.accent,
+  },
+  guidelinesContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  guidelinesContent: {
+    padding: 24,
+  },
+  guidelineItem: {
+    flexDirection: 'row',
+    marginBottom: 32,
+    alignItems: 'flex-start',
+  },
+  guidelineTextContainer: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  guidelineTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 4,
+  },
+  guidelineText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: 'Poppins_400Regular',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  modalHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
