@@ -5,6 +5,7 @@ import { useUserStore } from '../store/user.store';
 
 export const PostScreen: React.FC = () => {
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const userStore = useUserStore();
   
@@ -31,6 +32,7 @@ export const PostScreen: React.FC = () => {
 
     incrementPosts();
     setContent('');
+    setTitle('');
     setSelectedCategory(null);
     Alert.alert('Success', 'Your confession has been posted anonymously!');
   };
@@ -42,16 +44,26 @@ export const PostScreen: React.FC = () => {
         <Text style={styles.subtitle}>Share your secret anonymously</Text>
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="What's on your mind?"
-        placeholderTextColor={COLORS.textSecondary}
-        multiline
-        numberOfLines={6}
-        value={content}
-        onChangeText={setContent}
-        maxLength={500}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.titleInput}
+          placeholder="Title (Optional)"
+          placeholderTextColor={COLORS.textSecondary}
+          value={title}
+          onChangeText={setTitle}
+          maxLength={25}
+        />
+        <TextInput
+          style={styles.contentInput}
+          placeholder="What's on your mind?"
+          placeholderTextColor={COLORS.textSecondary}
+          multiline
+          numberOfLines={6}
+          value={content}
+          onChangeText={setContent}
+          maxLength={500}
+        />
+      </View>
       <Text style={styles.charCount}>{content.length}/500</Text>
 
       <Text style={styles.sectionTitle}>Select Category</Text>
@@ -110,16 +122,26 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 24,
   },
-  input: {
+  inputContainer: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 12,
-    padding: 16,
-    color: COLORS.text,
-    fontSize: 16,
-    minHeight: 150,
-    textAlignVertical: 'top',
     borderWidth: 1,
     borderColor: COLORS.border,
+    padding: 16,
+  },
+  titleInput: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    padding: 0,
+  },
+  contentInput: {
+    color: COLORS.text,
+    fontSize: 16,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    padding: 0,
   },
   charCount: {
     color: COLORS.textSecondary,
