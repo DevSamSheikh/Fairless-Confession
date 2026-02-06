@@ -8,17 +8,33 @@ import {
   Modal,
   SafeAreaView,
   FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
 import { Post } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: Date;
+  user?: string;
+}
+
 interface PostCardProps {
   post: Post;
   onReact: (reaction: string) => void;
   rank?: number;
 }
+
+const DEMO_COMMENTS: Comment[] = [
+  { id: '1', content: 'Stay strong, we are here for you! ❤️', createdAt: new Date(Date.now() - 120000) },
+  { id: '2', content: 'This society is exactly what I needed today.', createdAt: new Date(Date.now() - 600000) },
+  { id: '3', content: 'I can relate to this so much.', createdAt: new Date(Date.now() - 900000) },
+];
 
 const REACTIONS = [
   { emoji: "👍", label: "Like" },
@@ -45,11 +61,25 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<Comment[]>(DEMO_COMMENTS);
 
   const totalReactions = Object.values(post.reactions).reduce(
     (a, b) => a + b,
     0,
   );
+
+  const handleAddComment = () => {
+    if (commentText.trim()) {
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        content: commentText,
+        createdAt: new Date(),
+      };
+      setComments([newComment, ...comments]);
+      setCommentText("");
+    }
+  };
 
   const handleLongPress = () => {
     setShowReactions(true);
@@ -178,7 +208,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
             <View style={styles.iconWrapper}>
               <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
             </View>
-            <Text style={styles.interactionLabel}>{post.commentCount}</Text>
+            <Text style={styles.interactionLabel}>{comments.length}</Text>
           </TouchableOpacity>
         </View>
 
@@ -195,37 +225,40 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         onRequestClose={() => setShowFullView(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowFullView(false)}>
-              <Ionicons name="close" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderText}>Confession</Text>
-            <View style={{ width: 28 }} />
-          </View>
-          
-          <FlatList
-            data={post.comments || []}
-            keyExtractor={(item) => item.id}
-            ListHeaderComponent={() => (
-              <View style={styles.modalContent}>
-                <View style={styles.header}>
-                  <View style={styles.userInfo}>
-                    <AnonymousAvatar size={44} />
-                    <View style={styles.headerText}>
-                      <Text style={styles.anonymous}>Anonymous</Text>
-                      <View style={styles.metaRow}>
-                        <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
-                        <View style={styles.dot} />
-                        <Text style={styles.category}>{post.category || "General"}</Text>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowFullView(false)}>
+                <Ionicons name="close" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.modalHeaderText}>Confession</Text>
+              <View style={{ width: 28 }} />
+            </View>
+            
+            <FlatList
+              data={comments}
+              keyExtractor={(item) => item.id}
+              ListHeaderComponent={() => (
+                <View style={styles.modalContent}>
+                  <View style={styles.header}>
+                    <View style={styles.userInfo}>
+                      <AnonymousAvatar size={44} />
+                      <View style={styles.headerText}>
+                        <Text style={styles.anonymous}>Anonymous</Text>
+                        <View style={styles.metaRow}>
+                          <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+                          <View style={styles.dot} />
+                          <Text style={styles.category}>{post.category || "General"}</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-                {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
-                <Text style={styles.fullContent}>{post.content}</Text>
-                
-                <View style={styles.interactionRow}>
-                  <View style={styles.leftInteractions}>
+                  {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
+                  <Text style={styles.fullContent}>{post.content}</Text>
+                  
+                  <View style={styles.modalInteractionRow}>
                     <TouchableOpacity style={styles.interactionButton} onPress={toggleLike} onLongPress={handleLongPress}>
                       <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
                         {selectedReaction ? <Text style={{ fontSize: 20 }}>{selectedReaction}</Text> : <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />}
@@ -236,45 +269,56 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                       <View style={styles.iconWrapper}>
                         <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
                       </View>
-                      <Text style={styles.interactionLabel}>{post.commentCount}</Text>
+                      <Text style={styles.interactionLabel}>{comments.length}</Text>
                     </View>
                   </View>
-                </View>
-              </View>
-            )}
-            renderItem={({ item }) => (
-              <View style={styles.commentItem}>
-                <View style={styles.commentHeader}>
-                  <AnonymousAvatar size={32} />
-                  <View style={styles.commentInfo}>
-                    <Text style={styles.commentUser}>Anonymous</Text>
-                    <Text style={styles.commentTime}>{formatTime(item.createdAt)}</Text>
+
+                  <View style={styles.commentSectionHeader}>
+                    <Text style={styles.commentTitle}>Comments ({comments.length})</Text>
                   </View>
+                  {comments.length === 0 && (
+                    <View style={styles.noComments}>
+                      <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
+                      <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={styles.commentContent}>{item.content}</Text>
-              </View>
-            )}
-            ListFooterComponent={() => (
-              <View style={styles.commentSection}>
-                <Text style={styles.commentTitle}>Comments ({post.commentCount})</Text>
-                {(!post.comments || post.comments.length === 0) && (
-                  <View style={styles.noComments}>
-                    <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
-                    <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
+              )}
+              renderItem={({ item }) => (
+                <View style={styles.commentItem}>
+                  <View style={styles.commentHeader}>
+                    <AnonymousAvatar size={32} />
+                    <View style={styles.commentInfo}>
+                      <Text style={styles.commentUser}>Anonymous</Text>
+                      <Text style={styles.commentTime}>{formatTime(item.createdAt)}</Text>
+                    </View>
                   </View>
-                )}
+                  <Text style={styles.commentText}>{item.content}</Text>
+                </View>
+              )}
+              contentContainerStyle={{ paddingBottom: 100 }}
+            />
+            
+            <View style={styles.commentInputContainer}>
+              <View style={styles.commentInputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Add a supportive comment..."
+                  placeholderTextColor="#8E9196"
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                />
               </View>
-            )}
-          />
-          
-          <View style={styles.commentInputContainer}>
-            <View style={styles.commentInput}>
-              <Text style={styles.commentPlaceholder}>Add a supportive comment...</Text>
+              <TouchableOpacity 
+                style={[styles.sendButton, !commentText.trim() && { opacity: 0.5 }]}
+                onPress={handleAddComment}
+                disabled={!commentText.trim()}
+              >
+                <Ionicons name="send" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.sendButton}>
-              <Ionicons name="send" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
     </View>
@@ -494,11 +538,25 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
     marginBottom: 24,
   },
+  modalInteractionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 20,
+  },
+  commentSectionHeader: {
+    marginBottom: 20,
+  },
+  commentTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
+  },
   commentItem: {
     paddingHorizontal: 20,
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.03)',
   },
   commentHeader: {
     flexDirection: 'row',
@@ -518,23 +576,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
   },
-  commentContent: {
+  commentText: {
     color: '#E1E1E1',
     fontSize: 14,
     lineHeight: 22,
     fontFamily: 'Poppins_400Regular',
     marginLeft: 42,
-  },
-  commentSection: {
-    padding: 20,
-    borderTopWidth: 8,
-    borderTopColor: "rgba(0,0,0,0.2)",
-  },
-  commentTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Poppins_600SemiBold",
-    marginBottom: 20,
   },
   noComments: {
     alignItems: "center",
@@ -550,25 +597,30 @@ const styles = StyleSheet.create({
   commentInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.05)",
     backgroundColor: "#1E222B",
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  commentInput: {
+  commentInputWrapper: {
     flex: 1,
-    height: 44,
     backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: 22,
-    justifyContent: "center",
     paddingHorizontal: 16,
+    paddingVertical: 4,
     marginRight: 12,
   },
-  commentPlaceholder: {
-    color: "#8E9196",
+  input: {
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "Poppins_400Regular",
+    maxHeight: 100,
+    paddingVertical: 8,
   },
   sendButton: {
     width: 44,
