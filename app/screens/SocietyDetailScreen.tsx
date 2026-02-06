@@ -71,13 +71,20 @@ export const SocietyDetailScreen: React.FC = () => {
         </Text>
         
         <TouchableOpacity 
-          style={[styles.acceptButton, warningTimer > 0 && styles.disabledButton]} 
+          style={[styles.acceptButton, warningTimer > 0 ? styles.disabledButton : { backgroundColor: COLORS.accent }]} 
           onPress={confirmJoin}
           disabled={warningTimer > 0}
         >
           <Text style={styles.acceptButtonText}>
             {warningTimer > 0 ? `Please read (${warningTimer}s)` : "I Accept & Join"}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.giveUpButton} 
+          onPress={() => setShowWarning(false)}
+        >
+          <Text style={styles.giveUpButtonText}>Give Up</Text>
         </TouchableOpacity>
       </View>
     );
@@ -407,11 +414,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   unlockedContent: {
-    padding: 20,
+    paddingHorizontal: 0,
+    paddingVertical: 20,
   },
   confessBox: {
     backgroundColor: 'transparent',
     marginBottom: 30,
+    paddingHorizontal: 20,
   },
   titleInput: {
     color: COLORS.text,
@@ -452,6 +461,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  giveUpButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+  },
+  giveUpButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
   },
   societyTabs: {
     flexDirection: 'row',
