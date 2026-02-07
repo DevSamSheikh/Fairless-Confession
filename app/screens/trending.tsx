@@ -52,6 +52,8 @@ const MOCK_SOCIETIES = [
   },
 ];
 
+import { Tabs } from "../components/ui/Tabs";
+
 export const TrendingScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Discover");
   const navigation = useNavigation<any>();

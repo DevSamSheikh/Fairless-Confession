@@ -1,45 +1,27 @@
-# Project Progress
+# ConfessBox Project Progress
 
-## Current Status
-- Initial setup and core UI migration completed.
-- Authentication flow fully implemented and styled.
-- Post interactions system enhanced with reaction picker.
-- Home screen optimized with native animations and header hide/show logic.
-- Societies screen updated with animated header and layout refinements.
+## Overview
+Anonymous confession app built with React Native (Expo).
 
-## Completed Tasks
-- [x] Initial project migration.
-- [x] Dependency installation (Expo SDK 54, React 19).
-- [x] Asset setup (ConfessBox Logo, Poppins/Urbanist fonts).
-- [x] Splash Screen enhancement (100% design match).
-- [x] Onboarding Slider enhancement with animations.
-- [x] Welcome Screen redesign.
-- [x] Login & Register UI refinements with eye button toggle.
-- [x] Forget Password UI refinements with selection logic.
-- [x] PostCard UI enhancement (premium dark theme).
-- [x] Advanced Interaction System:
-    - [x] Interaction counts (Reactions/Comments).
-    - [x] Long-press reaction picker (👍, 👌, 🥂, 🤯, 🤔, 😡).
-    - [x] Undo reaction functionality.
-- [x] Home Header Optimization:
-    - [x] Logo integration.
-    - [x] Sticky scroll animations (Show/Hide).
-    - [x] Native status bar spacing.
-    - [x] Added `paddingTop` to prevent header overlaying cards.
-- [x] Societies (Trending) Screen Optimization:
-    - [x] Implemented animated header (matching Home style).
-    - [x] Removed search bar and explore heading.
-    - [x] Replaced bell icon with bookmark icon.
-    - [x] Added top padding to prevent mobile status bar overlap.
-- [x] Society Joining Workflow:
-    - [x] Added "Give Up" button to cancellation joining.
-    - [x] Fixed countdown button styling to use theme purple when active.
-- [x] Society Detail Screen:
-    - [x] Fixed horizontal spacing issues on post cards to match Home screen.
+## Tech Stack
+- **Frontend**: React Native (Expo Web), TypeScript, Zustand (State Management), React Navigation.
+- **Backend**: Currently using dummy data with Zustand stores for persistent-like local state. Ready for integration with Replit PostgreSQL/API.
 
-## Planned Tasks
-- [ ] Comment section implementation.
-- [ ] User profile customization.
-- [ ] Category-based filtering.
-- [ ] Push notification setup.
-- [ ] Backend integration with FastAPI + MongoDB.
+## Frontend Details
+- **Navigation**: Bottom Tab Navigator (Home, Societies, Confess, Interactions, Profile) + Stack Navigator (Auth, Detail Screens).
+- **Screens**: 
+  - Home: Feed with Latest/Trending tabs and expanding search.
+  - Societies: Restoration of "Old Style" with Discovery tabs (Confessions, Discover, Your Societies) and integrated header icons (Add, Search, Bookmark).
+  - Create Society: Form with validation (Name max 25, Subtitle max 30, Intro 100-200).
+  - Society Detail: Enhanced header with Back and Bookmark icons. Locked/Unlocked state, Guidelines, Feed, and Society Posting.
+  - Interactions: Activity log with status badges and modern UI.
+  - Profile: User stats and organized menu system.
+- **UI Components**: PostCard, ReactionBar, CategoryChip, AnonymousAvatar (Logo based with cover resize mode), UI Primitives (Button, Card, Header, Tabs).
+- **Styling**: Modern Dark Theme with Neon Accents (COLORS.accent: #6C5CE7).
+
+## Recent Changes (2026-02-07)
+- Restored "Old Style" Societies page with integrated header and multi-tab system.
+- Standardized user avatars to use the app logo with `cover` resize mode.
+- Added bookmark functionality in the header for Society Details.
+- Enhanced Interactions and Profile UI for a more premium feel.
+- Ensured tab logic consistency across the app.

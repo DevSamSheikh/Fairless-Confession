@@ -545,4 +545,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Poppins_600SemiBold',
   },
+  headerIconButton: {
+    padding: 8,
+  },
 });
