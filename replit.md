@@ -1,4 +1,4 @@
-# Fairless Confession
+# ConfessBox Confession
 
 ## Overview
 Anonymous confession app built with React Native (Expo) for web. Users can post anonymous confessions across categories like College, Work, Love, Drama, Dark, Funny, and Secrets. Features emoji reactions and comment counts.

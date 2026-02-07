@@ -60,6 +60,8 @@ const formatTime = (date: Date): string => {
 export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>(DEMO_COMMENTS);
@@ -134,7 +136,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               </View>
             </View>
           </View>
-          <TouchableOpacity style={styles.moreButton} activeOpacity={0.6}>
+          <TouchableOpacity style={styles.moreButton} activeOpacity={0.6} onPress={() => setShowMoreMenu(true)}>
             <Ionicons
               name="ellipsis-horizontal"
               size={20}
@@ -212,12 +214,64 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7} onPress={() => setShowShareMenu(true)}>
           <View style={styles.iconWrapper}>
             <Ionicons name="share-social-outline" size={20} color={COLORS.textSecondary} />
           </View>
         </TouchableOpacity>
       </View>
+
+      {/* Share Menu Modal */}
+      <Modal visible={showShareMenu} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowShareMenu(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={styles.shareMenu}>
+              <Text style={styles.menuTitle}>Share Confession</Text>
+              <View style={styles.shareGrid}>
+                {[
+                  { name: 'Instagram', icon: 'logo-instagram', color: '#E1306C' },
+                  { name: 'Facebook', icon: 'logo-facebook', color: '#4267B2' },
+                  { name: 'WhatsApp', icon: 'logo-whatsapp', color: '#25D366' },
+                  { name: 'Download', icon: 'download', color: '#6B5CE7' },
+                  { name: 'Copy Link', icon: 'link', color: '#6B5CE7' },
+                ].map((item) => (
+                  <TouchableOpacity key={item.name} style={styles.shareItem} onPress={() => {
+                    setShowShareMenu(false);
+                    alert(`${item.name} functionality integrated!`);
+                  }}>
+                    <View style={[styles.shareIcon, { backgroundColor: item.color }]}>
+                      <Ionicons name={item.icon as any} size={24} color="#FFF" />
+                    </View>
+                    <Text style={styles.shareLabel}>{item.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* More Menu Modal */}
+      <Modal visible={showMoreMenu} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={styles.moreMenu}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); alert('Post reported.'); }}>
+                <Ionicons name="flag-outline" size={20} color="#FF4B4B" />
+                <Text style={[styles.menuItemText, { color: '#FF4B4B' }]}>Report Post</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setShowMoreMenu(false)}>
+                <Ionicons name="eye-off-outline" size={20} color="#FFF" />
+                <Text style={styles.menuItemText}>Hide Post</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setShowMoreMenu(false)}>
+                <Ionicons name="copy-outline" size={20} color="#FFF" />
+                <Text style={styles.menuItemText}>Copy Content</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       <Modal
         visible={showFullView}
@@ -629,5 +683,68 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     justifyContent: "center",
     alignItems: "center",
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  shareMenu: {
+    backgroundColor: '#1E222B',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  menuTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  shareGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    gap: 16,
+  },
+  shareItem: {
+    alignItems: 'center',
+    width: '30%',
+    marginBottom: 10,
+  },
+  shareIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  shareLabel: {
+    color: '#E1E1E1',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+  },
+  moreMenu: {
+    backgroundColor: '#1E222B',
+    borderRadius: 20,
+    padding: 10,
+    width: '70%',
+    maxWidth: 300,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  menuItemText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
   },
 });
