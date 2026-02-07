@@ -8,16 +8,21 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
 import { useFeedStore } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
+import { useNavigation } from "@react-navigation/native";
 
 export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { posts, trendingPosts, addReaction } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleReact = (postId: string, reaction: string) => {
     addReaction(postId, reaction as any);
@@ -25,38 +30,71 @@ export const HomeScreen: React.FC = () => {
 
   const displayPosts = activeTab === "Latest" ? posts : trendingPosts;
 
+  const filteredPosts = searchQuery 
+    ? displayPosts.filter(p => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : displayPosts;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerContainer}>
-          <View style={styles.headerLeft}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../assets/images/logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greetingText}>Good Morning,</Text>
-              <Text style={styles.brandText}>ConfessBox</Text>
-            </View>
-          </View>
+          {!isSearchVisible ? (
+            <>
+              <View style={styles.headerLeft}>
+                <View style={styles.logoContainer}>
+                  <Image
+                    source={require("../../assets/images/logo.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={styles.greetingContainer}>
+                  <Text style={styles.greetingText}>Good Morning,</Text>
+                  <Text style={styles.brandText}>ConfessBox</Text>
+                </View>
+              </View>
 
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="search" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <View style={styles.notificationBadge} />
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color="#FFFFFF"
+              <View style={styles.headerIcons}>
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={() => setIsSearchVisible(true)}
+                >
+                  <Ionicons name="search" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={() => navigation.navigate("Interactions")}
+                >
+                  <View style={styles.notificationBadge} />
+                  <Ionicons
+                    name="notifications-outline"
+                    size={22}
+                    color="#FFFFFF"
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View style={styles.searchBarContainer}>
+              <TouchableOpacity onPress={() => setIsSearchVisible(false)}>
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search confessions..."
+                placeholderTextColor="#8E9196"
+                autoFocus
+                value={searchQuery}
+                onChangeText={setSearchQuery}
               />
-            </TouchableOpacity>
-          </View>
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <Ionicons name="close-circle" size={20} color="#8E9196" />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={styles.tabsContainer}>
@@ -68,7 +106,7 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         <FlatList
-          data={displayPosts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
             <PostCard
@@ -79,6 +117,13 @@ export const HomeScreen: React.FC = () => {
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            searchQuery ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
+              </View>
+            ) : null
+          }
         />
       </SafeAreaView>
     </View>
@@ -102,6 +147,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
     paddingBottom: 10,
     backgroundColor: COLORS.background,
+    height: 60,
   },
   headerLeft: {
     flexDirection: "row",
@@ -161,6 +207,24 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#1E222B",
   },
+  searchBarContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E222B",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 45,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    marginLeft: 10,
+  },
   tabsContainer: {
     paddingHorizontal: 16,
     paddingBottom: 10,
@@ -169,5 +233,15 @@ const styles = StyleSheet.create({
   list: {
     paddingTop: 10,
     paddingBottom: 100,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
   },
 });

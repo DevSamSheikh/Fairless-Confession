@@ -6,11 +6,10 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  SafeAreaView,
 } from "react-native";
 import { COLORS } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
-import { Header } from "../components/ui/Header";
-import { Tabs } from "../components/ui/Tabs";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
@@ -90,37 +89,31 @@ export const TrendingScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      <View style={styles.headerFixedContainer}>
-        <View style={styles.headerWrapper}>
-          <Header
-            title="Societies"
-            subtitle="Explore,"
-            rightIcons={[
-              { name: "add", onPress: () => {} },
-              { name: "search", onPress: () => {} },
-              { name: "bookmark-outline", onPress: () => {} },
-            ]}
-          />
-        </View>
-
-        <View style={styles.tabsWrapper}>
-          <Tabs tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Societies</Text>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => navigation.navigate('CreateSociety')}
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.content}>
-        <FlatList
-          data={MOCK_SOCIETIES}
-          renderItem={renderSocietyCard}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-        />
-      </View>
-    </View>
+      
+      <FlatList
+        data={MOCK_SOCIETIES}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSocietyCard}
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={() => (
+          <View style={styles.listHeader}>
+            <Text style={styles.subtitle}>Explore Communities</Text>
+            <Text style={styles.description}>Join private spaces to share targeted confessions and connect with people in similar situations.</Text>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 };
 
@@ -129,32 +122,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerFixedContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    backgroundColor: COLORS.background,
-    paddingTop: 40,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 15,
   },
-  headerWrapper: {
-    zIndex: 102,
-    backgroundColor: COLORS.background,
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.text,
+    fontFamily: 'Poppins_700Bold',
   },
-  tabsWrapper: {
-    backgroundColor: COLORS.background,
-    zIndex: 101,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
-  },
-  content: {
-    flex: 1,
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   listContainer: {
-    paddingTop: 180,
     paddingHorizontal: 20,
     paddingBottom: 100,
+  },
+  listHeader: {
+    marginBottom: 24,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 20,
   },
   card: {
     marginBottom: 16,
