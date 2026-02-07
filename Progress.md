@@ -30,6 +30,12 @@
     - [x] Implemented animated header (matching Home style).
     - [x] Removed search bar and explore heading.
     - [x] Replaced bell icon with bookmark icon.
+    - [x] Added top padding to prevent mobile status bar overlap.
+- [x] Society Joining Workflow:
+    - [x] Added "Give Up" button to cancellation joining.
+    - [x] Fixed countdown button styling to use theme purple when active.
+- [x] Society Detail Screen:
+    - [x] Fixed horizontal spacing issues on post cards to match Home screen.
 
 ## Planned Tasks
 - [ ] Comment section implementation.

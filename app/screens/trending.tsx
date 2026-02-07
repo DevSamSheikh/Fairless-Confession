@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 100,
     backgroundColor: COLORS.background,
-    // paddingTop: 40,
+    paddingTop: 40,
   },
   headerWrapper: {
     zIndex: 102,
