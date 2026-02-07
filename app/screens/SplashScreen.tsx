@@ -14,7 +14,7 @@ export const SplashScreen: React.FC = () => {
          />
       </View>
       <View style={styles.footer}>
-        <Text style={styles.brandName}>BrainBox</Text>
+        <Text style={styles.brandName}>ConfessBox</Text>
         <Text style={styles.version}>Version 1.0</Text>
       </View>
     </View>

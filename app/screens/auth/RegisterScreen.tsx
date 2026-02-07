@@ -63,7 +63,7 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
             />
           </TouchableOpacity>
           <Text style={styles.agreementText}>
-            I agree to the <Text style={styles.linkText}>Rules & Regulations</Text> of BrainBox
+            I agree to the <Text style={styles.linkText}>Rules & Regulations</Text> of ConfessBox
           </Text>
         </View>
 

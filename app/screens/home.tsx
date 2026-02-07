@@ -40,7 +40,7 @@ export const HomeScreen: React.FC = () => {
             </View>
             <View style={styles.greetingContainer}>
               <Text style={styles.greetingText}>Good Morning,</Text>
-              <Text style={styles.brandText}>BrainBox</Text>
+              <Text style={styles.brandText}>ConfessBox</Text>
             </View>
           </View>
 

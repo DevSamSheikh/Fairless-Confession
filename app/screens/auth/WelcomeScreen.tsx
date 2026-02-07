@@ -13,7 +13,7 @@ export const WelcomeScreen: React.FC = ({ navigation }: any) => {
           resizeMode="contain"
         />
         
-        <Text style={styles.title}>Welcome to{"\n"}BrainBox</Text>
+        <Text style={styles.title}>Welcome to{"\n"}ConfessBox</Text>
         
         <View style={styles.buttonContainer}>
           <TouchableOpacity 

@@ -10,7 +10,7 @@
 ## Completed Tasks
 - [x] Initial project migration.
 - [x] Dependency installation (Expo SDK 54, React 19).
-- [x] Asset setup (BrainBox Logo, Poppins/Urbanist fonts).
+- [x] Asset setup (ConfessBox Logo, Poppins/Urbanist fonts).
 - [x] Splash Screen enhancement (100% design match).
 - [x] Onboarding Slider enhancement with animations.
 - [x] Welcome Screen redesign.

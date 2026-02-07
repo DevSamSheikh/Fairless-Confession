@@ -16,27 +16,27 @@ const { width, height } = Dimensions.get("window");
 const SLIDES = [
   {
     id: "1",
-    title: "Unlock the Power\nOf Future AI",
+    title: "Express Freely\nStay Anonymous",
     subtitle:
-      "Chat with the smartest AI Future\nExperience power of AI with us",
+      "Share your deepest secrets, regrets, and stories without any fear. Your identity is always 100% safe.",
     image:
-      "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "2",
-    title: "Chat With Your\nFavourite AI",
+    title: "Join Specialized\nSocieties",
     subtitle:
-      "Chat with the smartest AI Future\nExperience power of AI with us",
+      "Connect with people who understand you. From College Life to Broken Hearts, find your circle.",
     image:
-      "https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800",
   },
   {
     id: "3",
-    title: "Boost Your Mind\nPower with AI",
+    title: "Interactive\nEngagement",
     subtitle:
-      "Chat with the smartest AI Future\nExperience power of AI with us",
+      "React with emojis, join deep discussions, and see what's trending in your community.",
     image:
-      "https://images.unsplash.com/photo-1531746790731-6c087fecd05a?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
   },
 ];
 
