@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   FlatList,
   TextInput,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
@@ -17,22 +18,59 @@ import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
 import { useNavigation } from "@react-navigation/native";
 
+const { width } = Dimensions.get("window");
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { posts, trendingPosts, addReaction } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const contentFlatListRef = useRef<FlatList>(null);
 
   const handleReact = (postId: string, reaction: string) => {
     addReaction(postId, reaction as any);
   };
 
-  const displayPosts = activeTab === "Latest" ? posts : trendingPosts;
+  const handleTabPress = (tab: string) => {
+    setActiveTab(tab);
+    const index = tab === "Latest" ? 0 : 1;
+    contentFlatListRef.current?.scrollToIndex({ index, animated: true });
+  };
 
-  const filteredPosts = searchQuery 
-    ? displayPosts.filter(p => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
-    : displayPosts;
+  const onMomentumScrollEnd = (e: any) => {
+    const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+    setActiveTab(newIndex === 0 ? "Latest" : "Trending");
+  };
+
+  const renderFeed = (data: any, tab: string) => {
+    const filtered = searchQuery 
+      ? data.filter((p: any) => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
+      : data;
+
+    return (
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => `${tab}-${item.id}`}
+        renderItem={({ item, index }) => (
+          <PostCard
+            post={item}
+            rank={tab === "Trending" ? index + 1 : undefined}
+            onReact={(reaction) => handleReact(item.id, reaction)}
+          />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          searchQuery ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
+            </View>
+          ) : null
+        }
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -101,29 +139,23 @@ export const HomeScreen: React.FC = () => {
           <Tabs
             tabs={["Latest", "Trending"]}
             activeTab={activeTab}
-            onTabPress={setActiveTab}
+            onTabPress={handleTabPress}
           />
         </View>
 
         <FlatList
-          data={filteredPosts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <PostCard
-              post={item}
-              rank={activeTab === "Trending" ? index + 1 : undefined}
-              onReact={(reaction) => handleReact(item.id, reaction)}
-            />
+          ref={contentFlatListRef}
+          data={["Latest", "Trending"]}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onMomentumScrollEnd}
+          renderItem={({ item }) => (
+            <View style={{ width }}>
+              {renderFeed(item === "Latest" ? posts : trendingPosts, item)}
+            </View>
           )}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            searchQuery ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
-              </View>
-            ) : null
-          }
+          keyExtractor={(item) => item}
         />
       </SafeAreaView>
     </View>

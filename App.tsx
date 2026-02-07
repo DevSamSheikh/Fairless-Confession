@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,59 +17,100 @@ import { SocietyDetailScreen } from './app/screens/SocietyDetailScreen';
 import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { View, FlatList, Dimensions, StyleSheet } from 'react-native';
 
-const Tab = createBottomTabNavigator();
+const { width } = Dimensions.get('window');
+
 const Stack = createNativeStackNavigator();
 
-function TabNavigator() {
+const MAIN_PAGES = [
+  { name: 'Home', component: HomeScreen, icon: 'home' },
+  { name: 'Societies', component: TrendingScreen, icon: 'people' },
+  { name: 'Confess', component: PostScreen, icon: 'add-circle' },
+  { name: 'Interactions', component: ActivityScreen, icon: 'heart-half' },
+  { name: 'Profile', component: MoreScreen, icon: 'person' },
+];
+
+function MainSwipeNavigator({ navigation }: any) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+
+  const onMomentumScrollEnd = (e: any) => {
+    const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (newIndex !== currentIndex) {
+      setCurrentIndex(newIndex);
+    }
+  };
+
+  const handleTabPress = (index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+    setCurrentIndex(index);
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Societies':
-              iconName = focused ? 'people' : 'people-outline';
-              break;
-            case 'Confess':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
-              break;
-            case 'Interactions':
-              iconName = focused ? 'heart-half' : 'heart-half-outline';
-              break;
-            case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-            default:
-              iconName = 'home';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.textSecondary,
-        tabBarStyle: {
-          backgroundColor: COLORS.background,
-          borderTopColor: COLORS.border,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 60,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Societies" component={TrendingScreen} />
-      <Tab.Screen name="Confess" component={PostScreen} />
-      <Tab.Screen name="Interactions" component={ActivityScreen} />
-      <Tab.Screen name="Profile" component={MoreScreen} />
-    </Tab.Navigator>
+    <View style={styles.container}>
+      <FlatList
+        ref={flatListRef}
+        data={MAIN_PAGES}
+        renderItem={({ item: Page }) => (
+          <View style={{ width, flex: 1 }}>
+            <Page.component />
+          </View>
+        )}
+        keyExtractor={(item) => item.name}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        bounces={false}
+        scrollEventThrottle={16}
+        removeClippedSubviews={true}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
+        windowSize={3}
+      />
+      
+      <View style={styles.tabBar}>
+        {MAIN_PAGES.map((page, index) => {
+          const isFocused = currentIndex === index;
+          const iconName = isFocused ? page.icon : `${page.icon}-outline` as any;
+          
+          return (
+            <View key={page.name} style={styles.tabItem}>
+              <Ionicons
+                name={iconName}
+                size={24}
+                color={isFocused ? COLORS.accent : COLORS.textSecondary}
+                onPress={() => handleTabPress(index)}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    height: 60,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingBottom: 8,
+    paddingTop: 8,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 
 export default function App() {
   return (
@@ -81,7 +122,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="Main" component={MainSwipeNavigator} />
         <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
         <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
       </Stack.Navigator>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -7,12 +7,16 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  Dimensions,
 } from "react-native";
 import { COLORS } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "../components/ui/Tabs";
+
+const { width } = Dimensions.get("window");
 
 const MOCK_SOCIETIES = [
   {
@@ -52,13 +56,23 @@ const MOCK_SOCIETIES = [
   },
 ];
 
-import { Tabs } from "../components/ui/Tabs";
-
 export const TrendingScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Discover");
   const navigation = useNavigation<any>();
+  const contentFlatListRef = useRef<FlatList>(null);
 
   const tabs = ["Confessions", "Discover", "Your Societies"];
+
+  const handleTabPress = (tab: string) => {
+    setActiveTab(tab);
+    const index = tabs.indexOf(tab);
+    contentFlatListRef.current?.scrollToIndex({ index, animated: true });
+  };
+
+  const onMomentumScrollEnd = (e: any) => {
+    const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+    setActiveTab(tabs[newIndex]);
+  };
 
   const renderSocietyCard = ({
     item,
@@ -115,19 +129,30 @@ export const TrendingScreen: React.FC = () => {
         </View>
 
         <View style={styles.tabsWrapper}>
-          <Tabs tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
+          <Tabs tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
         </View>
       </View>
 
-      <View style={styles.content}>
-        <FlatList
-          data={MOCK_SOCIETIES}
-          renderItem={renderSocietyCard}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-        />
-      </View>
+      <FlatList
+        ref={contentFlatListRef}
+        data={tabs}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        renderItem={({ item }) => (
+          <View style={{ width }}>
+            <FlatList
+              data={MOCK_SOCIETIES}
+              renderItem={renderSocietyCard}
+              keyExtractor={(s) => `${item}-${s.id}`}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContainer}
+            />
+          </View>
+        )}
+        keyExtractor={(item) => item}
+      />
     </View>
   );
 };
