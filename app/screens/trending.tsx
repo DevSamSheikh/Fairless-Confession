@@ -53,7 +53,7 @@ const MOCK_SOCIETIES = [
 ];
 
 export const TrendingScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("Confessions");
+  const [activeTab, setActiveTab] = useState("Discover");
   const navigation = useNavigation<any>();
 
   const tabs = ["Confessions", "Discover", "Your Societies"];
@@ -75,13 +75,12 @@ export const TrendingScreen: React.FC = () => {
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardMembers}>{item.members} members</Text>
           </View>
-          <Button
-            title="Join"
-            size="small"
-            onPress={() =>
-              navigation.navigate("SocietyDetail", { society: item })
-            }
-          />
+          <TouchableOpacity 
+            style={styles.joinButton}
+            onPress={() => navigation.navigate("SocietyDetail", { society: item })}
+          >
+            <Text style={styles.joinButtonText}>Join</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.cardDescription}>{item.description}</Text>
       </TouchableOpacity>
@@ -89,31 +88,45 @@ export const TrendingScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Societies</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => navigation.navigate('CreateSociety')}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
-      
-      <FlatList
-        data={MOCK_SOCIETIES}
-        keyExtractor={(item) => item.id}
-        renderItem={renderSocietyCard}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={() => (
-          <View style={styles.listHeader}>
-            <Text style={styles.subtitle}>Explore Communities</Text>
-            <Text style={styles.description}>Join private spaces to share targeted confessions and connect with people in similar situations.</Text>
+
+      <View style={styles.headerFixedContainer}>
+        <View style={styles.headerWrapper}>
+          <View style={styles.customHeader}>
+            <View>
+              <Text style={styles.headerTitleText}>Societies</Text>
+              <Text style={styles.headerSubtitleText}>Explore,</Text>
+            </View>
+            <View style={styles.headerIconsRow}>
+              <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.navigate('CreateSociety')}>
+                <Ionicons name="add" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIconButton}>
+                <Ionicons name="search" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIconButton}>
+                <Ionicons name="bookmark" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      />
-    </SafeAreaView>
+        </View>
+
+        <View style={styles.tabsWrapper}>
+          <Tabs tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        <FlatList
+          data={MOCK_SOCIETIES}
+          renderItem={renderSocietyCard}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+        />
+      </View>
+    </View>
   );
 };
 
@@ -122,55 +135,65 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  headerFixedContainer: {
+    backgroundColor: COLORS.background,
+    paddingTop: 40,
+  },
+  headerWrapper: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  customHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
   },
-  title: {
+  headerTitleText: {
+    color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '800',
-    color: COLORS.text,
     fontFamily: 'Poppins_700Bold',
   },
-  addButton: {
+  headerSubtitleText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+  },
+  headerIconsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  headerIconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.accent,
+    backgroundColor: '#1E222B',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  tabsWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  content: {
+    flex: 1,
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 100,
-  },
-  listHeader: {
-    marginBottom: 24,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontFamily: 'Poppins_400Regular',
-    lineHeight: 20,
   },
   card: {
     marginBottom: 16,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   cardHeader: {
     flexDirection: "row",
@@ -191,7 +214,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     fontFamily: "Poppins_700Bold",
   },
@@ -199,6 +222,17 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 12,
     fontFamily: "Poppins_400Regular",
+  },
+  joinButton: {
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  joinButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   cardDescription: {
     color: COLORS.textSecondary,

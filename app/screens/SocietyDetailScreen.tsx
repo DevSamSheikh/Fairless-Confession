@@ -107,7 +107,9 @@ export const SocietyDetailScreen: React.FC = () => {
             </View>
           )}
         </View>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={styles.headerIconButton}>
+          <Ionicons name="bookmark" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
