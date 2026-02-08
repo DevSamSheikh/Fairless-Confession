@@ -60,43 +60,70 @@ export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
-  const tabs = ["Confessions", "Discover", "Your Societies"];
+  // In a real app, these would come from a global user/society store
+  const [joinedSocieties] = useState(["1", "3"]); // Mock joined society IDs
+  const [userCreatedSocieties] = useState(["2"]); // Mock user-created society IDs
+
+  const tabs = ["Confessions", "Discover", "Joined", "Your Societies"];
 
   const renderSocietyCard = ({
     item,
   }: {
     item: (typeof MOCK_SOCIETIES)[0];
-  }) => (
-    <Card style={styles.card} variant="outline">
-      <TouchableOpacity
-        onPress={() => navigation.navigate("SocietyDetail", { society: item })}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>
-            <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+  }) => {
+    const isJoined = joinedSocieties.includes(item.id);
+    return (
+      <Card style={styles.card} variant="outline">
+        <TouchableOpacity
+          onPress={() => navigation.navigate("SocietyDetail", { society: item })}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.iconContainer}>
+              <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+            </View>
+            <View style={styles.cardTitleContainer}>
+              <Text style={styles.cardName}>{item.name}</Text>
+              <Text style={styles.cardMembers}>{item.members} members</Text>
+            </View>
+            <Button
+              title={isJoined ? "Member" : "Join"}
+              size="small"
+              variant={isJoined ? "outline" : "primary"}
+              onPress={() =>
+                navigation.navigate("SocietyDetail", { society: item })
+              }
+            />
           </View>
-          <View style={styles.cardTitleContainer}>
-            <Text style={styles.cardName}>{item.name}</Text>
-            <Text style={styles.cardMembers}>{item.members} members</Text>
-          </View>
-          <Button
-            title="Join"
-            size="small"
-            onPress={() =>
-              navigation.navigate("SocietyDetail", { society: item })
-            }
-          />
-        </View>
-        <Text style={styles.cardDescription}>{item.description}</Text>
-      </TouchableOpacity>
-    </Card>
-  );
+          <Text style={styles.cardDescription}>{item.description}</Text>
+        </TouchableOpacity>
+      </Card>
+    );
+  };
 
-  const filteredSocieties = searchQuery
-    ? MOCK_SOCIETIES.filter((s) =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : MOCK_SOCIETIES;
+  const filteredSocieties = MOCK_SOCIETIES.filter((s) => {
+    // 1. Apply Search Filter
+    if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // 2. Apply Tab Filter
+    switch (activeTab) {
+      case "Confessions":
+        // Show societies with new confessions (mock: show joined ones)
+        return joinedSocieties.includes(s.id);
+      case "Discover":
+        // Show societies not yet joined
+        return !joinedSocieties.includes(s.id);
+      case "Joined":
+        // Show societies user has joined
+        return joinedSocieties.includes(s.id);
+      case "Your Societies":
+        // Show societies created by the user
+        return userCreatedSocieties.includes(s.id);
+      default:
+        return true;
+    }
+  });
 
   return (
     <SafeAreaView style={styles.container}>

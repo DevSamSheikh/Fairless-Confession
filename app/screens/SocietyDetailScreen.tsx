@@ -30,6 +30,7 @@ export const SocietyDetailScreen: React.FC = () => {
   const society = route.params?.society || { name: 'Society', icon: 'people', members: 0 };
   
   const [isJoined, setIsJoined] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningTimer, setWarningTimer] = useState(6);
   const [confession, setConfession] = useState('');
@@ -100,14 +101,20 @@ export const SocietyDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{society.name}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{society.name}</Text>
           {isJoined && (
             <View style={styles.memberBadge}>
               <Text style={styles.memberBadgeText}>Member</Text>
             </View>
           )}
         </View>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={styles.saveButton} onPress={() => setIsSaved(!isSaved)}>
+          <Ionicons 
+            name={isSaved ? "bookmark" : "bookmark-outline"} 
+            size={24} 
+            color={isSaved ? COLORS.accent : "#FFFFFF"} 
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -275,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 60,
     paddingBottom: 15,
     backgroundColor: COLORS.cardBackground,
     borderWidth: 1,
@@ -284,7 +291,12 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginLeft: 15,
     gap: 8,
+  },
+  saveButton: {
+    padding: 8,
   },
   headerTitle: {
     color: '#FFFFFF',
