@@ -222,29 +222,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
       </View>
 
       {/* Share Menu Modal */}
-      <Modal visible={showShareMenu} transparent animationType="fade">
+      <Modal visible={showShareMenu} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={() => setShowShareMenu(false)}>
           <View style={styles.menuOverlay}>
-            <View style={styles.shareMenu}>
-              <Text style={styles.menuTitle}>Share Confession</Text>
-              <View style={styles.shareGrid}>
-                {[
-                  { name: 'Instagram', icon: 'logo-instagram', color: '#E1306C' },
-                  { name: 'Facebook', icon: 'logo-facebook', color: '#4267B2' },
-                  { name: 'WhatsApp', icon: 'logo-whatsapp', color: '#25D366' },
-                  { name: 'Download', icon: 'download', color: '#6B5CE7' },
-                  { name: 'Copy Link', icon: 'link', color: '#6B5CE7' },
-                ].map((item) => (
-                  <TouchableOpacity key={item.name} style={styles.shareItem} onPress={() => {
-                    setShowShareMenu(false);
-                    alert(`${item.name} functionality integrated!`);
-                  }}>
-                    <View style={[styles.shareIcon, { backgroundColor: item.color }]}>
-                      <Ionicons name={item.icon as any} size={24} color="#FFF" />
-                    </View>
-                    <Text style={styles.shareLabel}>{item.name}</Text>
-                  </TouchableOpacity>
-                ))}
+            <View style={styles.shareSheetContainer}>
+              <View style={styles.shareMenu}>
+                <View style={styles.dragHandle} />
+                <Text style={styles.menuTitle}>Share Confession</Text>
+                <View style={styles.shareGrid}>
+                  {[
+                    { name: 'Instagram', icon: 'logo-instagram', color: '#E1306C' },
+                    { name: 'Facebook', icon: 'logo-facebook', color: '#4267B2' },
+                    { name: 'WhatsApp', icon: 'logo-whatsapp', color: '#25D366' },
+                    { name: 'Download', icon: 'download', color: '#6B5CE7' },
+                    { name: 'Copy Link', icon: 'link', color: '#6B5CE7' },
+                  ].map((item) => (
+                    <TouchableOpacity key={item.name} style={styles.shareItem} onPress={() => {
+                      setShowShareMenu(false);
+                      alert(`${item.name} functionality integrated!`);
+                    }}>
+                      <View style={[styles.shareIcon, { backgroundColor: item.color }]}>
+                        <Ionicons name={item.icon as any} size={24} color="#FFF" />
+                      </View>
+                      <Text style={styles.shareLabel}>{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
           </View>
@@ -255,7 +258,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
       <Modal visible={showMoreMenu} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
           <View style={styles.menuOverlay}>
-            <View style={styles.moreMenu}>
+            <View style={[styles.moreMenu, { top: 120 }]}>
               <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); alert('Post reported.'); }}>
                 <Ionicons name="flag-outline" size={20} color="#FF4B4B" />
                 <Text style={[styles.menuItemText, { color: '#FF4B4B' }]}>Report Post</Text>
@@ -528,20 +531,16 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
-    paddingBottom: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reactionPicker: {
-    position: "absolute",
-    bottom: 100,
-    alignSelf: 'center',
     backgroundColor: "#1E222B",
     borderRadius: 30,
     flexDirection: "row",
     padding: 8,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    zIndex: 2000,
     elevation: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -687,13 +686,28 @@ const styles = StyleSheet.create({
   menuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: 'flex-end',
+  },
+  shareSheetContainer: {
+    width: '100%',
+    padding: 16,
+    paddingBottom: 40,
   },
   shareMenu: {
     backgroundColor: "#1E222B",
-    borderRadius: 24,
+    borderRadius: 32,
     padding: 24,
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 500,
+    alignSelf: 'center',
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   menuTitle: {
     color: "#FFF",

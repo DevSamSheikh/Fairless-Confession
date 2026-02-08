@@ -16,6 +16,9 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
 
+import { PostCard } from "../components/PostCard";
+import { useFeedStore } from "../store/feed.store";
+
 const MOCK_SOCIETIES = [
   {
     id: "1",
@@ -60,6 +63,10 @@ export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
+  const { posts } = useFeedStore();
+  const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+
   // In a real app, these would come from a global user/society store
   const [joinedSocieties] = useState(["1", "3"]); // Mock joined society IDs
   const [userCreatedSocieties] = useState(["2"]); // Mock user-created society IDs
@@ -72,6 +79,14 @@ export const TrendingScreen: React.FC = () => {
     item: (typeof MOCK_SOCIETIES)[0];
   }) => {
     const isJoined = joinedSocieties.includes(item.id);
+    const isSaved = savedSocieties.includes(item.id);
+    
+    // Determine button title based on tab
+    let buttonTitle = "Join";
+    if (activeTab === "Joined" || activeTab === "Your Societies" || isJoined) {
+      buttonTitle = "Visit";
+    }
+
     return (
       <Card style={styles.card} variant="outline">
         <TouchableOpacity
@@ -86,9 +101,9 @@ export const TrendingScreen: React.FC = () => {
               <Text style={styles.cardMembers}>{item.members} members</Text>
             </View>
             <Button
-              title={isJoined ? "Member" : "Join"}
+              title={buttonTitle}
               size="small"
-              variant={isJoined ? "outline" : "primary"}
+              variant={buttonTitle === "Visit" ? "outline" : "primary"}
               onPress={() =>
                 navigation.navigate("SocietyDetail", { society: item })
               }
@@ -101,16 +116,18 @@ export const TrendingScreen: React.FC = () => {
   };
 
   const filteredSocieties = MOCK_SOCIETIES.filter((s) => {
-    // 1. Apply Search Filter
+    // 1. Saved Filter
+    if (showSavedOnly && !savedSocieties.includes(s.id)) {
+      return false;
+    }
+
+    // 2. Apply Search Filter
     if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
 
-    // 2. Apply Tab Filter
+    // 3. Apply Tab Filter
     switch (activeTab) {
-      case "Confessions":
-        // Show societies with new confessions (mock: show joined ones)
-        return joinedSocieties.includes(s.id);
       case "Discover":
         // Show societies not yet joined
         return !joinedSocieties.includes(s.id);
@@ -123,6 +140,13 @@ export const TrendingScreen: React.FC = () => {
       default:
         return true;
     }
+  });
+
+  const joinedPosts = posts.filter(p => {
+    // This is mock logic since posts don't have societyId yet
+    // In a real app: return joinedSocieties.includes(p.societyId)
+    // For now, let's just show some posts in the Confessions tab
+    return true; 
   });
 
   return (
@@ -149,8 +173,11 @@ export const TrendingScreen: React.FC = () => {
               >
                 <Ionicons name="search" size={22} color="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Ionicons name="bookmark" size={22} color="#FFFFFF" />
+              <TouchableOpacity 
+                style={[styles.iconButton, showSavedOnly && { borderColor: COLORS.accent, backgroundColor: 'rgba(107, 92, 231, 0.1)' }]}
+                onPress={() => setShowSavedOnly(!showSavedOnly)}
+              >
+                <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={22} color={showSavedOnly ? COLORS.accent : "#FFFFFF"} />
               </TouchableOpacity>
             </View>
           </>
@@ -181,11 +208,19 @@ export const TrendingScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={filteredSocieties}
-        renderItem={renderSocietyCard}
+        data={activeTab === "Confessions" ? (joinedPosts as any[]) : (filteredSocieties as any[])}
+        renderItem={({ item }) => {
+          if (activeTab === "Confessions") {
+            return <PostCard post={item as any} onReact={() => {}} />;
+          }
+          return renderSocietyCard({ item: item as any });
+        }}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          activeTab === "Confessions" && { paddingHorizontal: 0 }
+        ]}
         ListEmptyComponent={
           searchQuery ? (
             <View style={styles.emptyContainer}>
@@ -208,9 +243,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 60,
     paddingBottom: 15,
-    minHeight: 80,
+    minHeight: 100,
   },
   headerLeft: {
     flex: 1,
