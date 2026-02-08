@@ -107,9 +107,7 @@ export const SocietyDetailScreen: React.FC = () => {
             </View>
           )}
         </View>
-        <TouchableOpacity style={styles.headerIconButton}>
-          <Ionicons name="bookmark" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -544,8 +542,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontFamily: 'Poppins_600SemiBold',
-  },
-  headerIconButton: {
-    padding: 8,
   },
 });
