@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  TextInput,
 } from "react-native";
 import { COLORS } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
+import { Tabs } from "../components/ui/Tabs";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,7 +55,9 @@ const MOCK_SOCIETIES = [
 ];
 
 export const TrendingScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("Confessions");
+  const [activeTab, setActiveTab] = useState("Discover");
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
   const tabs = ["Confessions", "Discover", "Your Societies"];
@@ -88,30 +92,80 @@ export const TrendingScreen: React.FC = () => {
     </Card>
   );
 
+  const filteredSocieties = searchQuery
+    ? MOCK_SOCIETIES.filter((s) =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : MOCK_SOCIETIES;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Societies</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => navigation.navigate('CreateSociety')}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
       
-      <FlatList
-        data={MOCK_SOCIETIES}
-        keyExtractor={(item) => item.id}
-        renderItem={renderSocietyCard}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={() => (
-          <View style={styles.listHeader}>
-            <Text style={styles.subtitle}>Explore Communities</Text>
-            <Text style={styles.description}>Join private spaces to share targeted confessions and connect with people in similar situations.</Text>
+      <View style={styles.headerContainer}>
+        {!isSearchVisible ? (
+          <>
+            <View style={styles.headerLeft}>
+              <Text style={styles.title}>Societies</Text>
+              <Text style={styles.exploreText}>Explore,</Text>
+            </View>
+            <View style={styles.headerRight}>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => navigation.navigate('CreateSociety')}
+              >
+                <Ionicons name="add" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => setIsSearchVisible(true)}
+              >
+                <Ionicons name="search" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Ionicons name="bookmark" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.searchBarContainer}>
+            <TouchableOpacity onPress={() => setIsSearchVisible(false)}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search societies..."
+              placeholderTextColor="#8E9196"
+              autoFocus
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={20} color="#8E9196" />
+              </TouchableOpacity>
+            )}
           </View>
         )}
+      </View>
+
+      <View style={styles.tabsWrapper}>
+        <Tabs tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
+      </View>
+
+      <FlatList
+        data={filteredSocieties}
+        renderItem={renderSocietyCard}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          searchQuery ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No societies found for "{searchQuery}"</Text>
+            </View>
+          ) : null
+        }
       />
     </SafeAreaView>
   );
@@ -122,13 +176,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 15,
+    minHeight: 80,
+  },
+  headerLeft: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -136,41 +194,63 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontFamily: 'Poppins_700Bold',
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  listHeader: {
-    marginBottom: 24,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 8,
-  },
-  description: {
+  exploreText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     fontFamily: 'Poppins_400Regular',
-    lineHeight: 20,
+    marginTop: -4,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#1E222B",
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  searchBarContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E222B",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins_400Regular",
+    marginLeft: 10,
+  },
+  tabsWrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 100,
   },
   card: {
     marginBottom: 16,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   cardHeader: {
     flexDirection: "row",
@@ -178,22 +258,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 14,
     backgroundColor: "rgba(107, 92, 231, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   cardTitleContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
   },
   cardName: {
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Poppins_700Bold",
+    fontFamily: "Poppins_600SemiBold",
   },
   cardMembers: {
     color: COLORS.textSecondary,
@@ -205,5 +285,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontFamily: "Poppins_400Regular",
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
   },
 });
