@@ -31,9 +31,21 @@ interface PostCardProps {
 }
 
 const DEMO_COMMENTS: Comment[] = [
-  { id: '1', content: 'Stay strong, we are here for you! ❤️', createdAt: new Date(Date.now() - 120000) },
-  { id: '2', content: 'This society is exactly what I needed today.', createdAt: new Date(Date.now() - 600000) },
-  { id: '3', content: 'I can relate to this so much.', createdAt: new Date(Date.now() - 900000) },
+  {
+    id: "1",
+    content: "Stay strong, we are here for you! ❤️",
+    createdAt: new Date(Date.now() - 120000),
+  },
+  {
+    id: "2",
+    content: "This society is exactly what I needed today.",
+    createdAt: new Date(Date.now() - 600000),
+  },
+  {
+    id: "3",
+    content: "I can relate to this so much.",
+    createdAt: new Date(Date.now() - 900000),
+  },
 ];
 
 const REACTIONS = [
@@ -118,12 +130,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         <View style={styles.rankBadge}>
           <View style={styles.rankIconContainer}>
             <Ionicons name="flame" size={14} color="#FFFFFF" />
-            <Text style={styles.rankText}>{rank}{rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th'}</Text>
+            <Text style={styles.rankText}>
+              {rank}
+              {rank === 1 ? "st" : rank === 2 ? "nd" : rank === 3 ? "rd" : "th"}
+            </Text>
           </View>
         </View>
       )}
-      
-      <TouchableOpacity activeOpacity={0.9} onPress={() => setShowFullView(true)}>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => setShowFullView(true)}
+      >
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <AnonymousAvatar size={44} />
@@ -132,11 +150,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               <View style={styles.metaRow}>
                 <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
                 <View style={styles.dot} />
-                <Text style={styles.category}>{post.category || "General"}</Text>
+                <Text style={styles.category}>
+                  {post.category || "General"}
+                </Text>
               </View>
             </View>
           </View>
-          <TouchableOpacity style={styles.moreButton} activeOpacity={0.6} onPress={() => setShowMoreMenu(true)}>
+          <TouchableOpacity
+            style={styles.moreButton}
+            activeOpacity={0.6}
+            onPress={() => setShowMoreMenu(true)}
+          >
             <Ionicons
               name="ellipsis-horizontal"
               size={20}
@@ -181,14 +205,31 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               onLongPress={handleLongPress}
               activeOpacity={0.7}
             >
-              <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
+              <View
+                style={[
+                  styles.iconWrapper,
+                  selectedReaction && styles.activeIconWrapper,
+                ]}
+              >
                 {selectedReaction ? (
                   <Text style={{ fontSize: 20 }}>{selectedReaction}</Text>
                 ) : (
-                  <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />
+                  <Ionicons
+                    name="thumbs-up-outline"
+                    size={22}
+                    color={COLORS.textSecondary}
+                  />
                 )}
               </View>
-              <Text style={[styles.interactionLabel, selectedReaction && { color: COLORS.accent, fontFamily: "Poppins_600SemiBold" }]}>
+              <Text
+                style={[
+                  styles.interactionLabel,
+                  selectedReaction && {
+                    color: COLORS.accent,
+                    fontFamily: "Poppins_600SemiBold",
+                  },
+                ]}
+              >
                 {totalReactions + (selectedReaction ? 1 : 0)}
               </Text>
             </TouchableOpacity>
@@ -200,15 +241,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
             onPress={() => setShowFullView(true)}
           >
             <View style={styles.iconWrapper}>
-              <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons
+                name="chatbubble-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
             </View>
             <Text style={styles.interactionLabel}>{comments.length}</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.interactionButton} activeOpacity={0.7} onPress={() => setShowShareMenu(true)}>
+        <TouchableOpacity
+          style={styles.interactionButton}
+          activeOpacity={0.7}
+          onPress={() => setShowShareMenu(true)}
+        >
           <View style={styles.iconWrapper}>
-            <Ionicons name="share-social-outline" size={20} color={COLORS.textSecondary} />
+            <Ionicons
+              name="share-social-outline"
+              size={20}
+              color={COLORS.textSecondary}
+            />
           </View>
         </TouchableOpacity>
       </View>
@@ -225,9 +278,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   data={[
-                    { name: "Instagram", icon: "logo-instagram", color: "#E1306C" },
-                    { name: "Facebook", icon: "logo-facebook", color: "#4267B2" },
-                    { name: "WhatsApp", icon: "logo-whatsapp", color: "#25D366" },
+                    {
+                      name: "Instagram",
+                      icon: "logo-instagram",
+                      color: "#E1306C",
+                    },
+                    {
+                      name: "Facebook",
+                      icon: "logo-facebook",
+                      color: "#4267B2",
+                    },
+                    {
+                      name: "WhatsApp",
+                      icon: "logo-whatsapp",
+                      color: "#25D366",
+                    },
                     { name: "Download", icon: "download", color: "#6B5CE7" },
                     { name: "Copy Link", icon: "link", color: "#6B5CE7" },
                   ]}
@@ -242,9 +307,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                       }}
                     >
                       <View
-                        style={[styles.shareIcon, { backgroundColor: item.color }]}
+                        style={[
+                          styles.shareIcon,
+                          { backgroundColor: item.color },
+                        ]}
                       >
-                        <Ionicons name={item.icon as any} size={24} color="#FFF" />
+                        <Ionicons
+                          name={item.icon as any}
+                          size={24}
+                          color="#FFF"
+                        />
                       </View>
                       <Text style={styles.shareLabel}>{item.name}</Text>
                     </TouchableOpacity>
@@ -261,15 +333,29 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.moreMenu}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); alert('Post reported.'); }}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setShowMoreMenu(false);
+                  alert("Post reported.");
+                }}
+              >
                 <Ionicons name="flag-outline" size={20} color="#FF4B4B" />
-                <Text style={[styles.menuItemText, { color: '#FF4B4B' }]}>Report Post</Text>
+                <Text style={[styles.menuItemText, { color: "#FF4B4B" }]}>
+                  Report Post
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={() => setShowMoreMenu(false)}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => setShowMoreMenu(false)}
+              >
                 <Ionicons name="eye-off-outline" size={20} color="#FFF" />
                 <Text style={styles.menuItemText}>Hide Post</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={() => setShowMoreMenu(false)}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => setShowMoreMenu(false)}
+              >
                 <Ionicons name="copy-outline" size={20} color="#FFF" />
                 <Text style={styles.menuItemText}>Copy Content</Text>
               </TouchableOpacity>
@@ -284,8 +370,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         onRequestClose={() => setShowFullView(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={{ flex: 1 }}
           >
             <View style={styles.modalHeader}>
@@ -294,10 +380,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               </TouchableOpacity>
               <Text style={styles.modalHeaderText}>Confession</Text>
               <TouchableOpacity onPress={() => setShowMoreMenu(true)}>
-                <Ionicons name="ellipsis-horizontal" size={24} color="#FFFFFF" />
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={24}
+                  color="#FFFFFF"
+                />
               </TouchableOpacity>
             </View>
-            
+
             <FlatList
               data={comments}
               keyExtractor={(item) => item.id}
@@ -309,38 +399,79 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                       <View style={styles.headerText}>
                         <Text style={styles.anonymous}>Anonymous</Text>
                         <View style={styles.metaRow}>
-                          <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
+                          <Text style={styles.time}>
+                            {formatTime(post.createdAt)}
+                          </Text>
                           <View style={styles.dot} />
-                          <Text style={styles.category}>{post.category || "General"}</Text>
+                          <Text style={styles.category}>
+                            {post.category || "General"}
+                          </Text>
                         </View>
                       </View>
                     </View>
                   </View>
-                  {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
+                  {post.title && (
+                    <Text style={styles.fullTitle}>{post.title}</Text>
+                  )}
                   <Text style={styles.fullContent}>{post.content}</Text>
-                  
+
                   <View style={styles.modalInteractionRow}>
-                    <TouchableOpacity style={styles.interactionButton} onPress={toggleLike} onLongPress={handleLongPress}>
-                      <View style={[styles.iconWrapper, selectedReaction && styles.activeIconWrapper]}>
-                        {selectedReaction ? <Text style={{ fontSize: 20 }}>{selectedReaction}</Text> : <Ionicons name="thumbs-up-outline" size={22} color={COLORS.textSecondary} />}
+                    <TouchableOpacity
+                      style={styles.interactionButton}
+                      onPress={toggleLike}
+                      onLongPress={handleLongPress}
+                    >
+                      <View
+                        style={[
+                          styles.iconWrapper,
+                          selectedReaction && styles.activeIconWrapper,
+                        ]}
+                      >
+                        {selectedReaction ? (
+                          <Text style={{ fontSize: 20 }}>
+                            {selectedReaction}
+                          </Text>
+                        ) : (
+                          <Ionicons
+                            name="thumbs-up-outline"
+                            size={22}
+                            color={COLORS.textSecondary}
+                          />
+                        )}
                       </View>
-                      <Text style={styles.interactionLabel}>{totalReactions + (selectedReaction ? 1 : 0)}</Text>
+                      <Text style={styles.interactionLabel}>
+                        {totalReactions + (selectedReaction ? 1 : 0)}
+                      </Text>
                     </TouchableOpacity>
                     <View style={styles.interactionButton}>
                       <View style={styles.iconWrapper}>
-                        <Ionicons name="chatbubble-outline" size={20} color={COLORS.textSecondary} />
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={20}
+                          color={COLORS.textSecondary}
+                        />
                       </View>
-                      <Text style={styles.interactionLabel}>{comments.length}</Text>
+                      <Text style={styles.interactionLabel}>
+                        {comments.length}
+                      </Text>
                     </View>
                   </View>
 
                   <View style={styles.commentSectionHeader}>
-                    <Text style={styles.commentTitle}>Comments ({comments.length})</Text>
+                    <Text style={styles.commentTitle}>
+                      Comments ({comments.length})
+                    </Text>
                   </View>
                   {comments.length === 0 && (
                     <View style={styles.noComments}>
-                      <Ionicons name="chatbubbles-outline" size={48} color="rgba(255,255,255,0.1)" />
-                      <Text style={styles.noCommentsText}>No comments yet. Be the first to reflect.</Text>
+                      <Ionicons
+                        name="chatbubbles-outline"
+                        size={48}
+                        color="rgba(255,255,255,0.1)"
+                      />
+                      <Text style={styles.noCommentsText}>
+                        No comments yet. Be the first to reflect.
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -351,7 +482,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                     <AnonymousAvatar size={32} />
                     <View style={styles.commentInfo}>
                       <Text style={styles.commentUser}>Anonymous</Text>
-                      <Text style={styles.commentTime}>{formatTime(item.createdAt)}</Text>
+                      <Text style={styles.commentTime}>
+                        {formatTime(item.createdAt)}
+                      </Text>
                     </View>
                   </View>
                   <Text style={styles.commentText}>{item.content}</Text>
@@ -359,7 +492,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               )}
               contentContainerStyle={{ paddingBottom: 100 }}
             />
-            
+
             <View style={styles.commentInputContainer}>
               <View style={styles.commentInputWrapper}>
                 <TextInput
@@ -371,8 +504,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   multiline
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.sendButton, !commentText.trim() && { opacity: 0.5 }]}
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  !commentText.trim() && { opacity: 0.5 },
+                ]}
                 onPress={handleAddComment}
                 disabled={!commentText.trim()}
               >
@@ -402,15 +538,15 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   rankBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -10,
     left: -10,
     zIndex: 10,
   },
   rankIconContainer: {
     backgroundColor: COLORS.accent,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -421,9 +557,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   rankText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
     marginLeft: 4,
   },
   header: {
@@ -509,13 +645,13 @@ const styles = StyleSheet.create({
   },
   reactionButtonWrapper: {
     zIndex: 1000,
-    alignItems: 'center',
+    alignItems: "center",
   },
   reactionPickerContainer: {
-    position: 'absolute',
-    bottom: '100%',
+    position: "absolute",
+    bottom: "100%",
     marginBottom: 8,
-    alignItems: 'center',
+    alignItems: "center",
     width: 300,
   },
   interactionButton: {
@@ -604,11 +740,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalInteractionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: "rgba(255,255,255,0.05)",
     marginBottom: 20,
   },
   commentSectionHeader: {
@@ -624,28 +760,28 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   commentInfo: {
     marginLeft: 10,
   },
   commentUser: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: "Poppins_600SemiBold",
   },
   commentTime: {
-    color: '#8E9196',
+    color: "#8E9196",
     fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
   commentText: {
-    color: '#E1E1E1',
+    color: "#E1E1E1",
     fontSize: 14,
     lineHeight: 22,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     marginLeft: 42,
   },
   noComments: {
@@ -667,7 +803,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.05)",
     backgroundColor: "#1E222B",
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -698,7 +834,7 @@ const styles = StyleSheet.create({
   menuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   shareSheetContainer: {
     width: "100%",
@@ -763,14 +899,14 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 14,
     gap: 12,
   },
   menuItemText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
+    fontFamily: "Poppins_500Medium",
   },
 });

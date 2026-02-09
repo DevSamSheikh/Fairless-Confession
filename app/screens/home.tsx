@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
   StatusBar,
   FlatList,
   TextInput,
+  Vibration,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
@@ -23,6 +25,27 @@ export const HomeScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const lastCenterId = useRef<string | null>(null);
+  const windowHeight = Dimensions.get('window').height;
+
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const centerY = offsetY + windowHeight / 2;
+    
+    // Approximate item height (card height + margin)
+    // PostCard is around 250-300px depending on content
+    const itemHeight = 280; 
+    const index = Math.floor(centerY / itemHeight);
+    
+    if (index >= 0 && index < filteredPosts.length) {
+      const currentId = filteredPosts[index].id;
+      if (currentId !== lastCenterId.current) {
+        lastCenterId.current = currentId;
+        // Haptic feedback (short vibration)
+        Vibration.vibrate(10); 
+      }
+    }
+  };
 
   const handleReact = (postId: string, reaction: string) => {
     addReaction(postId, reaction as any);
@@ -115,6 +138,8 @@ export const HomeScreen: React.FC = () => {
               onReact={(reaction) => handleReact(item.id, reaction)}
             />
           )}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
@@ -137,7 +162,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 40,
   },
   headerContainer: {
     flexDirection: "row",

@@ -282,11 +282,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 15,
     backgroundColor: COLORS.cardBackground,
-    borderWidth: 1,
-    borderColor: 'rgba(107, 92, 231, 0.3)',
   },
   headerTitleContainer: {
     flexDirection: 'row',

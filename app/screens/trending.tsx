@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,8 @@ import {
   FlatList,
   SafeAreaView,
   TextInput,
+  Vibration,
+  Dimensions,
 } from "react-native";
 import { COLORS } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
@@ -66,6 +68,26 @@ export const TrendingScreen: React.FC = () => {
   const { posts } = useFeedStore();
   const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const lastCenterId = useRef<string | null>(null);
+  const windowHeight = Dimensions.get('window').height;
+
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const centerY = offsetY + windowHeight / 2;
+    
+    // Approximate item height
+    const itemHeight = activeTab === "Confessions" ? 280 : 180;
+    const data = activeTab === "Confessions" ? joinedPosts : filteredSocieties;
+    const index = Math.floor(centerY / itemHeight);
+    
+    if (index >= 0 && index < data.length) {
+      const currentId = data[index].id;
+      if (currentId !== lastCenterId.current) {
+        lastCenterId.current = currentId;
+        Vibration.vibrate(10);
+      }
+    }
+  };
 
   // In a real app, these would come from a global user/society store
   const [joinedSocieties] = useState(["1", "3"]); // Mock joined society IDs
@@ -215,6 +237,8 @@ export const TrendingScreen: React.FC = () => {
           }
           return renderSocietyCard({ item: item as any });
         }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -243,7 +267,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 15,
     minHeight: 100,
   },
