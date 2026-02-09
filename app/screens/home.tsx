@@ -35,14 +35,16 @@ export const HomeScreen: React.FC = () => {
     // Approximate item height (card height + margin)
     // PostCard is around 250-300px depending on content
     const itemHeight = 280; 
-    const index = Math.floor(centerY / itemHeight);
+    // Use a smaller threshold for absolute center
+    const threshold = 15; 
+    const distanceToCenter = Math.abs(centerY % itemHeight - itemHeight / 2);
     
-    if (index >= 0 && index < filteredPosts.length) {
+    if (index >= 0 && index < filteredPosts.length && distanceToCenter < threshold) {
       const currentId = filteredPosts[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        // Haptic feedback (short vibration)
-        Vibration.vibrate(10); 
+        // Higher intensity for haptic (long vibration or pattern)
+        Vibration.vibrate([0, 20, 10, 20]); 
       }
     }
   };

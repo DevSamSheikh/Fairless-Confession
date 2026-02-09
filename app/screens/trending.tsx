@@ -78,13 +78,15 @@ export const TrendingScreen: React.FC = () => {
     // Approximate item height
     const itemHeight = activeTab === "Confessions" ? 280 : 180;
     const data = activeTab === "Confessions" ? joinedPosts : filteredSocieties;
-    const index = Math.floor(centerY / itemHeight);
+    // Use a smaller threshold for absolute center
+    const threshold = 15;
+    const distanceToCenter = Math.abs(centerY % itemHeight - itemHeight / 2);
     
-    if (index >= 0 && index < data.length) {
+    if (index >= 0 && index < data.length && distanceToCenter < threshold) {
       const currentId = data[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        Vibration.vibrate(10);
+        Vibration.vibrate([0, 20, 10, 20]);
       }
     }
   };
