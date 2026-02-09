@@ -77,6 +77,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>(DEMO_COMMENTS);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
 
   const totalReactions = Object.values(post.reactions).reduce(
     (a, b) => a + b,
@@ -267,61 +269,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
       </View>
 
       {/* Share Menu Modal */}
-      <Modal visible={showShareMenu} transparent animationType="slide">
+      <Modal visible={showShareMenu} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setShowShareMenu(false)}>
-          <View style={styles.menuOverlay}>
-            <View style={styles.shareSheetContainer}>
-              <View style={styles.shareMenu}>
-                <View style={styles.dragHandle} />
-                <Text style={styles.menuTitle}>Share Confession</Text>
-                <FlatList
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  data={[
-                    {
-                      name: "Instagram",
-                      icon: "logo-instagram",
-                      color: "#E1306C",
-                    },
-                    {
-                      name: "Facebook",
-                      icon: "logo-facebook",
-                      color: "#4267B2",
-                    },
-                    {
-                      name: "WhatsApp",
-                      icon: "logo-whatsapp",
-                      color: "#25D366",
-                    },
-                    { name: "Download", icon: "download", color: "#6B5CE7" },
-                    { name: "Copy Link", icon: "link", color: "#6B5CE7" },
-                  ]}
-                  keyExtractor={(item) => item.name}
-                  contentContainerStyle={styles.shareGrid}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.shareItem}
-                      onPress={() => {
-                        setShowShareMenu(false);
-                        alert(`${item.name} functionality integrated!`);
-                      }}
-                    >
-                      <View
-                        style={[
-                          styles.shareIcon,
-                          { backgroundColor: item.color },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={24}
-                          color="#FFF"
-                        />
-                      </View>
-                      <Text style={styles.shareLabel}>{item.name}</Text>
-                    </TouchableOpacity>
-                  )}
-                />
+          <View style={styles.modalOverlay}>
+            <View style={styles.shareMenuContainer}>
+              <Text style={styles.menuTitle}>Share Confession</Text>
+              <View style={styles.shareGridContainer}>
+                {[
+                  { name: "Instagram", icon: "logo-instagram", color: "#E1306C" },
+                  { name: "Facebook", icon: "logo-facebook", color: "#4267B2" },
+                  { name: "WhatsApp", icon: "logo-whatsapp", color: "#25D366" },
+                  { name: "Copy Link", icon: "link", color: "#6B5CE7" },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.name}
+                    style={styles.shareItem}
+                    onPress={() => {
+                      setShowShareMenu(false);
+                      alert(`${item.name} functionality integrated!`);
+                    }}
+                  >
+                    <View style={[styles.shareIcon, { backgroundColor: item.color }]}>
+                      <Ionicons name={item.icon as any} size={24} color="#FFF" />
+                    </View>
+                    <Text style={styles.shareLabel}>{item.name}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
           </View>
@@ -379,7 +352,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                 <Ionicons name="close" size={28} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={styles.modalHeaderText}>Confession</Text>
-              <TouchableOpacity onPress={() => setShowMoreMenu(true)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMoreMenu(true);
+                }}
+              >
                 <Ionicons
                   name="ellipsis-horizontal"
                   size={24}
@@ -479,15 +456,60 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               renderItem={({ item }) => (
                 <View style={styles.commentItem}>
                   <View style={styles.commentHeader}>
-                    <AnonymousAvatar size={32} />
-                    <View style={styles.commentInfo}>
-                      <Text style={styles.commentUser}>Anonymous</Text>
-                      <Text style={styles.commentTime}>
-                        {formatTime(item.createdAt)}
-                      </Text>
+                    <View style={styles.commentUserRow}>
+                      <AnonymousAvatar size={32} />
+                      <View style={styles.commentInfo}>
+                        <Text style={styles.commentUser}>Anonymous</Text>
+                        <Text style={styles.commentTime}>
+                          {formatTime(item.createdAt)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.commentActions}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setEditingCommentId(item.id);
+                          setEditingText(item.content);
+                        }}
+                      >
+                        <Ionicons name="pencil" size={16} color={COLORS.textSecondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setComments(comments.filter(c => c.id !== item.id));
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#FF4B4B" />
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <Text style={styles.commentText}>{item.content}</Text>
+                  {editingCommentId === item.id ? (
+                    <View style={styles.editContainer}>
+                      <TextInput
+                        style={styles.editInput}
+                        value={editingText}
+                        onChangeText={setEditingText}
+                        multiline
+                      />
+                      <View style={styles.editActions}>
+                        <TouchableOpacity onPress={() => setEditingCommentId(null)}>
+                          <Text style={styles.cancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setComments(comments.map(c => 
+                              c.id === item.id ? { ...c, content: editingText } : c
+                            ));
+                            setEditingCommentId(null);
+                          }}
+                        >
+                          <Text style={styles.saveText}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={styles.commentText}>{item.content}</Text>
+                  )}
                 </View>
               )}
               contentContainerStyle={{ paddingBottom: 100 }}
@@ -523,6 +545,80 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
 };
 
 const styles = StyleSheet.create({
+  shareMenuContainer: {
+    backgroundColor: "#1E222B",
+    borderRadius: 24,
+    padding: 24,
+    width: "80%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  shareGridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    gap: 16,
+  },
+  shareItem: {
+    alignItems: "center",
+    width: 70,
+  },
+  shareIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  shareLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontFamily: "Poppins_400Regular",
+    textAlign: "center",
+  },
+  menuTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  commentUserRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  commentActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  editContainer: {
+    marginTop: 8,
+  },
+  editInput: {
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+  },
+  editActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 8,
+    gap: 16,
+  },
+  cancelText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  saveText: {
+    color: COLORS.accent,
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
   container: {
     backgroundColor: "#1E222B",
     borderRadius: 28,

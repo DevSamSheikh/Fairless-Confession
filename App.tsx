@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Animated, TouchableOpacity, View, Text } from 'react-native';
 import { HomeScreen } from './app/screens/home';
 import { TrendingScreen } from './app/screens/trending';
 import { PostScreen } from './app/screens/post';
@@ -22,52 +23,112 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function TabNavigator() {
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  const handleTabPress = (e: any, route: string) => {
+    // Check if double click logic can be added or just use a simple refresh for demo
+    setRefreshing(true);
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start(() => setRefreshing(false));
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap;
 
-          switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Societies':
-              iconName = focused ? 'people' : 'people-outline';
-              break;
-            case 'Confess':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
-              break;
-            case 'Interactions':
-              iconName = focused ? 'heart-half' : 'heart-half-outline';
-              break;
-            case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-            default:
-              iconName = 'home';
-          }
+            switch (route.name) {
+              case 'Home':
+                iconName = focused ? 'home' : 'home-outline';
+                break;
+              case 'Societies':
+                iconName = focused ? 'people' : 'people-outline';
+                break;
+              case 'Confess':
+                iconName = focused ? 'add-circle' : 'add-circle-outline';
+                break;
+              case 'Interactions':
+                iconName = focused ? 'heart-half' : 'heart-half-outline';
+                break;
+              case 'Profile':
+                iconName = focused ? 'person' : 'person-outline';
+                break;
+              default:
+                iconName = 'home';
+            }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.textSecondary,
-        tabBarStyle: {
-          backgroundColor: COLORS.background,
-          borderTopColor: COLORS.border,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 60,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Societies" component={TrendingScreen} />
-      <Tab.Screen name="Confess" component={PostScreen} />
-      <Tab.Screen name="Interactions" component={ActivityScreen} />
-      <Tab.Screen name="Profile" component={MoreScreen} />
-    </Tab.Navigator>
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: COLORS.accent,
+          tabBarInactiveTintColor: COLORS.textSecondary,
+          tabBarStyle: {
+            backgroundColor: COLORS.background,
+            borderTopColor: COLORS.border,
+            paddingBottom: 8,
+            paddingTop: 8,
+            height: 60,
+          },
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeScreen}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              if (navigation.isFocused()) {
+                handleTabPress(e, 'Home');
+              }
+            },
+          })}
+        />
+        <Tab.Screen 
+          name="Societies" 
+          component={TrendingScreen}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              if (navigation.isFocused()) {
+                handleTabPress(e, 'Societies');
+              }
+            },
+          })}
+        />
+        <Tab.Screen name="Confess" component={PostScreen} />
+        <Tab.Screen 
+          name="Interactions" 
+          component={ActivityScreen}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              if (navigation.isFocused()) {
+                handleTabPress(e, 'Interactions');
+              }
+            },
+          })}
+        />
+        <Tab.Screen name="Profile" component={MoreScreen} />
+      </Tab.Navigator>
+      
+      {refreshing && (
+        <Animated.View style={{
+          position: 'absolute',
+          top: 50,
+          alignSelf: 'center',
+          backgroundColor: COLORS.accent,
+          paddingHorizontal: 20,
+          paddingVertical: 10,
+          borderRadius: 20,
+          opacity: fadeAnim,
+          zIndex: 9999,
+        }}>
+          <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Refreshing...</Text>
+        </Animated.View>
+      )}
+    </>
   );
 }
 
