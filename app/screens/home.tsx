@@ -37,14 +37,16 @@ export const HomeScreen: React.FC = () => {
     const itemHeight = 280; 
     // Use a smaller threshold for absolute center
     const threshold = 15; 
-    const distanceToCenter = Math.abs(centerY % itemHeight - itemHeight / 2);
+    const distanceToCenter = Math.abs((centerY % itemHeight) - (itemHeight / 2));
     
+    const index = Math.floor(centerY / itemHeight);
+
     if (index >= 0 && index < filteredPosts.length && distanceToCenter < threshold) {
       const currentId = filteredPosts[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        // Higher intensity for haptic (long vibration or pattern)
-        Vibration.vibrate([0, 20, 10, 20]); 
+        // Higher intensity for haptic (vibration pattern)
+        Vibration.vibrate([0, 25, 15, 25]); 
       }
     }
   };
