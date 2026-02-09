@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Sta
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
+import { useNavigation } from '@react-navigation/native';
 
 interface SettingsItem {
   icon: keyof typeof Ionicons.glyphMap;

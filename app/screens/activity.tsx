@@ -121,31 +121,6 @@ export const ActivityScreen: React.FC = () => {
   );
 };
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>Interactions</Text>
-        <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>3 New</Text>
-        </View>
-      </View>
-      <FlatList
-        data={dummyActivities}
-        keyExtractor={(item) => item.id}
-        renderItem={renderActivity}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off-outline" size={60} color={COLORS.border} />
-            <Text style={styles.emptyText}>No new interactions yet</Text>
-          </View>
-        )}
-      />
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
