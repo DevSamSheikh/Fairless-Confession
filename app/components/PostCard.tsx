@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   reactionPickerContainer: {
     position: "absolute",
     bottom: "100%",
-    marginBottom: 8,
+    marginBottom: 5,
     alignItems: "center",
     width: 300,
   },

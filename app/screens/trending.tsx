@@ -88,7 +88,7 @@ export const TrendingScreen: React.FC = () => {
       const currentId = data[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        Vibration.vibrate([0, 25, 15, 25]);
+        Vibration.vibrate(60);
       }
     }
   };

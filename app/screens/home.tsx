@@ -45,8 +45,8 @@ export const HomeScreen: React.FC = () => {
       const currentId = filteredPosts[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        // Higher intensity for haptic (vibration pattern)
-        Vibration.vibrate([0, 25, 15, 25]); 
+        // STRONG VIBRATION
+        Vibration.vibrate(60); 
       }
     }
   };

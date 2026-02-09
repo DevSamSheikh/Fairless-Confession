@@ -1,50 +1,125 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AnonymousAvatar } from '../components/AnonymousAvatar';
-import { COLORS } from '../utils/constants';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  StatusBar,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AnonymousAvatar } from "../components/AnonymousAvatar";
+import { COLORS } from "../utils/constants";
+import { useNavigation } from "@react-navigation/native";
+import { useFeedStore } from "../store/feed.store";
 
 interface Activity {
   id: string;
-  type: 'reaction' | 'comment';
+  type: "reaction" | "comment";
   emoji?: string;
   message: string;
   time: string;
+  postId: string;
 }
 
 const dummyActivities: Activity[] = [
-  { id: '1', type: 'reaction', message: 'Someone empathized with your confession', time: '2m ago' },
-  { id: '2', type: 'comment', message: 'Someone reflected on your confession', time: '15m ago' },
-  { id: '3', type: 'reaction', message: 'Someone resonated with your confession', time: '1h ago' },
+  {
+    id: "1",
+    type: "reaction",
+    message: "Someone empathized with your confession",
+    time: "2m ago",
+    postId: "1",
+  },
+  {
+    id: "2",
+    type: "comment",
+    message: "Someone reflected on your confession",
+    time: "15m ago",
+    postId: "2",
+  },
+  {
+    id: "3",
+    type: "reaction",
+    message: "Someone resonated with your confession",
+    time: "1h ago",
+    postId: "3",
+  },
 ];
 
 export const ActivityScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const { posts } = useFeedStore();
+
+  const handlePress = (postId: string) => {
+    // Navigate to Home tab (simulated)
+    navigation.navigate("Home");
+  };
+
   const renderActivity = ({ item }: { item: Activity }) => (
-    <View style={styles.activityItem}>
+    <TouchableOpacity
+      style={styles.activityItem}
+      activeOpacity={0.7}
+      onPress={() => handlePress(item.postId)}
+    >
       <View style={styles.avatarWrapper}>
         <AnonymousAvatar size={48} />
-        <View style={[styles.typeBadge, { backgroundColor: item.type === 'reaction' ? COLORS.accent : '#FF4B4B' }]}>
-          <Ionicons 
-            name={item.type === 'reaction' ? 'heart' : 'chatbubble'} 
-            size={10} 
-            color="#FFFFFF" 
+        <View
+          style={[
+            styles.typeBadge,
+            {
+              backgroundColor:
+                item.type === "reaction" ? COLORS.accent : "#FF4B4B",
+            },
+          ]}
+        >
+          <Ionicons
+            name={item.type === "reaction" ? "heart" : "chatbubble"}
+            size={10}
+            color="#FFFFFF"
           />
         </View>
       </View>
       <View style={styles.activityContent}>
         <View style={styles.activityHeader}>
-          <Text style={styles.activityText}>
-            {item.message}
-          </Text>
+          <Text style={styles.activityText}>{item.message}</Text>
           <Text style={styles.activityTime}>{item.time}</Text>
         </View>
-        <TouchableOpacity style={styles.viewButton}>
+        <View style={styles.viewButton}>
           <Text style={styles.viewButtonText}>View Confession</Text>
           <Ionicons name="arrow-forward" size={14} color={COLORS.accent} />
-        </TouchableOpacity>
+        </View>
       </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Interactions</Text>
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>3 New</Text>
+        </View>
+      </View>
+      <FlatList
+        data={dummyActivities}
+        keyExtractor={(item) => item.id}
+        renderItem={renderActivity}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="notifications-off-outline"
+              size={60}
+              color={COLORS.border}
+            />
+            <Text style={styles.emptyText}>No new interactions yet</Text>
+          </View>
+        )}
+      />
     </View>
   );
+};
 
   return (
     <View style={styles.container}>

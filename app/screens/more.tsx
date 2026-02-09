@@ -11,6 +11,7 @@ interface SettingsItem {
 }
 
 export const MoreScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -63,6 +64,16 @@ export const MoreScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Content</Text>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('MyConfessions')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: 'rgba(108, 92, 231, 0.1)' }]}>
+              <Ionicons name="document-text" size={20} color={COLORS.accent} />
+            </View>
+            <Text style={styles.menuText}>My Confessions</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(255, 75, 75, 0.1)' }]}>
               <Ionicons name="heart" size={20} color="#FF4B4B" />
