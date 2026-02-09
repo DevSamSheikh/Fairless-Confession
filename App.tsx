@@ -27,7 +27,6 @@ function TabNavigator() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   const handleTabPress = (e: any, route: string) => {
-    // Check if double click logic can be added or just use a simple refresh for demo
     setRefreshing(true);
     Animated.sequence([
       Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -36,7 +35,7 @@ function TabNavigator() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
@@ -128,7 +127,7 @@ function TabNavigator() {
           <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Refreshing...</Text>
         </Animated.View>
       )}
-    </>
+    </View>
   );
 }
 

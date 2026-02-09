@@ -207,7 +207,7 @@ export const SocietyDetailScreen: React.FC = () => {
             {SOCIETY_CONFESSIONS.map((post, index) => (
               <PostCard 
                 key={post.id} 
-                post={{ ...post, category: society.name as any } as any} 
+                post={{ ...post, category: society.name } as any} 
                 rank={activeTab === "Trending" ? index + 1 : undefined}
                 onReact={() => {}} 
               />

@@ -553,6 +553,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
   },
+  menuTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
   shareGridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -575,13 +582,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 12,
     fontFamily: "Poppins_400Regular",
-    textAlign: "center",
-  },
-  menuTitle: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontFamily: "Poppins_600SemiBold",
-    marginBottom: 20,
     textAlign: "center",
   },
   commentUserRow: {
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -810,13 +810,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.05)",
   },
   modalHeaderText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "Poppins_600SemiBold",
   },
   modalContent: {
@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
   },
   fullContent: {
     color: "#E1E1E1",
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 28,
     fontFamily: "Poppins_400Regular",
     marginBottom: 24,
@@ -838,10 +838,10 @@ const styles = StyleSheet.create({
   modalInteractionRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingBottom: 20,
+    marginBottom: 32,
+    paddingBottom: 24,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
-    marginBottom: 20,
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   commentSectionHeader: {
     marginBottom: 20,
@@ -858,6 +858,7 @@ const styles = StyleSheet.create({
   commentHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   commentInfo: {
@@ -926,58 +927,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     justifyContent: "center",
     alignItems: "center",
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  shareSheetContainer: {
-    width: "100%",
-  },
-  shareMenu: {
-    backgroundColor: "#1E222B",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    width: "100%",
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  menuTitle: {
-    color: "#FFF",
-    fontSize: 18,
-    fontFamily: "Poppins_600SemiBold",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  shareGrid: {
-    flexDirection: "row",
-    paddingBottom: 10,
-  },
-  shareItem: {
-    alignItems: "center",
-    marginRight: 24,
-    width: 70,
-  },
-  shareIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  shareLabel: {
-    color: "#E1E1E1",
-    fontSize: 12,
-    fontFamily: "Poppins_400Regular",
   },
   moreMenu: {
     position: "absolute",
