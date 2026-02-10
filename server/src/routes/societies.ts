@@ -46,7 +46,8 @@ router.post('/join/:id', authMiddleware, async (req: AuthRequest, res: Response)
       .limit(1);
 
     if (existingMember.length > 0) {
-      return res.status(400).json({ error: 'Already a member of this society' });
+      res.status(400).json({ error: 'Already a member of this society' });
+      return;
     }
 
     await db.insert(societyMembers).values({
