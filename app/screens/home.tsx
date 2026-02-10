@@ -21,12 +21,26 @@ import { useNavigation } from "@react-navigation/native";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts, trendingPosts, addReaction } = useFeedStore();
+  const { posts, trendingPosts, addReaction, refreshFeed } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const lastCenterId = useRef<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const lastTap = useRef<number>(0);
   const windowHeight = Dimensions.get('window').height;
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      refreshFeed();
+      Vibration.vibrate(50);
+    }
+    lastTap.current = now;
+  };
 
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
@@ -133,14 +147,17 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         <FlatList
+          ref={flatListRef}
           data={filteredPosts}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
-            <PostCard
-              post={item}
-              rank={activeTab === "Trending" ? index + 1 : undefined}
-              onReact={(reaction) => handleReact(item.id, reaction)}
-            />
+            <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
+              <PostCard
+                post={item}
+                rank={activeTab === "Trending" ? index + 1 : undefined}
+                onReact={(reaction) => handleReact(item.id, reaction)}
+              />
+            </TouchableOpacity>
           )}
           onScroll={handleScroll}
           scrollEventThrottle={16}

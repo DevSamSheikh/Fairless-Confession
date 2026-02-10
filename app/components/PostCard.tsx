@@ -89,7 +89,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingText, setEditingText] = useState("");
 
+  const { deletePost, updatePost } = useFeedStore();
+
   const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
+
+  const handleEditPost = () => {
+    setIsEditing(true);
+    setEditingText(post.content);
+    setShowMoreMenu(false);
+  };
+
+  const handleDeletePost = () => {
+    Alert.alert(
+      "Delete Confession",
+      "Are you sure you want to delete this confession?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deletePost(post.id) }
+      ]
+    );
+    setShowMoreMenu(false);
+  };
+
+  const handleSavePostEdit = () => {
+    if (editingText.trim()) {
+      updatePost(post.id, editingText);
+      setIsEditing(false);
+    }
+  };
 
   const handleAddComment = () => {
     if (commentText.trim()) {
@@ -159,11 +186,33 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
 
         <View style={styles.contentContainer}>
           {post.title && <Text style={styles.title}>{post.title}</Text>}
-          <Text style={styles.content}>{contentPreview}</Text>
-          {isLongText && (
-            <View style={styles.seeMoreContainer}>
-              <Text style={styles.seeMore}>Read more</Text>
+          {isEditing && !showFullView ? (
+            <View style={styles.editCommentBox}>
+              <TextInput
+                style={styles.editInput}
+                value={editingText}
+                onChangeText={setEditingText}
+                multiline
+                autoFocus
+              />
+              <View style={styles.editActions}>
+                <TouchableOpacity onPress={() => setIsEditing(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleSavePostEdit}>
+                  <Text style={styles.saveText}>Save</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+          ) : (
+            <>
+              <Text style={styles.content}>{contentPreview}</Text>
+              {isLongText && (
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMore}>Read more</Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </TouchableOpacity>
@@ -239,6 +288,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
           <View style={styles.centeredOverlay}>
             <View style={styles.centerPopup}>
+              {post.isOwner && (
+                <>
+                  <TouchableOpacity style={styles.popupItem} onPress={handleEditPost}>
+                    <Ionicons name="pencil-outline" size={20} color={THEME.colors.white} />
+                    <Text style={styles.popupText}>Edit Post</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.popupItem} onPress={handleDeletePost}>
+                    <Ionicons name="trash-outline" size={20} color={THEME.colors.error} />
+                    <Text style={[styles.popupText, { color: THEME.colors.error }]}>Delete Post</Text>
+                  </TouchableOpacity>
+                </>
+              )}
               <TouchableOpacity style={styles.popupItem} onPress={() => setShowMoreMenu(false)}>
                 <Ionicons name="flag-outline" size={20} color={THEME.colors.error} />
                 <Text style={[styles.popupText, { color: THEME.colors.error }]}>Report Post</Text>

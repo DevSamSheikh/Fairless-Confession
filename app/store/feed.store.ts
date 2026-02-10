@@ -1,3 +1,6 @@
+import { create } from 'zustand';
+import { Category } from '../utils/constants';
+
 export interface Comment {
   id: string;
   content: string;
@@ -14,10 +17,8 @@ export interface Post {
   commentCount: number;
   createdAt: Date;
   comments?: Comment[];
+  isOwner?: boolean;
 }
-
-import { create } from 'zustand';
-import { Category } from '../utils/constants';
 
 // We'll use emojis as keys for reactions as per requirements
 export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
@@ -30,6 +31,9 @@ interface FeedState {
   setTrendingPosts: (posts: Post[]) => void;
   setLoading: (loading: boolean) => void;
   addReaction: (postId: string, reaction: string) => void;
+  deletePost: (postId: string) => void;
+  updatePost: (postId: string, content: string) => void;
+  refreshFeed: () => void;
 }
 
 const dummyComments: Comment[] = [
@@ -48,6 +52,7 @@ const dummyPosts: Post[] = [
     commentCount: 67,
     createdAt: new Date(Date.now() - 3600000),
     comments: dummyComments,
+    isOwner: true,
   },
   {
     id: '2',
@@ -58,6 +63,7 @@ const dummyPosts: Post[] = [
     commentCount: 89,
     createdAt: new Date(Date.now() - 7200000),
     comments: dummyComments,
+    isOwner: false,
   },
   {
     id: '3',
@@ -68,6 +74,7 @@ const dummyPosts: Post[] = [
     commentCount: 234,
     createdAt: new Date(Date.now() - 10800000),
     comments: dummyComments,
+    isOwner: true,
   },
   {
     id: '4',
@@ -78,6 +85,7 @@ const dummyPosts: Post[] = [
     commentCount: 156,
     createdAt: new Date(Date.now() - 14400000),
     comments: dummyComments,
+    isOwner: false,
   },
   {
     id: '5',
@@ -88,6 +96,7 @@ const dummyPosts: Post[] = [
     commentCount: 78,
     createdAt: new Date(Date.now() - 18000000),
     comments: dummyComments,
+    isOwner: false,
   },
 ];
 
@@ -118,4 +127,28 @@ export const useFeedStore = create<FeedState>((set) => ({
         trendingPosts: sortByTrending(updatedPosts),
       };
     }),
+  deletePost: (postId) =>
+    set((state) => {
+      const updatedPosts = state.posts.filter((p) => p.id !== postId);
+      return {
+        posts: updatedPosts,
+        trendingPosts: sortByTrending(updatedPosts),
+      };
+    }),
+  updatePost: (postId, content) =>
+    set((state) => {
+      const updatedPosts = state.posts.map((p) =>
+        p.id === postId ? { ...p, content } : p
+      );
+      return {
+        posts: updatedPosts,
+        trendingPosts: sortByTrending(updatedPosts),
+      };
+    }),
+  refreshFeed: () =>
+    set((state) => ({
+      // Shuffle posts to simulate "refresh"
+      posts: [...state.posts].sort(() => Math.random() - 0.5),
+      trendingPosts: sortByTrending(state.posts)
+    })),
 }));
