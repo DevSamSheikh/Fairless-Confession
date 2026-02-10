@@ -309,9 +309,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
       </Modal>
 
       {/* 3-Dot More Menu (Centered Popup) */}
-      <Modal visible={showMoreMenu} transparent animationType="fade">
+      <Modal visible={showMoreMenu} transparent animationType="fade" statusBarTranslucent>
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
-          <View style={styles.centeredOverlay}>
+          <View style={[styles.centeredOverlay, { zIndex: 9999 }]}>
             <View style={styles.centerPopup}>
               {post.isOwner ? (
                 <>
