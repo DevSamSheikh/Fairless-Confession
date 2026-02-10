@@ -51,7 +51,7 @@ const dummyActivities: Activity[] = [
   },
 ];
 
-export const ActivityScreen: React.FC = () => {
+export const InteractionsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -100,7 +100,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingTop: 60,
+    paddingBottom: 15,
   },
   headerTitle: {
     color: "#FFFFFF",

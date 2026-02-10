@@ -11,7 +11,7 @@ interface SettingsItem {
   subtitle?: string;
 }
 
-export const MoreScreen: React.FC = () => {
+export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   return (
     <SafeAreaView style={styles.container}>

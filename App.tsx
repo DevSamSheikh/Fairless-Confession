@@ -4,12 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Animated, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
-import { HomeScreen } from './app/screens/home';
-import { TrendingScreen } from './app/screens/trending';
-import { PostScreen } from './app/screens/post';
-import { SocietiesScreen } from './app/screens/societies';
-import { ActivityScreen } from './app/screens/activity';
-import { MoreScreen } from './app/screens/more';
+import { HomeScreen } from './app/screens/HomeScreen';
+import { TrendingScreen } from './app/screens/TrendingScreen';
+import { PostScreen } from './app/screens/PostScreen';
+import { SocietiesScreen } from './app/screens/societies/SocietiesScreen';
+import { InteractionsScreen } from './app/screens/InteractionsScreen';
+import { ProfileScreen } from './app/screens/ProfileScreen';
 import { WelcomeScreen } from './app/screens/auth/WelcomeScreen';
 import { LoginScreen } from './app/screens/auth/LoginScreen';
 import { RegisterScreen } from './app/screens/auth/RegisterScreen';
@@ -103,7 +103,7 @@ function TabNavigator() {
         <Tab.Screen name="Confess" component={PostScreen} />
         <Tab.Screen 
           name="Interactions" 
-          component={ActivityScreen}
+          component={InteractionsScreen}
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               if (navigation.isFocused()) {
@@ -112,7 +112,7 @@ function TabNavigator() {
             },
           })}
         />
-        <Tab.Screen name="Profile" component={MoreScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
       
       {refreshing && (
