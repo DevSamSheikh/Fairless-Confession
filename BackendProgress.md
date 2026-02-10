@@ -15,13 +15,17 @@ The backend infrastructure for ConfessBox is partially implemented with core ser
     - `GET /societies` & `POST /societies`
     - `POST /reactions/posts/:postId` (Atomic updates)
     - `GET /comments/:postId` & `POST /comments/:postId`
+    - `POST /societies/join/:id` & `POST /societies/leave/:id` (Membership management)
+
+## Current Work
+- Implemented `POST /societies/join/:id` and `POST /societies/leave/:id` endpoints.
+- Updated `BackendProgress.md` to reflect recent changes.
 
 ## Pending Tasks
 - **Real-time Notifications**: Integration of WebSockets (Socket.io) for live reaction/comment updates.
 - **Privacy Middleware**: Enhanced filtering to ensure no internal IDs are leaked in nested responses.
 - **Rate Limiting**: Implementation of request throttling to prevent confession spam.
 - **Caching**: Redis integration for high-traffic "Trending" post results.
-- **Society Interactions**: `POST /societies/join/:id` endpoint implementation.
 
 ## Recommendations
 1. **Drizzle Relational Queries**: Refactor `db/index.ts` to include full schema relations for cleaner data fetching.
