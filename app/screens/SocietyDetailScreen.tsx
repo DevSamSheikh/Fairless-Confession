@@ -57,7 +57,13 @@ export const SocietyDetailScreen: React.FC = () => {
   const confirmJoin = () => {
     setShowWarning(false);
     setIsJoined(true);
+    // Add logic to save joined society in store if needed
   };
+
+  if (isJoined && route.params?.isFromSocieties) {
+    // If user is already joined and coming from societies list, we can redirect or show content directly
+    // For now, we just proceed as normal but show the unlocked content
+  }
 
   if (showWarning) {
     return (

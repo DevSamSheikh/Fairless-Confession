@@ -47,73 +47,68 @@ const dummyActivities: Activity[] = [
 ];
 
 export const ActivityScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
   const { posts } = useFeedStore();
+  const joinedSocieties = ["Midnight Society"]; // Simulated joined societies
 
-  const handlePress = (postId: string) => {
-    // Navigate to Home tab (simulated)
-    navigation.navigate("Home");
-  };
+  const societiesPosts = posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
 
-  const renderActivity = ({ item }: { item: Activity }) => (
-    <TouchableOpacity
-      style={styles.activityItem}
-      activeOpacity={0.7}
-      onPress={() => handlePress(item.postId)}
-    >
-      <View style={styles.avatarWrapper}>
-        <AnonymousAvatar size={48} />
-        <View
-          style={[
-            styles.typeBadge,
-            {
-              backgroundColor:
-                item.type === "reaction" ? COLORS.accent : "#FF4B4B",
-            },
-          ]}
-        >
-          <Ionicons
-            name={item.type === "reaction" ? "heart" : "chatbubble"}
-            size={10}
-            color="#FFFFFF"
-          />
-        </View>
-      </View>
-      <View style={styles.activityContent}>
-        <View style={styles.activityHeader}>
-          <Text style={styles.activityText}>{item.message}</Text>
-          <Text style={styles.activityTime}>{item.time}</Text>
-        </View>
-        <View style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>View Confession</Text>
-          <Ionicons name="arrow-forward" size={14} color={COLORS.accent} />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+  const [activeTab, setActiveTab] = React.useState("Confessions");
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.headerContainer}>
-        <Text style={styles.header}>Interactions</Text>
-        <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>3 New</Text>
+        <View>
+          <Text style={styles.header}>Societies</Text>
+          <Text style={styles.subHeader}>Explore,</Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Ionicons name="add" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Ionicons name="search" size={20} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Ionicons name="bookmark" size={20} color="#FFF" />
+          </TouchableOpacity>
         </View>
       </View>
+
+      <View style={styles.tabsContainer}>
+        {["Confessions", "Discover", "Joined", "You"].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <FlatList
-        data={dummyActivities}
+        data={activeTab === "Confessions" ? societiesPosts : []}
         keyExtractor={(item) => item.id}
-        renderItem={renderActivity}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onReact={() => {}}
+          />
+        )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons
-              name="notifications-off-outline"
+              name="people-outline"
               size={60}
               color={COLORS.border}
             />
-            <Text style={styles.emptyText}>No new interactions yet</Text>
+            <Text style={styles.emptyText}>
+              {activeTab === "Confessions" 
+                ? "Join societies to see confessions" 
+                : `No ${activeTab.toLowerCase()} content yet`}
+            </Text>
           </View>
         )}
       />
@@ -129,94 +124,60 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: COLORS.background,
   },
   header: {
     color: COLORS.text,
     fontSize: 28,
-    fontWeight: '800',
     fontFamily: 'Poppins_700Bold',
   },
-  headerBadge: {
-    backgroundColor: 'rgba(107, 92, 231, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginLeft: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-  },
-  headerBadgeText: {
-    color: COLORS.accent,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  typeBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.cardBackground,
-  },
-  activityContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  activityHeader: {
-    marginBottom: 8,
-  },
-  activityText: {
-    color: COLORS.text,
-    fontSize: 15,
-    fontFamily: 'Poppins_500Medium',
-    lineHeight: 20,
-  },
-  activityTime: {
+  subHeader: {
     color: COLORS.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
   },
-  viewButton: {
+  headerIcons: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
-  viewButtonText: {
-    color: COLORS.accent,
-    fontSize: 13,
-    fontWeight: '600',
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1E222B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 10,
+  },
+  tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#1E222B',
+  },
+  activeTab: {
+    backgroundColor: COLORS.accent,
+  },
+  tabText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  activeTabText: {
+    color: '#FFF',
+  },
+  list: {
+    paddingBottom: 100,
   },
   emptyContainer: {
     marginTop: 100,
@@ -230,3 +191,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
   },
 });
+

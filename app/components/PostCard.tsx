@@ -148,7 +148,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               <View style={styles.metaRow}>
                 <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
                 <View style={styles.dot} />
-                <Text style={styles.category}>{post.category || "General"}</Text>
+                <Text style={styles.category}>{post.societyName || post.category || "General"}</Text>
               </View>
             </View>
           </View>
@@ -309,7 +309,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                         <View style={styles.metaRow}>
                           <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
                           <View style={styles.dot} />
-                          <Text style={styles.category}>{post.category || "General"}</Text>
+                          <Text style={styles.category}>{post.societyName || post.category || "General"}</Text>
                         </View>
                       </View>
                     </View>

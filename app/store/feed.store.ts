@@ -9,6 +9,7 @@ export interface Post {
   title?: string;
   content: string;
   category: Category;
+  societyName?: string;
   reactions: Record<string, number>;
   commentCount: number;
   createdAt: Date;
@@ -42,6 +43,7 @@ const dummyPosts: Post[] = [
     title: 'Group project nightmare',
     content: 'I secretly hate group projects but always end up doing all the work anyway. It\'s so frustrating when people just slack off.',
     category: 'College',
+    societyName: 'Midnight Society',
     reactions: { '❤️': 234, '😮': 45, '😢': 12, '😡': 89, '😂': 156 },
     commentCount: 67,
     createdAt: new Date(Date.now() - 3600000),
