@@ -103,6 +103,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
     setExpandedWords(prev => prev + 100);
   };
 
+  const handleReportPost = () => {
+    Alert.alert(
+      "Report Confession",
+      "Thank you for reporting. Our team will review this confession shortly.",
+      [{ text: "OK" }]
+    );
+    setShowMoreMenu(false);
+  };
+
+  const handleShare = (platform: string) => {
+    Alert.alert("Share Confession", `Sharing to ${platform}...`, [{ text: "OK" }]);
+    setShowShareMenu(false);
+  };
+
   const handleEditPost = () => {
     setIsEditing(true);
     setEditingText(post.content);
@@ -298,7 +312,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
           <View style={styles.centeredOverlay}>
             <View style={styles.centerPopup}>
-              {post.isOwner && (
+              {post.isOwner ? (
                 <>
                   <TouchableOpacity style={styles.popupItem} onPress={handleEditPost}>
                     <Ionicons name="pencil-outline" size={20} color={THEME.colors.white} />
@@ -309,8 +323,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                     <Text style={[styles.popupText, { color: THEME.colors.error }]}>Delete Post</Text>
                   </TouchableOpacity>
                 </>
-              )}
-              {!post.isOwner && (
+              ) : (
                 <>
                   <TouchableOpacity style={styles.popupItem} onPress={handleReportPost}>
                     <Ionicons name="flag-outline" size={20} color={THEME.colors.error} />
