@@ -98,6 +98,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
   const isPostLong = words.length > 100;
   const paginatedContent = words.slice(0, expandedWords).join(" ");
   const hasMoreWords = words.length > expandedWords;
+  const totalReactions = Object.values(post.reactions || {}).reduce((a, b) => a + b, 0);
 
   const handleReadMoreFullView = () => {
     setExpandedWords(prev => prev + 100);

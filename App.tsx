@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, TouchableOpacity, View, Text } from 'react-native';
+import { Animated, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
 import { HomeScreen } from './app/screens/home';
 import { TrendingScreen } from './app/screens/trending';
 import { PostScreen } from './app/screens/post';
@@ -19,6 +19,7 @@ import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { MyConfessionsScreen } from './app/screens/MyConfessionsScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useUserStore } from './app/store/user.store';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -133,19 +134,28 @@ function TabNavigator() {
 }
 
 export default function App() {
+  const { user } = useUserStore();
+
   return (
     <NavigationContainer>
       <StatusBar style="light" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-        <Stack.Screen name="Main" component={TabNavigator} />
-        <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
-        <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
-        <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+        {!user ? (
+          <>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
+            <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
+            <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,11 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useUserStore } from '../../store/user.store';
 
 const { width } = Dimensions.get('window');
 
 export const LoginScreen: React.FC = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { setUser } = useUserStore();
+
+  const handleLogin = () => {
+    if (email && password) {
+      setLoading(true);
+      // Simulate API call
+      setTimeout(() => {
+        setUser({
+          id: '1',
+          email,
+          username: email.split('@')[0],
+        });
+        setLoading(false);
+        navigation.replace('Main');
+      }, 1500);
+    } else {
+      // For demo purposes, allow login even if empty
+      setUser({ id: '1', email: 'guest@example.com', username: 'guest' });
+      navigation.replace('Main');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,6 +50,8 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholder="Enter Your Email"
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -35,6 +62,8 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholder="Password"
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
@@ -45,8 +74,12 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
           <Text style={styles.forgotPasswordText}>Forget Password ?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.replace('Main')}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.loginButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
