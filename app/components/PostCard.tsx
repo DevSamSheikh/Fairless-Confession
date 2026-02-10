@@ -552,11 +552,62 @@ const styles = StyleSheet.create({
   shareLabel: { color: THEME.colors.textSecondary, fontSize: 12, fontFamily: THEME.typography.fontFamily.regular },
 
   // Center Popup Style
-  centerPopup: { backgroundColor: THEME.colors.card, borderRadius: THEME.radius.xl, width: "75%", padding: THEME.spacing.sm, borderWidth: 1, borderColor: THEME.colors.border },
+  centerPopup: {
+    backgroundColor: THEME.colors.card,
+    borderRadius: THEME.radius.xl,
+    width: "75%",
+    padding: THEME.spacing.sm,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+  },
   popupItem: { flexDirection: "row", alignItems: "center", padding: THEME.spacing.md, gap: THEME.spacing.md },
   popupText: { color: THEME.colors.white, fontSize: 16, fontFamily: THEME.typography.fontFamily.medium },
 
-  // Full View Styles
+  // Missing styles
+  fullViewContent: { padding: THEME.spacing.lg },
+  fullTitle: { color: THEME.colors.white, fontSize: 22, fontFamily: THEME.typography.fontFamily.bold, marginBottom: THEME.spacing.md },
+  fullContentText: {
+    color: "#E1E1E1",
+    fontSize: 17,
+    lineHeight: 28,
+    fontFamily: THEME.typography.fontFamily.regular,
+    marginBottom: THEME.spacing.md,
+  },
+  readMoreFullButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: THEME.spacing.lg,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(107, 92, 231, 0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  readMoreFullText: {
+    color: THEME.colors.accent,
+    fontSize: 14,
+    fontFamily: THEME.typography.fontFamily.semiBold,
+  },
+  fullViewStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: THEME.spacing.lg,
+    paddingTop: THEME.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+  },
+  statsText: {
+    color: THEME.colors.textSecondary,
+    fontSize: 14,
+    fontFamily: THEME.typography.fontFamily.medium,
+  },
+  commentsList: { paddingHorizontal: THEME.spacing.lg, paddingBottom: 100 },
   fullViewContainer: { flex: 1, backgroundColor: THEME.colors.background },
   fullViewHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: THEME.spacing.md, borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
   fullViewHeaderText: { color: THEME.colors.white, fontSize: 16, fontFamily: THEME.typography.fontFamily.semiBold },
@@ -589,7 +640,6 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
     backgroundColor: "rgba(255,255,255,0.02)",
     borderRadius: THEME.radius.lg,
-    marginHorizontal: THEME.spacing.md,
     marginBottom: THEME.spacing.md,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.04)",
@@ -600,14 +650,22 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.sm,
   },
   commentInfo: { marginLeft: THEME.spacing.md },
-  commentUser: { color: THEME.colors.white, fontSize: 14, fontFamily: THEME.typography.fontFamily.semiBold },
-  commentTime: { color: THEME.colors.textSecondary, fontSize: 11, fontFamily: THEME.typography.fontFamily.regular },
+  commentUser: {
+    color: THEME.colors.white,
+    fontSize: 14,
+    fontFamily: THEME.typography.fontFamily.semiBold,
+  },
+  commentTime: {
+    color: THEME.colors.textSecondary,
+    fontSize: 11,
+    fontFamily: THEME.typography.fontFamily.regular,
+  },
   commentText: {
     color: "#E1E1E1",
     fontSize: 15,
     lineHeight: 22,
-    fontFamily: THEME.typography.fontFamily.regular,
     marginLeft: 44,
+    fontFamily: THEME.typography.fontFamily.regular,
   },
   
   // Comment Input

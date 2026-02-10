@@ -23,12 +23,10 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
           username: email.split('@')[0],
         });
         setLoading(false);
-        navigation.replace('Main');
       }, 1500);
     } else {
       // For demo purposes, allow login even if empty
       setUser({ id: '1', email: 'guest@example.com', username: 'guest' });
-      navigation.replace('Main');
     }
   };
 

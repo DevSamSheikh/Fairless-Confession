@@ -90,7 +90,7 @@ function TabNavigator() {
         />
         <Tab.Screen 
           name="Societies" 
-          component={HomeScreen}
+          component={TrendingScreen}
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               if (navigation.isFocused()) {
