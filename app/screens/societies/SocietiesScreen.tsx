@@ -12,30 +12,79 @@ import { PostCard } from "../../components/PostCard";
 import { COLORS } from "../../utils/constants";
 import { useFeedStore } from "../../store/feed.store";
 
+interface Society {
+  id: string;
+  name: string;
+  members: string;
+  description: string;
+  icon: string;
+}
+
+const ALL_SOCIETIES: Society[] = [
+  {
+    id: "1",
+    name: "Midnight Society",
+    members: "1240 members",
+    description: "Confessions for the night owls.",
+    icon: "moon",
+  },
+  {
+    id: "2",
+    name: "College Life Society",
+    members: "8600 members",
+    description: "Campus secrets and exam stress.",
+    icon: "school",
+  },
+  {
+    id: "3",
+    name: "Workplace Society",
+    members: "3200 members",
+    description: "Office drama and boss rants.",
+    icon: "briefcase",
+  },
+  {
+    id: "4",
+    name: "Broken Hearts Society",
+    members: "5600 members",
+    description: "Anonymously heal together.",
+    icon: "heart-dislike",
+  },
+  {
+    id: "5",
+    name: "Gamer Society",
+    members: "2100 members",
+    description: "Rage quits and lobby secrets.",
+    icon: "game-controller",
+  },
+];
+
 export const SocietiesScreen: React.FC = () => {
   const { posts } = useFeedStore();
-  const joinedSocieties = ["Midnight Society"]; // Simulated joined societies
+  const joinedSocieties = ["Midnight Society"];
   const [activeTab, setActiveTab] = React.useState("Confessions");
   const [showSavedOnly, setShowSavedOnly] = React.useState(false);
 
-  // Simulated saved societies
-  const savedSocieties = ["Midnight Society"];
-
   const filteredPosts = React.useMemo(() => {
-    let result = posts;
-    
-    if (activeTab === "Confessions") {
-      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
-    } else if (activeTab === "Joined") {
-      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
-    }
-    
-    if (showSavedOnly) {
-      result = result.filter(p => p.societyName && savedSocieties.includes(p.societyName));
-    }
-    
-    return result;
-  }, [posts, activeTab, joinedSocieties, showSavedOnly]);
+    return posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+  }, [posts, joinedSocieties]);
+
+  const renderSocietyItem = ({ item }: { item: Society }) => (
+    <View style={styles.societyCard}>
+      <View style={styles.societyInfo}>
+        <View style={styles.societyIconContainer}>
+          <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+        </View>
+        <View style={styles.societyTextContent}>
+          <Text style={styles.societyName}>{item.name}</Text>
+          <Text style={styles.societyMembers}>{item.members}</Text>
+        </View>
+        <TouchableOpacity style={styles.joinButton}>
+          <Text style={styles.joinButtonText}>Join</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.societyDescription}>{item.description}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -73,33 +122,32 @@ export const SocietiesScreen: React.FC = () => {
         ))}
       </View>
 
-      <FlatList
-        data={filteredPosts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onReact={() => {}}
-          />
-        )}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name="people-outline"
-              size={60}
-              color={COLORS.border}
+      {activeTab === "Confessions" ? (
+        <FlatList
+          data={filteredPosts}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onReact={() => {}}
             />
-            <Text style={styles.emptyText}>
-              {showSavedOnly 
-                ? "No saved societies found"
-                : activeTab === "Confessions" 
-                  ? "Join societies to see confessions" 
-                  : `No ${activeTab.toLowerCase()} content yet`}
-            </Text>
-          </View>
-        )}
-      />
+          )}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={60} color={COLORS.border} />
+              <Text style={styles.emptyText}>Join societies to see confessions</Text>
+            </View>
+          )}
+        />
+      ) : (
+        <FlatList
+          data={ALL_SOCIETIES}
+          keyExtractor={(item) => item.id}
+          renderItem={renderSocietyItem}
+          contentContainerStyle={styles.list}
+        />
+      )}
     </View>
   );
 };
@@ -165,7 +213,60 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   list: {
+    paddingHorizontal: 16,
     paddingBottom: 100,
+  },
+  societyCard: {
+    backgroundColor: "#1E222B",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  societyInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  societyIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(107, 92, 231, 0.1)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  societyTextContent: {
+    flex: 1,
+  },
+  societyName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  societyMembers: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontFamily: "Poppins_400Regular",
+  },
+  joinButton: {
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 15,
+  },
+  joinButtonText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  societyDescription: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontFamily: "Poppins_400Regular",
+    lineHeight: 20,
   },
   emptyContainer: {
     marginTop: 100,
