@@ -10,17 +10,22 @@ const router = Router();
 // Get all posts (latest first)
 router.get('/', async (req, res) => {
   try {
-    const allPosts = await db.query.posts.findMany({
-      orderBy: [desc(posts.createdAt)],
-      with: {
-        userId: true, // This is a bit tricky with Drizzle relational queries if not set up, but let's stick to basics
-      },
-    });
-    // For simplicity without full relational setup in db/index.ts yet:
     const results = await db.select().from(posts).orderBy(desc(posts.createdAt));
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch posts' });
+  }
+});
+
+// Get trending posts
+router.get('/trending', async (req, res) => {
+  try {
+    const results = await db.select().from(posts)
+      .orderBy(desc(posts.commentCount), desc(posts.createdAt))
+      .limit(20);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch trending posts' });
   }
 });
 

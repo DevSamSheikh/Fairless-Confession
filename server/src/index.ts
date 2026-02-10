@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
 import societyRoutes from './routes/societies.js';
+import reactionRoutes from './routes/reactions.js';
+import commentRoutes from './routes/comments.js';
 
 dotenv.config();
 
@@ -18,6 +20,8 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/posts', postRoutes);
 app.use('/societies', societyRoutes);
+app.use('/reactions', reactionRoutes);
+app.use('/comments', commentRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
