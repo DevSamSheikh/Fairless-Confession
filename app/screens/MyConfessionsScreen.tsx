@@ -35,6 +35,7 @@ export const MyConfessionsScreen: React.FC = () => {
     if (editContent.trim()) {
       updatePost(editingPost.id, editContent);
       setEditingPost(null);
+      Alert.alert("Success", "Confession updated successfully.");
     }
   };
 

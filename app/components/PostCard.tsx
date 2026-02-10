@@ -92,7 +92,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
 
   const { deletePost, updatePost } = useFeedStore();
 
-  const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
+  const [expandedWords, setExpandedWords] = useState(100);
+
+  const words = post.content.split(/\s+/);
+  const isPostLong = words.length > 100;
+  const paginatedContent = words.slice(0, expandedWords).join(" ");
+  const hasMoreWords = words.length > expandedWords;
+
+  const handleReadMoreFullView = () => {
+    setExpandedWords(prev => prev + 100);
+  };
 
   const handleEditPost = () => {
     setIsEditing(true);
@@ -271,7 +280,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   { name: "WhatsApp", icon: "logo-whatsapp", color: "#25D366" },
                   { name: "Copy Link", icon: "link", color: THEME.colors.primary },
                 ].map((item) => (
-                  <TouchableOpacity key={item.name} style={styles.shareItem} onPress={() => setShowShareMenu(false)}>
+                  <TouchableOpacity key={item.name} style={styles.shareItem} onPress={() => handleShare(item.name)}>
                     <View style={[styles.shareIcon, { backgroundColor: item.color }]}>
                       <Ionicons name={item.icon as any} size={24} color={THEME.colors.white} />
                     </View>
@@ -301,14 +310,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   </TouchableOpacity>
                 </>
               )}
-              <TouchableOpacity style={styles.popupItem} onPress={() => setShowMoreMenu(false)}>
-                <Ionicons name="flag-outline" size={20} color={THEME.colors.error} />
-                <Text style={[styles.popupText, { color: THEME.colors.error }]}>Report Post</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.popupItem} onPress={() => setShowMoreMenu(false)}>
-                <Ionicons name="eye-off-outline" size={20} color={THEME.colors.white} />
-                <Text style={styles.popupText}>Hide Post</Text>
-              </TouchableOpacity>
+              {!post.isOwner && (
+                <>
+                  <TouchableOpacity style={styles.popupItem} onPress={handleReportPost}>
+                    <Ionicons name="flag-outline" size={20} color={THEME.colors.error} />
+                    <Text style={[styles.popupText, { color: THEME.colors.error }]}>Report Post</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.popupItem} onPress={() => setShowMoreMenu(false)}>
+                    <Ionicons name="eye-off-outline" size={20} color={THEME.colors.white} />
+                    <Text style={styles.popupText}>Hide Post</Text>
+                  </TouchableOpacity>
+                </>
+              )}
               <TouchableOpacity style={styles.popupItem} onPress={() => setShowMoreMenu(false)}>
                 <Ionicons name="copy-outline" size={20} color={THEME.colors.white} />
                 <Text style={styles.popupText}>Copy Content</Text>
@@ -377,7 +390,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                     </View>
                   </View>
                   {post.title && <Text style={styles.fullTitle}>{post.title}</Text>}
-                  <Text style={styles.fullContentText}>{post.content}</Text>
+                  <Text style={styles.fullContentText}>{paginatedContent}</Text>
+                  
+                  {hasMoreWords && (
+                    <TouchableOpacity 
+                      onPress={handleReadMoreFullView}
+                      style={styles.readMoreFullButton}
+                    >
+                      <Text style={styles.readMoreFullText}>Read More Content</Text>
+                      <Ionicons name="chevron-down" size={16} color={THEME.colors.accent} />
+                    </TouchableOpacity>
+                  )}
+
                   <View style={styles.fullViewStats}>
                     <Text style={styles.statsText}>{totalReactions} Reactions</Text>
                     <View style={styles.dot} />
@@ -524,16 +548,53 @@ const styles = StyleSheet.create({
   fullViewHeaderText: { color: THEME.colors.white, fontSize: 16, fontFamily: THEME.typography.fontFamily.semiBold },
   fullViewContent: { padding: THEME.spacing.lg },
   fullTitle: { color: THEME.colors.white, fontSize: 22, fontFamily: THEME.typography.fontFamily.bold, marginBottom: THEME.spacing.md },
-  fullContentText: { color: "#E1E1E1", fontSize: 17, lineHeight: 28, fontFamily: THEME.typography.fontFamily.regular },
-  fullViewStats: { flexDirection: "row", alignItems: "center", marginTop: THEME.spacing.lg, paddingTop: THEME.spacing.lg, borderTopWidth: 1, borderTopColor: THEME.colors.border },
-  statsText: { color: THEME.colors.textSecondary, fontSize: 14, fontFamily: THEME.typography.fontFamily.medium },
-  commentsList: { paddingHorizontal: THEME.spacing.lg, paddingBottom: 100 },
-  commentItem: { marginBottom: THEME.spacing.lg },
-  commentUserHeader: { flexDirection: "row", alignItems: "center", marginBottom: THEME.spacing.sm },
+  fullContentText: {
+    color: "#E1E1E1",
+    fontSize: 17,
+    lineHeight: 28,
+    fontFamily: THEME.typography.fontFamily.regular,
+    marginBottom: THEME.spacing.md,
+  },
+  readMoreFullButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: THEME.spacing.lg,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(107, 92, 231, 0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  readMoreFullText: {
+    color: THEME.colors.accent,
+    fontSize: 14,
+    fontFamily: THEME.typography.fontFamily.semiBold,
+  },
+  commentItem: {
+    padding: THEME.spacing.md,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: THEME.radius.lg,
+    marginHorizontal: THEME.spacing.md,
+    marginBottom: THEME.spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.04)",
+  },
+  commentUserHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: THEME.spacing.sm,
+  },
   commentInfo: { marginLeft: THEME.spacing.md },
   commentUser: { color: THEME.colors.white, fontSize: 14, fontFamily: THEME.typography.fontFamily.semiBold },
   commentTime: { color: THEME.colors.textSecondary, fontSize: 11, fontFamily: THEME.typography.fontFamily.regular },
-  commentText: { color: "#E1E1E1", fontSize: 15, lineHeight: 22, marginLeft: 44, fontFamily: THEME.typography.fontFamily.regular },
+  commentText: {
+    color: "#E1E1E1",
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: THEME.typography.fontFamily.regular,
+    marginLeft: 44,
+  },
   
   // Comment Input
   commentInputBar: { flexDirection: "row", alignItems: "center", padding: THEME.spacing.md, backgroundColor: THEME.colors.card, borderTopWidth: 1, borderTopColor: THEME.colors.border },
