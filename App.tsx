@@ -7,6 +7,7 @@ import { Animated, TouchableOpacity, View, Text, ActivityIndicator } from 'react
 import { HomeScreen } from './app/screens/home';
 import { TrendingScreen } from './app/screens/trending';
 import { PostScreen } from './app/screens/post';
+import { SocietiesScreen } from './app/screens/societies';
 import { ActivityScreen } from './app/screens/activity';
 import { MoreScreen } from './app/screens/more';
 import { WelcomeScreen } from './app/screens/auth/WelcomeScreen';
@@ -90,7 +91,7 @@ function TabNavigator() {
         />
         <Tab.Screen 
           name="Societies" 
-          component={TrendingScreen}
+          component={SocietiesScreen}
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               if (navigation.isFocused()) {

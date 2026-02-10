@@ -6,19 +6,19 @@ import {
   FlatList,
   TouchableOpacity,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { PostCard } from "../components/PostCard";
 import { COLORS } from "../utils/constants";
-import { useFeedStore } from "../store/feed.store";
 
 interface Activity {
   id: string;
   type: "reaction" | "comment";
-  emoji?: string;
   message: string;
   time: string;
   postId: string;
+  icon: string;
+  iconColor: string;
 }
 
 const dummyActivities: Activity[] = [
@@ -28,6 +28,8 @@ const dummyActivities: Activity[] = [
     message: "Someone empathized with your confession",
     time: "2m ago",
     postId: "1",
+    icon: "heart",
+    iconColor: "#6B5CE7",
   },
   {
     id: "2",
@@ -35,6 +37,8 @@ const dummyActivities: Activity[] = [
     message: "Someone reflected on your confession",
     time: "15m ago",
     postId: "2",
+    icon: "chatbubble",
+    iconColor: "#FF4B4B",
   },
   {
     id: "3",
@@ -42,98 +46,48 @@ const dummyActivities: Activity[] = [
     message: "Someone resonated with your confession",
     time: "1h ago",
     postId: "3",
+    icon: "heart",
+    iconColor: "#6B5CE7",
   },
 ];
 
 export const ActivityScreen: React.FC = () => {
-  const { posts } = useFeedStore();
-  const joinedSocieties = ["Midnight Society"]; // Simulated joined societies
-  const [activeTab, setActiveTab] = React.useState("Confessions");
-  const [showSavedOnly, setShowSavedOnly] = React.useState(false);
-
-  // Simulated saved societies
-  const savedSocieties = ["Midnight Society"];
-
-  const filteredPosts = React.useMemo(() => {
-    let result = posts;
-    
-    if (activeTab === "Confessions") {
-      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
-    } else if (activeTab === "Joined") {
-      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
-    }
-    
-    if (showSavedOnly) {
-      result = result.filter(p => p.societyName && savedSocieties.includes(p.societyName));
-    }
-    
-    return result;
-  }, [posts, activeTab, joinedSocieties, showSavedOnly]);
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.headerContainer}>
-        <View>
-          <Text style={styles.header}>Societies</Text>
-          <Text style={styles.subHeader}>Explore,</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Interactions</Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>3 New</Text>
         </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="add" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="search" size={20} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerIconButton, showSavedOnly && { backgroundColor: COLORS.accent }]}
-            onPress={() => setShowSavedOnly(!showSavedOnly)}
-          >
-            <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={20} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.tabsContainer}>
-        {["Confessions", "Discover", "Joined", "You"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
       </View>
 
       <FlatList
-        data={filteredPosts}
+        data={dummyActivities}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            onReact={() => {}}
-          />
+          <TouchableOpacity style={styles.activityItem} activeOpacity={0.7}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={24} color="#555" />
+              </View>
+              <View style={[styles.typeIcon, { backgroundColor: item.iconColor }]}>
+                <Ionicons name={item.icon as any} size={10} color="#FFF" />
+              </View>
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityMessage}>{item.message}</Text>
+              <Text style={styles.activityTime}>{item.time}</Text>
+              <TouchableOpacity style={styles.viewButton}>
+                <Text style={styles.viewButtonText}>View Confession</Text>
+                <Ionicons name="arrow-forward" size={12} color={COLORS.accent} />
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         )}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name="people-outline"
-              size={60}
-              color={COLORS.border}
-            />
-            <Text style={styles.emptyText}>
-              {showSavedOnly 
-                ? "No saved societies found"
-                : activeTab === "Confessions" 
-                  ? "Join societies to see confessions" 
-                  : `No ${activeTab.toLowerCase()} content yet`}
-            </Text>
-          </View>
-        )}
+        contentContainerStyle={styles.listContent}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -142,74 +96,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
   header: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontFamily: 'Poppins_700Bold',
-  },
-  subHeader: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-  },
-  headerIcons: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  headerIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E222B',
-    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 10,
+    paddingVertical: 15,
   },
-  tab: {
-    paddingVertical: 8,
+  headerTitle: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontFamily: "Poppins_700Bold",
+    marginRight: 10,
+  },
+  badge: {
+    backgroundColor: "rgba(107, 92, 231, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: COLORS.accent,
+    fontSize: 12,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  listContent: {
     paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  activityItem: {
+    backgroundColor: "#1E222B",
     borderRadius: 20,
-    backgroundColor: '#1E222B',
-  },
-  activeTab: {
-    backgroundColor: COLORS.accent,
-  },
-  tabText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  activeTabText: {
-    color: '#FFF',
-  },
-  list: {
-    paddingBottom: 100,
-  },
-  emptyContainer: {
-    marginTop: 100,
+    padding: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
-  emptyText: {
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#2A2F3E",
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typeIcon: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: "#1E222B",
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityMessage: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 2,
+  },
+  activityTime: {
     color: COLORS.textSecondary,
-    fontSize: 16,
-    marginTop: 20,
-    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    fontFamily: "Poppins_400Regular",
+    marginBottom: 6,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewButtonText: {
+    color: COLORS.accent,
+    fontSize: 13,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
-
