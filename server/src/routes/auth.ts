@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { users } from '../db/schema';
-import { IdentityService } from '../services/identityService';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
+import { IdentityService } from '../services/identityService.js';
 import { eq } from 'drizzle-orm';
 
 const router = Router();
@@ -10,10 +10,15 @@ router.post('/anonymous-login', async (req, res) => {
   try {
     const { identityId, avatarSeed } = IdentityService.generateIdentity();
     
-    const [newUser] = await db.insert(users).values({
+    const results = await db.insert(users).values({
       identityId,
       avatarSeed,
     }).returning();
+
+    const newUser = results[0];
+    if (!newUser) {
+      throw new Error('Failed to create user');
+    }
 
     const token = IdentityService.generateToken(newUser.id);
     

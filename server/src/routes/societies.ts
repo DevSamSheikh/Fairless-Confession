@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { societies } from '../db/schema';
+import { db } from '../db/index.js';
+import { societies } from '../db/schema.js';
 
 const router = Router();
 

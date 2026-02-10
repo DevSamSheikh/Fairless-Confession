@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth';
-import postRoutes from './routes/posts';
-import societyRoutes from './routes/societies';
+import authRoutes from './routes/auth.js';
+import postRoutes from './routes/posts.js';
+import societyRoutes from './routes/societies.js';
 
 dotenv.config();
 

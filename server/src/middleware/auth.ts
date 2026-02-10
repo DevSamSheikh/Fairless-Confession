@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { IdentityService } from '../services/identityService';
+import type { Request, Response, NextFunction } from 'express';
+import { IdentityService } from '../services/identityService.js';
 
 export interface AuthRequest extends Request {
   userId?: string;
