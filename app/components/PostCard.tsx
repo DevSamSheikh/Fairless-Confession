@@ -13,10 +13,11 @@ import {
   Platform,
   Animated,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
-import { Post } from "../store/feed.store";
+import { Post, useFeedStore } from "../store/feed.store";
 import { THEME } from "../utils/theme";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
