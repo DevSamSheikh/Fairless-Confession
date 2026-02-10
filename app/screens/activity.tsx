@@ -8,9 +8,8 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { AnonymousAvatar } from "../components/AnonymousAvatar";
+import { PostCard } from "../components/PostCard";
 import { COLORS } from "../utils/constants";
-import { useNavigation } from "@react-navigation/native";
 import { useFeedStore } from "../store/feed.store";
 
 interface Activity {
@@ -49,10 +48,27 @@ const dummyActivities: Activity[] = [
 export const ActivityScreen: React.FC = () => {
   const { posts } = useFeedStore();
   const joinedSocieties = ["Midnight Society"]; // Simulated joined societies
-
-  const societiesPosts = posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
-
   const [activeTab, setActiveTab] = React.useState("Confessions");
+  const [showSavedOnly, setShowSavedOnly] = React.useState(false);
+
+  // Simulated saved societies
+  const savedSocieties = ["Midnight Society"];
+
+  const filteredPosts = React.useMemo(() => {
+    let result = posts;
+    
+    if (activeTab === "Confessions") {
+      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+    } else if (activeTab === "Joined") {
+      result = result.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+    }
+    
+    if (showSavedOnly) {
+      result = result.filter(p => p.societyName && savedSocieties.includes(p.societyName));
+    }
+    
+    return result;
+  }, [posts, activeTab, joinedSocieties, showSavedOnly]);
 
   return (
     <View style={styles.container}>
@@ -69,8 +85,11 @@ export const ActivityScreen: React.FC = () => {
           <TouchableOpacity style={styles.headerIconButton}>
             <Ionicons name="search" size={20} color="#FFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="bookmark" size={20} color="#FFF" />
+          <TouchableOpacity 
+            style={[styles.headerIconButton, showSavedOnly && { backgroundColor: COLORS.accent }]}
+            onPress={() => setShowSavedOnly(!showSavedOnly)}
+          >
+            <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={20} color="#FFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -88,7 +107,7 @@ export const ActivityScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={activeTab === "Confessions" ? societiesPosts : []}
+        data={filteredPosts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <PostCard
@@ -105,9 +124,11 @@ export const ActivityScreen: React.FC = () => {
               color={COLORS.border}
             />
             <Text style={styles.emptyText}>
-              {activeTab === "Confessions" 
-                ? "Join societies to see confessions" 
-                : `No ${activeTab.toLowerCase()} content yet`}
+              {showSavedOnly 
+                ? "No saved societies found"
+                : activeTab === "Confessions" 
+                  ? "Join societies to see confessions" 
+                  : `No ${activeTab.toLowerCase()} content yet`}
             </Text>
           </View>
         )}
