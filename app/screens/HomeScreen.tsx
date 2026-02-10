@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
-  TextInput,
   Vibration,
   Dimensions,
 } from "react-native";
@@ -18,6 +17,7 @@ import { useFeedStore } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
 import { useNavigation } from "@react-navigation/native";
+import { SearchBar } from "../components/SearchBar";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -34,7 +34,6 @@ export const HomeScreen: React.FC = () => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       refreshFeed();
       Vibration.vibrate(50);
@@ -45,21 +44,15 @@ export const HomeScreen: React.FC = () => {
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const centerY = offsetY + windowHeight / 2;
-    
-    // Approximate item height (card height + margin)
-    // PostCard is around 250-300px depending on content
     const itemHeight = 280; 
-    // Use a smaller threshold for absolute center
     const threshold = 15; 
     const distanceToCenter = Math.abs((centerY % itemHeight) - (itemHeight / 2));
-    
     const index = Math.floor(centerY / itemHeight);
 
     if (index >= 0 && index < filteredPosts.length && distanceToCenter < threshold) {
       const currentId = filteredPosts[index].id;
       if (currentId !== lastCenterId.current) {
         lastCenterId.current = currentId;
-        // STRONG VIBRATION
         Vibration.vibrate(60); 
       }
     }
@@ -117,24 +110,12 @@ export const HomeScreen: React.FC = () => {
               </View>
             </>
           ) : (
-            <View style={styles.searchBarContainer}>
-              <TouchableOpacity onPress={() => setIsSearchVisible(false)}>
-                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search confessions..."
-                placeholderTextColor="#8E9196"
-                autoFocus
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <Ionicons name="close-circle" size={20} color="#8E9196" />
-                </TouchableOpacity>
-              )}
-            </View>
+            <SearchBar 
+              isVisible={isSearchVisible}
+              onClose={() => setIsSearchVisible(false)}
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+            />
           )}
         </View>
 
@@ -252,24 +233,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
     borderWidth: 1.5,
     borderColor: "#1E222B",
-  },
-  searchBarContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1E222B",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    height: 45,
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-  },
-  searchInput: {
-    flex: 1,
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontFamily: "Poppins_400Regular",
-    marginLeft: 10,
   },
   tabsContainer: {
     paddingHorizontal: 16,

@@ -11,15 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../../components/PostCard";
 import { COLORS } from "../../utils/constants";
 import { useFeedStore } from "../../store/feed.store";
-
-interface Activity {
-  id: string;
-  type: "reaction" | "comment";
-  emoji?: string;
-  message: string;
-  time: string;
-  postId: string;
-}
+import { useNavigation } from "@react-navigation/native";
+import { SearchBar } from "../../components/SearchBar";
 
 interface Society {
   id: string;
@@ -68,13 +61,24 @@ const ALL_SOCIETIES: Society[] = [
 ];
 
 export const SocietiesScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { posts } = useFeedStore();
-  const joinedSocieties = ["Midnight Society"]; // Simulated joined societies
-
-  const societiesPosts = posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+  const joinedSocieties = ["Midnight Society"]; 
 
   const [activeTab, setActiveTab] = React.useState("Confessions");
   const [showSavedOnly, setShowSavedOnly] = React.useState(false);
+  const [isSearchVisible, setIsSearchVisible] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  const societiesPosts = posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+
+  const filteredPosts = searchQuery 
+    ? societiesPosts.filter(p => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : societiesPosts;
+
+  const filteredSocieties = searchQuery
+    ? ALL_SOCIETIES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    : ALL_SOCIETIES;
 
   const renderSocietyItem = ({ item }: { item: Society }) => (
     <View style={styles.societyCard}>
@@ -98,24 +102,42 @@ export const SocietiesScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.headerContainer}>
-        <View>
-          <Text style={styles.header}>Societies</Text>
-          <Text style={styles.subHeader}>Explore,</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.headerIconButton} onPress={() => console.log('Add Society')}>
-            <Ionicons name="add" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIconButton} onPress={() => console.log('Search Societies')}>
-            <Ionicons name="search" size={20} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerIconButton, showSavedOnly && { backgroundColor: COLORS.accent }]} 
-            onPress={() => setShowSavedOnly(!showSavedOnly)}
-          >
-            <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={20} color="#FFF" />
-          </TouchableOpacity>
-        </View>
+        {!isSearchVisible ? (
+          <>
+            <View>
+              <Text style={styles.header}>Societies</Text>
+              <Text style={styles.subHeader}>Explore,</Text>
+            </View>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity 
+                style={styles.headerIconButton} 
+                onPress={() => navigation.navigate('CreateSociety')}
+              >
+                <Ionicons name="add" size={24} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.headerIconButton} 
+                onPress={() => setIsSearchVisible(true)}
+              >
+                <Ionicons name="search" size={20} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.headerIconButton, showSavedOnly && { backgroundColor: COLORS.accent }]} 
+                onPress={() => setShowSavedOnly(!showSavedOnly)}
+              >
+                <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <SearchBar 
+            isVisible={isSearchVisible}
+            onClose={() => setIsSearchVisible(false)}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            placeholder="Search societies..."
+          />
+        )}
       </View>
 
       <View style={styles.tabsContainer}>
@@ -132,7 +154,7 @@ export const SocietiesScreen: React.FC = () => {
 
       {activeTab === "Confessions" ? (
         <FlatList
-          data={societiesPosts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <PostCard
@@ -149,14 +171,14 @@ export const SocietiesScreen: React.FC = () => {
                 color={COLORS.border}
               />
               <Text style={styles.emptyText}>
-                Join societies to see confessions
+                {searchQuery ? "No matches found" : "Join societies to see confessions"}
               </Text>
             </View>
           )}
         />
       ) : (
         <FlatList
-          data={ALL_SOCIETIES}
+          data={filteredSocieties}
           keyExtractor={(item) => item.id}
           renderItem={renderSocietyItem}
           contentContainerStyle={styles.list}
@@ -168,7 +190,7 @@ export const SocietiesScreen: React.FC = () => {
                 color={COLORS.border}
               />
               <Text style={styles.emptyText}>
-                No {activeTab.toLowerCase()} content yet
+                {searchQuery ? "No societies found" : `No ${activeTab.toLowerCase()} content yet`}
               </Text>
             </View>
           )}
@@ -190,6 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
+    minHeight: 120,
   },
   header: {
     color: COLORS.text,
