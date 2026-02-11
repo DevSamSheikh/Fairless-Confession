@@ -20,7 +20,7 @@ export const useUserStore = create<UserState>((set) => ({
   postsToday: 0,
   commentsThisHour: 0,
   setUser: (user) => set({ user, isAuthenticated: !!user, userId: user ? user.id : null }),
-  login: async (credentials?: any) => {
+  login: async (credentials?: any): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('Logging in with', credentials);
       set({ isAuthenticated: true, userId: 'anonymous-user-' + Date.now() });

@@ -44,7 +44,7 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
     setLoading(true);
     setTimeout(async () => {
       try {
-        const result = await login({ name, email, password }) as any;
+        const result = await login({ name, email, password });
         if (result && result.success) {
           setLoading(false);
         } else {
