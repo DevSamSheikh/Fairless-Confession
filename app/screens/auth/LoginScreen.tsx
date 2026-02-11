@@ -32,9 +32,14 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
 
     setLoading(true);
     // Smooth transition
-    setTimeout(() => {
-      login();
-      setLoading(false);
+    setTimeout(async () => {
+      const result = await login({ email, password });
+      if (result.success) {
+        setLoading(false);
+      } else {
+        setError(result.error || 'Login failed');
+        setLoading(false);
+      }
     }, 500);
   };
 

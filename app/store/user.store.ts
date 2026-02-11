@@ -20,8 +20,14 @@ export const useUserStore = create<UserState>((set) => ({
   postsToday: 0,
   commentsThisHour: 0,
   setUser: (user) => set({ user, isAuthenticated: !!user, userId: user ? user.id : null }),
-  login: () => {
-    set({ isAuthenticated: true, userId: 'anonymous-user-' + Date.now() });
+  login: async (credentials: any) => {
+    try {
+      console.log('Logging in with', credentials);
+      set({ isAuthenticated: true, userId: 'anonymous-user-' + Date.now() });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Login failed' };
+    }
   },
   logout: () => set({ user: null, isAuthenticated: false, userId: null }),
   incrementPosts: () => set((state) => ({ postsToday: state.postsToday + 1 })),

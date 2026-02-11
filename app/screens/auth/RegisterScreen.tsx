@@ -42,9 +42,14 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      login();
-      setLoading(false);
+    setTimeout(async () => {
+      const result = await login({ name, email, password });
+      if (result.success) {
+        setLoading(false);
+      } else {
+        setError(result.error || 'Registration failed');
+        setLoading(false);
+      }
     }, 500);
   };
 
