@@ -13,21 +13,9 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
   const { setUser } = useUserStore();
 
   const handleLogin = () => {
-    if (email && password) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setUser({
-          id: '1',
-          email,
-          username: email.split('@')[0],
-        });
-        setLoading(false);
-      }, 1500);
-    } else {
-      // For demo purposes, allow login even if empty
-      setUser({ id: '1', email: 'guest@example.com', username: 'guest' });
-    }
+    setLoading(true);
+    // Redirect to backend login endpoint
+    window.location.href = '/api/login';
   };
 
   return (
@@ -72,11 +60,15 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
           <Text style={styles.forgotPasswordText}>Forget Password ?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={() => window.location.href = '/api/login'} 
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.loginButtonText}>Login</Text>
+            <Text style={styles.loginButtonText}>Login with Replit</Text>
           )}
         </TouchableOpacity>
 
