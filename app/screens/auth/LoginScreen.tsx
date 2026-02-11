@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
+import { Toast } from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -10,13 +11,31 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { setUser } = useUserStore();
+  const [error, setError] = useState('');
+  const [errorField, setErrorField] = useState<string | null>(null);
+  const { login } = useUserStore();
 
   const handleLogin = () => {
-    setLoading(true);
-    if (typeof window !== 'undefined' && window.location) {
-      window.location.href = '/api/login';
+    setError('');
+    setErrorField(null);
+
+    if (!email) {
+      setError('Please enter your email');
+      setErrorField('email');
+      return;
     }
+    if (!password) {
+      setError('Please enter your password');
+      setErrorField('password');
+      return;
+    }
+
+    setLoading(true);
+    // Mock smooth login for now
+    setTimeout(() => {
+      login();
+      setLoading(false);
+    }, 1000);
   };
 
   return (
@@ -30,7 +49,7 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
       <View style={styles.content}>
         <Text style={styles.title}>Login Your{"\n"}Account</Text>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errorField === 'email' && styles.inputError]}>
           <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -38,11 +57,14 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errorField === 'email') setErrorField(null);
+            }}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errorField === 'password' && styles.inputError]}>
           <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -50,7 +72,10 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errorField === 'password') setErrorField(null);
+            }}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
@@ -63,11 +88,7 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
 
         <TouchableOpacity 
           style={styles.loginButton} 
-          onPress={() => {
-            if (typeof window !== 'undefined' && window.location) {
-              window.location.href = '/api/login';
-            }
-          }} 
+          onPress={handleLogin} 
           disabled={loading}
         >
           {loading ? (
@@ -76,6 +97,8 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             <Text style={styles.loginButtonText}>Login</Text>
           )}
         </TouchableOpacity>
+
+        <Toast message={error} onHide={() => setError('')} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Create New Account? </Text>
@@ -170,6 +193,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
+  },
+  inputError: {
+    borderColor: '#FF4B4B',
+    backgroundColor: 'rgba(255, 75, 75, 0.05)',
   },
   forgotPassword: {
     alignSelf: 'flex-end',

@@ -1,12 +1,52 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useUserStore } from '../../store/user.store';
+import { Toast } from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
 export const RegisterScreen: React.FC = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [errorField, setErrorField] = useState<string | null>(null);
+  const { login } = useUserStore();
+
+  const handleRegister = () => {
+    setError('');
+    setErrorField(null);
+
+    if (!name) {
+      setError('Please enter your full name');
+      setErrorField('name');
+      return;
+    }
+    if (!email) {
+      setError('Please enter your email');
+      setErrorField('email');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      setErrorField('password');
+      return;
+    }
+    if (!agreed) {
+      setError('Please agree to the rules');
+      return;
+    }
+
+    setLoading(true);
+    setTimeout(() => {
+      login();
+      setLoading(false);
+    }, 1000);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -19,32 +59,47 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Create your{"\n"}Account</Text>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errorField === 'name' && styles.inputError]}>
           <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Full Name"
             placeholderTextColor="#6B7280"
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
+              if (errorField === 'name') setErrorField(null);
+            }}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errorField === 'email' && styles.inputError]}>
           <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Enter Your Email"
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errorField === 'email') setErrorField(null);
+            }}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errorField === 'password' && styles.inputError]}>
           <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errorField === 'password') setErrorField(null);
+            }}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
@@ -68,16 +123,18 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
         </View>
 
         <TouchableOpacity 
-          style={[styles.registerButton, !agreed && styles.disabledButton]} 
-          onPress={() => {
-            if (agreed && typeof window !== 'undefined' && window.location) {
-              window.location.href = '/api/login';
-            }
-          }}
-          disabled={!agreed}
+          style={[styles.registerButton, (!agreed || loading) && styles.disabledButton]} 
+          onPress={handleRegister}
+          disabled={!agreed || loading}
         >
-          <Text style={styles.registerButtonText}>Register</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.registerButtonText}>Register</Text>
+          )}
         </TouchableOpacity>
+
+        <Toast message={error} onHide={() => setError('')} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already Have An Account? </Text>
@@ -172,6 +229,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
+  },
+  inputError: {
+    borderColor: '#FF4B4B',
+    backgroundColor: 'rgba(255, 75, 75, 0.05)',
   },
   registerButton: {
     backgroundColor: '#1A1D23',
