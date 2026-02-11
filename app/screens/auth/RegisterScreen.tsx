@@ -43,11 +43,16 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
 
     setLoading(true);
     setTimeout(async () => {
-      const result = await login({ name, email, password });
-      if (result.success) {
-        setLoading(false);
-      } else {
-        setError(result.error || 'Registration failed');
+      try {
+        const result = await login({ name, email, password }) as any;
+        if (result && result.success) {
+          setLoading(false);
+        } else {
+          setError(result?.error || 'Registration failed');
+          setLoading(false);
+        }
+      } catch (err) {
+        setError('An unexpected error occurred');
         setLoading(false);
       }
     }, 500);
