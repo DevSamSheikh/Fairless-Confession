@@ -31,11 +31,11 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
     }
 
     setLoading(true);
-    // Mock smooth login for now
+    // Smooth transition
     setTimeout(() => {
       login();
       setLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   return (

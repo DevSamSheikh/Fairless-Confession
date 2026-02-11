@@ -45,7 +45,7 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
     setTimeout(() => {
       login();
       setLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   return (
