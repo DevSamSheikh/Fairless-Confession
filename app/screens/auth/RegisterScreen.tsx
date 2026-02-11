@@ -93,11 +93,31 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
         <Text style={styles.socialTitle}>Continue With Accounts</Text>
 
         <View style={styles.socialRow}>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
-            <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
+            onPress={() => {
+              if (typeof window !== 'undefined' && window.location) {
+                window.location.href = '/api/login';
+              }
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="logo-google" size={18} color="#E57373" style={{ marginRight: 8 }} />
+              <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
+            </View>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
-            <Text style={[styles.socialText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
+            onPress={() => {
+              if (typeof window !== 'undefined' && window.location) {
+                window.location.href = '/api/login';
+              }
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="call-outline" size={18} color="#64B5F6" style={{ marginRight: 8 }} />
+              <Text style={[styles.socialText, { color: '#64B5F6' }]}>PHONE</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -17,7 +17,9 @@ export const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = '/api/logout';
+    }
   };
 
   return (
