@@ -15,7 +15,9 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
   const handleLogin = () => {
     setLoading(true);
     // Redirect to backend login endpoint
-    window.location.href = '/api/login';
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = '/api/login';
+    }
   };
 
   return (
@@ -62,13 +64,17 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
 
         <TouchableOpacity 
           style={styles.loginButton} 
-          onPress={() => window.location.href = '/api/login'} 
+          onPress={() => {
+            if (typeof window !== 'undefined' && window.location) {
+              window.location.href = '/api/login';
+            }
+          }} 
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.loginButtonText}>Login with Replit</Text>
+            <Text style={styles.loginButtonText}>Login</Text>
           )}
         </TouchableOpacity>
 

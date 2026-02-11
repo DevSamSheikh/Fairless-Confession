@@ -69,10 +69,14 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
 
         <TouchableOpacity 
           style={[styles.registerButton, !agreed && styles.disabledButton]} 
-          onPress={() => agreed && (window.location.href = '/api/login')}
+          onPress={() => {
+            if (agreed && typeof window !== 'undefined' && window.location) {
+              window.location.href = '/api/login';
+            }
+          }}
           disabled={!agreed}
         >
-          <Text style={styles.registerButtonText}>Register with Replit</Text>
+          <Text style={styles.registerButtonText}>Register</Text>
         </TouchableOpacity>
 
         <View style={styles.footer}>
