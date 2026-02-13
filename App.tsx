@@ -20,10 +20,8 @@ import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { MyConfessionsScreen } from './app/screens/MyConfessionsScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuth } from './app/store/use-auth';
+import { useUserStore } from './app/store/user.store';
 
-const queryClient = new QueryClient();
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -136,46 +134,30 @@ function TabNavigator() {
   );
 }
 
-function Root() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
-      </View>
-    );
-  }
-
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isAuthenticated ? (
-        <>
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Main" component={TabNavigator} />
-          <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
-          <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
-          <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
-        </>
-      )}
-    </Stack.Navigator>
-  );
-}
-
 export default function App() {
+  const { user } = useUserStore();
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Root />
-      </NavigationContainer>
-    </QueryClientProvider>
+    <NavigationContainer>
+      <StatusBar style="light" />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!user ? (
+          <>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
+            <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
+            <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

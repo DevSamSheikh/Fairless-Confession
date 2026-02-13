@@ -1,62 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useUserStore } from '../../store/user.store';
-import { Toast } from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
 export const RegisterScreen: React.FC = ({ navigation }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [errorField, setErrorField] = useState<string | null>(null);
-  const { login } = useUserStore();
-
-  const handleRegister = () => {
-    setError('');
-    setErrorField(null);
-
-    if (!name) {
-      setError('Please enter your full name');
-      setErrorField('name');
-      return;
-    }
-    if (!email) {
-      setError('Please enter your email');
-      setErrorField('email');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password');
-      setErrorField('password');
-      return;
-    }
-    if (!agreed) {
-      setError('Please agree to the rules');
-      return;
-    }
-
-    setLoading(true);
-    setTimeout(async () => {
-      try {
-        const result = await login({ name, email, password });
-        if (result && result.success) {
-          setLoading(false);
-        } else {
-          setError(result?.error || 'Registration failed');
-          setLoading(false);
-        }
-      } catch (err) {
-        setError('An unexpected error occurred');
-        setLoading(false);
-      }
-    }, 500);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,47 +19,32 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Create your{"\n"}Account</Text>
 
-        <View style={[styles.inputContainer, errorField === 'name' && styles.inputError]}>
+        <View style={styles.inputContainer}>
           <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Full Name"
             placeholderTextColor="#6B7280"
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              if (errorField === 'name') setErrorField(null);
-            }}
           />
         </View>
 
-        <View style={[styles.inputContainer, errorField === 'email' && styles.inputError]}>
+        <View style={styles.inputContainer}>
           <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Enter Your Email"
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errorField === 'email') setErrorField(null);
-            }}
           />
         </View>
 
-        <View style={[styles.inputContainer, errorField === 'password' && styles.inputError]}>
+        <View style={styles.inputContainer}>
           <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errorField === 'password') setErrorField(null);
-            }}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
@@ -133,18 +68,12 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
         </View>
 
         <TouchableOpacity 
-          style={[styles.registerButton, (!agreed || loading) && styles.disabledButton]} 
-          onPress={handleRegister}
-          disabled={!agreed || loading}
+          style={[styles.registerButton, !agreed && styles.disabledButton]} 
+          onPress={() => agreed && navigation.replace('Main')}
+          disabled={!agreed}
         >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.registerButtonText}>Register</Text>
-          )}
+          <Text style={styles.registerButtonText}>Register</Text>
         </TouchableOpacity>
-
-        <Toast message={error} onHide={() => setError('')} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already Have An Account? </Text>
@@ -160,31 +89,11 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
         <Text style={styles.socialTitle}>Continue With Accounts</Text>
 
         <View style={styles.socialRow}>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="logo-google" size={18} color="#E57373" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
+            <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="call-outline" size={18} color="#64B5F6" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialText, { color: '#64B5F6' }]}>PHONE</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
+            <Text style={[styles.socialText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -239,10 +148,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
-  },
-  inputError: {
-    borderColor: '#FF4B4B',
-    backgroundColor: 'rgba(255, 75, 75, 0.05)',
   },
   registerButton: {
     backgroundColor: '#1A1D23',

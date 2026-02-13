@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -39,31 +38,11 @@ export const WelcomeScreen: React.FC = ({ navigation }: any) => {
         </View>
         
         <View style={styles.socialContainer}>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="logo-google" size={18} color="#E57373" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialButtonText, { color: '#E57373' }]}>GOOGLE</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
+            <Text style={[styles.socialButtonText, { color: '#E57373' }]}>GOOGLE</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="call-outline" size={18} color="#64B5F6" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialButtonText, { color: '#64B5F6' }]}>PHONE</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
+            <Text style={[styles.socialButtonText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
           </TouchableOpacity>
         </View>
       </View>

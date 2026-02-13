@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
-import { Toast } from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -11,41 +10,24 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [errorField, setErrorField] = useState<string | null>(null);
-  const { login } = useUserStore();
+  const { setUser } = useUserStore();
 
   const handleLogin = () => {
-    setError('');
-    setErrorField(null);
-
-    if (!email) {
-      setError('Please enter your email');
-      setErrorField('email');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password');
-      setErrorField('password');
-      return;
-    }
-
-    setLoading(true);
-    // Smooth transition
-    setTimeout(async () => {
-      try {
-        const result = await login({ email, password });
-        if (result && result.success) {
-          setLoading(false);
-        } else {
-          setError(result?.error || 'Login failed');
-          setLoading(false);
-        }
-      } catch (err) {
-        setError('An unexpected error occurred');
+    if (email && password) {
+      setLoading(true);
+      // Simulate API call
+      setTimeout(() => {
+        setUser({
+          id: '1',
+          email,
+          username: email.split('@')[0],
+        });
         setLoading(false);
-      }
-    }, 500);
+      }, 1500);
+    } else {
+      // For demo purposes, allow login even if empty
+      setUser({ id: '1', email: 'guest@example.com', username: 'guest' });
+    }
   };
 
   return (
@@ -59,7 +41,7 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
       <View style={styles.content}>
         <Text style={styles.title}>Login Your{"\n"}Account</Text>
 
-        <View style={[styles.inputContainer, errorField === 'email' && styles.inputError]}>
+        <View style={styles.inputContainer}>
           <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -67,14 +49,11 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errorField === 'email') setErrorField(null);
-            }}
+            onChangeText={setEmail}
           />
         </View>
 
-        <View style={[styles.inputContainer, errorField === 'password' && styles.inputError]}>
+        <View style={styles.inputContainer}>
           <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -82,10 +61,7 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errorField === 'password') setErrorField(null);
-            }}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
@@ -96,19 +72,13 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
           <Text style={styles.forgotPasswordText}>Forget Password ?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.loginButton} 
-          onPress={handleLogin} 
-          disabled={loading}
-        >
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
             <Text style={styles.loginButtonText}>Login</Text>
           )}
         </TouchableOpacity>
-
-        <Toast message={error} onHide={() => setError('')} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Create New Account? </Text>
@@ -124,31 +94,11 @@ export const LoginScreen: React.FC = ({ navigation }: any) => {
         <Text style={styles.socialTitle}>Continue With Accounts</Text>
 
         <View style={styles.socialRow}>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="logo-google" size={18} color="#E57373" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
+            <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.socialButton, { backgroundColor: '#1A1D23', borderWidth: 1, borderColor: '#2A2E37' }]}
-            onPress={() => {
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/api/login';
-              }
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="logo-facebook" size={18} color="#64B5F6" style={{ marginRight: 8 }} />
-              <Text style={[styles.socialText, { color: '#64B5F6' }]}>FACEBOOK</Text>
-            </View>
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
+            <Text style={[styles.socialText, { color: '#64B5F6' }]}>FACEBOOK</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -203,10 +153,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
-  },
-  inputError: {
-    borderColor: '#FF4B4B',
-    backgroundColor: 'rgba(255, 75, 75, 0.05)',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
