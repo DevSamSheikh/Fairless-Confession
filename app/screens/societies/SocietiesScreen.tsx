@@ -90,7 +90,10 @@ export const SocietiesScreen: React.FC = () => {
           <Text style={styles.societyName}>{item.name}</Text>
           <Text style={styles.societyMembers}>{item.members}</Text>
         </View>
-        <TouchableOpacity style={styles.joinButton}>
+        <TouchableOpacity 
+          style={styles.joinButton}
+          onPress={() => navigation.navigate('SocietyDetail', { society: item })}
+        >
           <Text style={styles.joinButtonText}>Join</Text>
         </TouchableOpacity>
       </View>
