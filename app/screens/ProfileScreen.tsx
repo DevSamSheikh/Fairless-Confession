@@ -47,18 +47,24 @@ export const ProfileScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={[styles.menuIcon, { backgroundColor: 'rgba(108, 92, 231, 0.1)' }]}>
-              <Ionicons name="person" size={20} color={COLORS.accent} />
-            </View>
-            <Text style={styles.menuText}>Identity Settings</Text>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('PrivacySecurity')}
+          >
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(74, 222, 128, 0.1)' }]}>
               <Ionicons name="shield-checkmark" size={20} color="#4ADE80" />
             </View>
             <Text style={styles.menuText}>Privacy & Security</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('AppSettings')}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: 'rgba(108, 92, 231, 0.1)' }]}>
+              <Ionicons name="settings" size={20} color={COLORS.accent} />
+            </View>
+            <Text style={styles.menuText}>App Settings</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>

@@ -340,6 +340,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   style={styles.menuItemRow}
                   onPress={() => {
                     setShowMoreMenu(false);
+                    alert("Confession saved!");
+                  }}
+                >
+                  <Ionicons name="bookmark-outline" size={20} color="#FFF" />
+                  <Text style={styles.menuItemLabel}>Save Confession</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={() => {
+                    setShowMoreMenu(false);
                     alert("Post reported.");
                   }}
                 >

@@ -18,6 +18,8 @@ import { OnboardingScreen } from './app/screens/OnboardingScreen';
 import { SocietyDetailScreen } from './app/screens/SocietyDetailScreen';
 import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { MyConfessionsScreen } from './app/screens/MyConfessionsScreen';
+import { PrivacySecurityScreen } from './app/screens/PrivacySecurityScreen';
+import { AppSettingsScreen } from './app/screens/AppSettingsScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useUserStore } from './app/store/user.store';
@@ -155,6 +157,8 @@ export default function App() {
             <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
             <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
             <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+            <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+            <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
           </>
         )}
       </Stack.Navigator>
