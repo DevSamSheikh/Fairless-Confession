@@ -16,27 +16,24 @@ const { width, height } = Dimensions.get("window");
 const SLIDES = [
   {
     id: "1",
-    title: "Express Freely\nStay Anonymous",
+    title: "Speak Freely.\nNo Names. No Judgement.",
     subtitle:
-      "Share your deepest secrets, regrets, and stories without any fear. Your identity is always 100% safe.",
-    image:
-      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800",
+      "Share what you can’t say anywhere else.\nYour thoughts stay yours — always anonymous, always safe.",
+    image: require("../../assets/images/onboarding_safety.png"),
   },
   {
     id: "2",
-    title: "Join Specialized\nSocieties",
+    title: "You’re Not the\nOnly One",
     subtitle:
-      "Connect with people who understand you. From College Life to Broken Hearts, find your circle.",
-    image:
-      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800",
+      "Thousands feel what you feel —\ndiscover real stories, secrets, and moments from real people.",
+    image: require("../../assets/images/onboarding_belonging.png"),
   },
   {
     id: "3",
-    title: "Interactive\nEngagement",
+    title: "Express. React.\nFeel Connected.",
     subtitle:
-      "React with emojis, join deep discussions, and see what's trending in your community.",
-    image:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
+      "Post anonymously, react honestly,\nand be part of a space where honesty is normal.",
+    image: require("../../assets/images/onboarding_action.png"),
   },
 ];
 
@@ -73,7 +70,7 @@ export const OnboardingScreen: React.FC = ({ navigation }: any) => {
       <View style={styles.slide}>
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: item.image }}
+            source={item.image}
             style={styles.image}
             resizeMode="cover"
           />
