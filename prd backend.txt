@@ -1,0 +1,382 @@
+# ConfessBox Backend Development PRD
+
+## 1\. Overview
+
+**App/Website Name:** ConfessBox
+
+ConfessBox is an anonymous text-based confession platform designed as a Progressive Web App (PWA) that allows users to share their thoughts and experiences while maintaining anonymity from other users. The platform features a dual-posting system where users can share confessions publicly or within specific societies (similar to private groups). While users appear anonymous to each other with generic display names, comprehensive tracking and monitoring capabilities are available exclusively to administrators for security and moderation purposes.
+
+The target audience includes individuals seeking a safe, anonymous space to share personal experiences, thoughts, and confessions. The app addresses the need for anonymous self-expression while maintaining accountability through administrative oversight, creating a balance between privacy and security.
+
+## 2\. Essential Core Features
+
+### Authentication & User Management
+
+* User registration with email verification
+* Secure login/logout functionality
+* Password reset capability
+* Strong password enforcement (4-8 characters)
+* Comprehensive user activity tracking (IP, MAC address, device info, timestamps)
+* Unique user ID generation with 2004 prefix pattern
+
+### Content Management
+
+* Public confession posting from user profiles
+* Society-based confession posting for members only
+* Post editing and deletion capabilities
+* Content categorization system
+* Post sharing via unique URLs
+* Rich text content support
+
+### Society System
+
+* Society creation and management
+* Society discovery and search functionality
+* Join/leave society capabilities
+* Member-only content visibility
+* Society-specific confession feeds
+
+### Interaction Features
+
+* Like/unlike functionality
+* Commenting system
+* View tracking
+* Content saving/bookmarking
+* Trending content algorithm
+* Search functionality across posts and societies
+
+### Administrative Features
+
+* Complete user activity monitoring
+* Post reporting system
+* User behavior analytics
+* Content moderation tools
+* Comprehensive audit trails
+
+### Security & Privacy
+
+* Anonymous user display to other users
+* Secure data encryption
+* Activity logging and forensic tracking
+* Email validation
+* Privacy policy compliance
+
+## 3\. Tech Stack
+
+**Front-End:** React, Tailwind CSS & Vite (Already completed)
+**Back-End:** Supabase
+
+* Authentication: Supabase Auth with custom user tracking
+* Database: PostgreSQL for user data, posts, societies, interactions
+* Storage: Supabase Storage for any media assets
+* Real-time: Supabase Realtime for live interactions
+* Edge Functions: For complex business logic and tracking
+
+**APIs & Integrations:**
+
+* Email validation service API
+* Geolocation API for IP tracking
+* Device fingerprinting for MAC address capture
+* SMS verification service for mobile number validation
+
+**Security Features:**
+
+* Row Level Security (RLS) policies
+* JWT token authentication
+* API rate limiting
+* Data encryption at rest and in transit
+
+## 4\. Design Preferences
+
+**Interface:** Clean, minimalist design with focus on readability and anonymous interaction, featuring dark/light theme options for comfortable confession reading and writing.
+
+**Color Palette:**
+
+* Primary: Deep Blue (#1a365d) - Trust and security
+* Secondary: Soft Gray (#f7fafc) - Neutral anonymity
+* Accent: Warm Orange (#ed8936) - Engagement and interaction
+
+**Typography:**
+
+* Headings: Inter (modern, clean readability)
+* Body Text: Source Sans Pro (comfortable for extended reading)
+
+## 5\. All Screens/Pages
+
+### Authentication Screens
+
+#### `/login`
+
+* Email input field with validation
+* Password input with show/hide toggle
+* Login button
+* "Forgot Password" link
+* "Register" navigation link
+* Background tracking initialization
+
+#### `/register`
+
+* Full Name input field
+* Email input with validation
+* Password input with strength indicator (4-8 characters)
+* Confirm password field
+* Rules & Privacy Policy checkbox
+* Register button
+* "Already have account" login link
+* Background data capture (timestamp, IP, MAC, mobile number)
+
+#### `/forget-password`
+
+* Email input field
+* Reset password button
+* Back to login link
+* Instructions text
+* Success/error message display
+
+### Main Application Screens
+
+#### `/home`
+
+* Anonymous confession feed (public posts)
+* Post interaction buttons (like, comment, share, save)
+* Floating action button for new confession
+* Pull-to-refresh functionality
+* Infinite scroll loading
+* Navigation to trending, societies, profile
+
+#### `/home/trending`
+
+* Trending confessions based on engagement
+* Time filter options (24h, week, month)
+* Trending indicators
+* Same interaction features as home feed
+
+#### `/societies`
+
+* Society navigation hub
+* Quick access to joined societies
+* Society creation button
+* Search societies functionality
+* Recent society activity preview
+
+#### `/societies/confessions`
+
+* Combined feed from all joined societies
+* Society name labels on posts
+* Filter by specific society option
+* Post interaction capabilities
+
+#### `/societies/discover`
+
+* Browse public societies
+* Society search functionality
+* Society preview information
+* Join/leave buttons
+* Society member count display
+
+#### `/societies/joined`
+
+* List of user's joined societies
+* Society activity indicators
+* Quick navigation to society feeds
+* Leave society option
+
+#### `/societies/you`
+
+* Societies created by user
+* Society management options
+* Member management tools
+* Society statistics
+
+#### `/society/:id`
+
+* Individual society feed
+* Society information header
+* Member-only confessions
+* Post to society button
+* Society member list (anonymous)
+* Join/leave functionality
+
+#### `/create-society`
+
+* Society name input
+* Society description textarea
+* Privacy settings (public/private)
+* Category selection
+* Rules and guidelines text
+* Create society button
+
+#### `/saved-societies`
+
+* List of saved/bookmarked societies
+* Quick access navigation
+* Remove from saved option
+* Society activity indicators
+
+#### `/post`
+
+* New confession creation interface
+* Title/heading input
+* Content textarea
+* Category selection dropdown
+* Visibility options (public/society)
+* Society selection (if applicable)
+* Post button
+* Draft saving capability
+
+#### `/post/:id`
+
+* Individual post view
+* Full confession content
+* Interaction buttons (like, comment, share)
+* Comments section
+* Related confessions
+* Report post option
+
+#### `/me`
+
+* Anonymous profile display
+* User statistics (posts, likes received)
+* Account settings access
+* Privacy settings
+* Theme preferences
+
+#### `/my-confessions`
+
+* List of user's posted confessions
+* Post statistics (views, likes, comments)
+* Edit/delete options
+* Draft confessions
+* Post status indicators
+
+#### `/my-confession/delete/:id`
+
+* Confirmation dialog
+* Post preview
+* Delete confirmation button
+* Cancel option
+* Warning about permanent deletion
+
+#### `/my-confession/edit/:id`
+
+* Editable post form
+* Original content display
+* Save changes button
+* Cancel option
+* Edit history tracking
+
+#### `/report/:postid`
+
+* Report reason selection
+* Additional details textarea
+* Submit report button
+* Report guidelines
+* Confirmation message
+
+### Utility Screens
+
+#### `/search`
+
+* Search input field
+* Filter options (posts, societies, categories)
+* Search results display
+* Recent searches
+* Popular searches
+
+#### `/interactions`
+
+* User's interaction history
+* Likes, comments, saves organized
+* Direct navigation to interacted content
+* Interaction statistics
+
+## 6\. App Menu and Navigation Structure
+
+**Navigation System:** Bottom tab navigation with floating action button for PWA optimization
+
+**Main Navigation Tabs:**
+
+1. **Home** \- Public confession feed
+2. **Societies** \- Society\-related content and management
+3. **Post** \- Floating action button for quick confession creation
+4. **Saved** \- Bookmarked content and societies
+5. **Profile** \- User account and settings
+
+**Secondary Navigation:**
+
+* Hamburger menu for less frequent actions
+* Search accessible from top bar
+* Settings and logout in profile section
+* Society-specific navigation within society screens
+
+**Navigation Hierarchy:**
+
+```
+├── Authentication Flow
+├── Main App
+│   ├── Home Feed
+│   │   └── Trending
+│   ├── Societies Hub
+│   │   ├── Discover
+│   │   ├── Joined
+│   │   ├── Your Societies
+│   │   └── Individual Society
+│   ├── Post Creation
+│   └── Profile Section
+│       ├── My Confessions
+│       ├── Settings
+│       └── Account Management
+└── Utility Functions
+    ├── Search
+    ├── Interactions
+    └── Reports
+```
+
+## 7\. User Flow
+
+### Registration and Onboarding Flow:
+
+1. User opens ConfessBox PWA
+2. Presented with login screen, selects "Register"
+3. Completes registration form with full name, email, password
+4. Accepts rules and privacy policy
+5. System captures background details (timestamp, IP, MAC, mobile number)
+6. Generates unique user ID with 2004 prefix
+7. Email verification sent and confirmed
+8. User directed to home feed tutorial
+
+### Daily Usage Flow:
+
+1. User opens app and logs in
+2. System updates login tracking data
+3. User browses home feed of public confessions
+4. User can like, comment, or save interesting confessions
+5. User navigates to societies tab
+6. Joins new societies or browses joined society confessions
+7. User creates new confession (public or society-specific)
+8. System captures all posting metadata and tracking information
+9. User interacts with other confessions through likes and comments
+10. User checks their profile for confession statistics
+11. User logs out when finished
+
+### Confession Creation Flow:
+
+1. User taps floating post button
+2. Selects confession type (public or society)
+3. If society selected, chooses specific society from joined list
+4. Writes confession title and content
+5. Selects appropriate category
+6. Reviews confession before posting
+7. Submits confession with full tracking capture
+8. Confession appears in appropriate feed
+9. User receives engagement notifications
+
+### Society Interaction Flow:
+
+1. User discovers new society through explore tab
+2. Views society information and recent confessions
+3. Joins society to access full content
+4. Posts society-specific confessions
+5. Interacts with other society members anonymously
+6. Can leave society or manage created societies
+7. All interactions tracked for administrative oversight
