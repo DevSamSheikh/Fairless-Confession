@@ -1,0 +1,125 @@
+You are working on a React Native Expo (TypeScript) social media feed.
+
+The current feed triggers `Vibration.vibrate()` while scrolling, which feels heavy and unpleasant.
+Replace it with a **center-crossing micro-haptics system** using `expo-haptics`.
+
+Goal:
+Create a premium scroll feeling similar to TikTok/Reels mechanical scrolling ticks.
+
+---
+
+## BEHAVIOR REQUIREMENTS
+
+1. Center Trigger Rule
+   Each post card should trigger a tiny haptic tick when its CENTER crosses the EXACT vertical center of the screen.
+
+Meaning:
+If the card moves from above center → below center OR below → above → trigger haptic once.
+
+It must NOT continuously fire while inside the center zone.
+
+2. Micro-Haptic Type
+   Use ONLY:
+   Haptics.selectionAsync()
+
+Do NOT use:
+
+* Vibration API
+* Notification haptics
+* Heavy impacts
+
+The effect should feel like keyboard typing ticks.
+
+3. Threshold Zone (Anti-Spam Protection)
+   Instead of 1px exact center, create a tolerance zone:
+
+screenCenter ± 3px
+
+The haptic should trigger ONLY when crossing into the zone from outside,
+NOT while staying inside.
+
+4. One Tick Per Post
+   Each post should only fire once per crossing.
+   Scrolling up should re-allow triggering again.
+
+5. Scroll Speed Behavior
+   Slow scroll → spaced ticks
+   Fast scroll → rapid ticks
+
+No timers.
+No artificial delay.
+The natural scroll velocity must control frequency.
+
+6. Performance Rules (VERY IMPORTANT)
+
+* No setState during scroll
+* No re-renders
+* Use refs only
+* Use onScroll with throttling
+* Must work smoothly with 100+ posts
+
+7. Snap Completion Feedback
+   When scrolling stops and the nearest post settles at center,
+   trigger:
+
+Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+This should fire once after momentum end.
+
+---
+
+## TECH IMPLEMENTATION
+
+Feed uses FlatList.
+
+Implement:
+
+A) Track layout Y position of each post
+B) Calculate cardCenter = layoutY - scrollOffset + cardHeight/2
+C) Compare with screenCenter
+D) Detect crossing direction
+E) Maintain lastCrossedIndexRef
+F) Prevent duplicate triggers
+
+Use:
+
+* useRef
+* onScroll
+* onMomentumScrollEnd
+
+Do NOT use reanimated unless already present.
+
+---
+
+## REMOVE OLD SYSTEM
+
+Delete every use of:
+Vibration.vibrate()
+
+and any debounce timers currently used for vibration.
+
+---
+
+## EXPECTED RESULT
+
+The feed should feel like:
+slow scroll → .*.*.*.*._.
+fast scroll → ..........
+snap stop → small click
+
+The user should feel physical stepping between posts.
+
+Write clean, well-commented TypeScript code and keep logic isolated in a reusable hook:
+
+useCenterHaptics.ts
+
+---
+
+## OUTPUT
+
+1. The hook implementation
+2. How to integrate into FlatList
+3. Required imports
+4. Any performance considerations
+
+Do not explain theory. Only implement.

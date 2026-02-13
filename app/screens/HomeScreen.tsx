@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,8 +8,8 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
-  Vibration,
   Dimensions,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
@@ -18,6 +18,7 @@ import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
 import { useNavigation } from "@react-navigation/native";
 import { SearchBar } from "../components/SearchBar";
+import { useCenterHaptics } from "../hooks/useCenterHaptics";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -25,10 +26,10 @@ export const HomeScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const lastCenterId = useRef<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const lastTap = useRef<number>(0);
-  const windowHeight = Dimensions.get('window').height;
+
+  const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -36,26 +37,8 @@ export const HomeScreen: React.FC = () => {
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       refreshFeed();
-      Vibration.vibrate(50);
     }
     lastTap.current = now;
-  };
-
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const centerY = offsetY + windowHeight / 2;
-    const itemHeight = 280; 
-    const threshold = 15; 
-    const distanceToCenter = Math.abs((centerY % itemHeight) - (itemHeight / 2));
-    const index = Math.floor(centerY / itemHeight);
-
-    if (index >= 0 && index < filteredPosts.length && distanceToCenter < threshold) {
-      const currentId = filteredPosts[index].id;
-      if (currentId !== lastCenterId.current) {
-        lastCenterId.current = currentId;
-        Vibration.vibrate(60); 
-      }
-    }
   };
 
   const handleReact = (postId: string, reaction: string) => {
@@ -132,15 +115,18 @@ export const HomeScreen: React.FC = () => {
           data={filteredPosts}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
-            <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
-              <PostCard
-                post={item}
-                rank={activeTab === "Trending" ? index + 1 : undefined}
-                onReact={(reaction) => handleReact(item.id, reaction)}
-              />
-            </TouchableOpacity>
+            <View onLayout={(e) => onLayoutItem(`post-${index}`, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+              <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
+                <PostCard
+                  post={item}
+                  rank={activeTab === "Trending" ? index + 1 : undefined}
+                  onReact={(reaction) => handleReact(item.id, reaction)}
+                />
+              </TouchableOpacity>
+            </View>
           )}
-          onScroll={handleScroll}
+          onScroll={onScroll}
+          onMomentumScrollEnd={onMomentumScrollEnd}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
