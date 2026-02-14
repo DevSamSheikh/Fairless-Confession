@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
+import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { HomeScreen } from './app/screens/HomeScreen';
 import { TrendingScreen } from './app/screens/TrendingScreen';
 import { PostScreen } from './app/screens/PostScreen';
@@ -137,7 +137,20 @@ function TabNavigator() {
 }
 
 export default function App() {
-  const { user } = useUserStore();
+  const { user, isHydrated, hydrate } = useUserStore();
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  if (!isHydrated) {
+    return (
+      <View style={styles.loadingRoot}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -165,3 +178,16 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingRoot: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: COLORS.textSecondary,
+    marginTop: 12,
+  },
+});

@@ -1,23 +1,60 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useUserStore } from '../../store/user.store';
+import { register } from '../../api/auth';
 
 const { width } = Dimensions.get('window');
 
-export const RegisterScreen: React.FC = ({ navigation }: any) => {
+export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const setAuth = useUserStore((s) => s.setAuth);
+
+  const handleRegister = async () => {
+    setError('');
+    if (!agreed) {
+      setError('You must agree to the Rules & Regulations.');
+      return;
+    }
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setError('Please enter email and password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await register(trimmedEmail, password, fullName.trim(), true);
+      await setAuth(result.token || null, result.user);
+      if (result.token) {
+        navigation.replace('Main');
+      } else {
+        setError('Registration successful. Please check your email to verify your account.');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <View style={styles.backButtonCircle}>
-           <Ionicons name="chevron-back" size={20} color="#6B7280" />
+          <Ionicons name="chevron-back" size={20} color="#6B7280" />
         </View>
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Create your{"\n"}Account</Text>
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>
           <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
@@ -25,6 +62,8 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
             style={styles.input}
             placeholder="Full Name"
             placeholderTextColor="#6B7280"
+            value={fullName}
+            onChangeText={(t) => { setFullName(t); setError(''); }}
           />
         </View>
 
@@ -35,6 +74,9 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
             placeholder="Enter Your Email"
             placeholderTextColor="#6B7280"
             keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={(t) => { setEmail(t); setError(''); }}
           />
         </View>
 
@@ -45,34 +87,29 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
             placeholder="Password"
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={(t) => { setPassword(t); setError(''); }}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#6B7280" />
+            <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.agreementContainer}>
-          <TouchableOpacity 
-            style={styles.checkbox} 
-            onPress={() => setAgreed(!agreed)}
-          >
-            <Ionicons 
-              name={agreed ? "checkbox" : "square-outline"} 
-              size={24} 
-              color={agreed ? '#6B5CE7' : '#6B7280'} 
-            />
+          <TouchableOpacity style={styles.checkbox} onPress={() => setAgreed(!agreed)}>
+            <Ionicons name={agreed ? 'checkbox' : 'square-outline'} size={24} color={agreed ? '#6B5CE7' : '#6B7280'} />
           </TouchableOpacity>
           <Text style={styles.agreementText}>
             I agree to the <Text style={styles.linkText}>Rules & Regulations</Text> of ConfessBox
           </Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.registerButton, !agreed && styles.disabledButton]} 
-          onPress={() => agreed && navigation.replace('Main')}
-          disabled={!agreed}
+        <TouchableOpacity
+          style={[styles.registerButton, (!agreed || loading) && styles.disabledButton]}
+          onPress={handleRegister}
+          disabled={!agreed || loading}
         >
-          <Text style={styles.registerButtonText}>Register</Text>
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.registerButtonText}>Register</Text>}
         </TouchableOpacity>
 
         <View style={styles.footer}>
@@ -83,11 +120,10 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
         </View>
 
         <View style={styles.dividerContainer}>
-           <View style={styles.divider} />
+          <View style={styles.divider} />
         </View>
 
         <Text style={styles.socialTitle}>Continue With Accounts</Text>
-
         <View style={styles.socialRow}>
           <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
             <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
@@ -102,135 +138,42 @@ export const RegisterScreen: React.FC = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F1115',
-  },
-  backButton: {
-    padding: 24,
-    paddingTop: 40,
-  },
+  container: { flex: 1, backgroundColor: '#0F1115' },
+  backButton: { padding: 24, paddingTop: 40 },
   backButtonCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#1A1D23',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 44, height: 44, borderRadius: 12, backgroundColor: '#1A1D23',
+    justifyContent: 'center', alignItems: 'center',
   },
-  scrollContent: {
-    paddingHorizontal: 30,
-    paddingBottom: 40,
-  },
+  scrollContent: { paddingHorizontal: 30, paddingBottom: 40 },
   title: {
-    color: '#FFFFFF',
-    fontSize: 40,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 60,
-    lineHeight: 50,
+    color: '#FFFFFF', fontSize: 40, fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 24, lineHeight: 50,
   },
+  errorText: { color: '#EF4444', marginBottom: 12, fontSize: 14 },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1D23',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 60,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#2A2E37',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D23',
+    borderRadius: 16, paddingHorizontal: 16, height: 60, marginBottom: 16,
+    borderWidth: 1, borderColor: '#2A2E37',
   },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Poppins_400Regular',
-  },
+  inputIcon: { marginRight: 12 },
+  input: { flex: 1, color: '#FFFFFF', fontSize: 16, fontFamily: 'Poppins_400Regular' },
+  agreementContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10, paddingHorizontal: 4 },
+  checkbox: { marginRight: 10 },
+  agreementText: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular', flex: 1 },
+  linkText: { color: '#FFFFFF', textDecorationLine: 'underline' },
   registerButton: {
-    backgroundColor: '#1A1D23',
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: '#2A2E37',
+    backgroundColor: '#1A1D23', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center',
+    marginTop: 24, marginBottom: 30, borderWidth: 1, borderColor: '#2A2E37',
   },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  agreementContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-    paddingHorizontal: 4,
-  },
-  checkbox: {
-    marginRight: 10,
-  },
-  agreementText: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    flex: 1,
-  },
-  linkText: {
-    color: '#FFFFFF',
-    textDecorationLine: 'underline',
-  },
-  registerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 40,
-  },
-  footerText: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-  },
-  signinText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  dividerContainer: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#2A2E37',
-    marginBottom: 40,
-  },
-  divider: {
-    flex: 1,
-  },
-  socialTitle: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  socialButton: {
-    width: (width - 76) / 2,
-    height: 60,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  socialText: {
-    fontFamily: 'Poppins_600SemiBold',
-    fontSize: 14,
-  },
+  disabledButton: { opacity: 0.5 },
+  registerButtonText: { color: '#FFFFFF', fontSize: 18, fontFamily: 'Poppins_600SemiBold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 40 },
+  footerText: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  signinText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  dividerContainer: { width: '100%', height: 1, backgroundColor: '#2A2E37', marginBottom: 40 },
+  divider: { flex: 1 },
+  socialTitle: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 30 },
+  socialRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  socialButton: { width: (width - 76) / 2, height: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  socialText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
 });

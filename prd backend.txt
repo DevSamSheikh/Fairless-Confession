@@ -67,7 +67,7 @@ The target audience includes individuals seeking a safe, anonymous space to shar
 **Back-End:** Supabase
 
 * Authentication: Supabase Auth with custom user tracking
-* Database: PostgreSQL for user data, posts, societies, interactions
+* Database: Supabase (PostgreSQL) for user data, posts, societies, interactions
 * Storage: Supabase Storage for any media assets
 * Real-time: Supabase Realtime for live interactions
 * Edge Functions: For complex business logic and tracking

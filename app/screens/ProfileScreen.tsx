@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
 import { useNavigation } from '@react-navigation/native';
+import { useUserStore } from '../store/user.store';
 
 interface SettingsItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -13,6 +14,13 @@ interface SettingsItem {
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { user, logout } = useUserStore();
+  const displayId = user?.identityId || user?.userIdCustom || '#Confess_****';
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -25,7 +33,7 @@ export const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.userName}>Anonymous User</Text>
-          <Text style={styles.userId}>#Confess_4920</Text>
+          <Text style={styles.userId}>{displayId}</Text>
           
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -97,7 +105,7 @@ export const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FF4B4B" />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>

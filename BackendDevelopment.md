@@ -1,69 +1,78 @@
 # Backend Development Guide: ConfessBox
 
-This document outlines the step-by-step process to build a robust, anonymous backend for ConfessBox using **Node.js, TypeScript, and PostgreSQL**.
+This document outlines the backend for ConfessBox using **Supabase** (Auth, Database, optional Realtime/Edge Functions) with a thin **Express + TypeScript** API server where needed.
+
+---
+
+## Tech Stack
+
+- **Supabase**: Auth, Database (PostgreSQL), Storage, Realtime
+- **Express + TypeScript**: Optional API server using `@supabase/supabase-js` (service role) for server-side logic
+- **Environment**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (see `.env.example`)
 
 ---
 
 ## Phase 1: Environment Setup
-1. **Initialize Project**: 
-   - Use `npm init -y` in the server directory.
-   - Install core dependencies: `express`, `cors`, `helmet`, `dotenv`, `pg`, `drizzle-orm`.
-   - Install dev dependencies: `typescript`, `@types/node`, `@types/express`, `tsx`.
-2. **Database Provisioning**: 
-   - Use the Replit PostgreSQL tool to create a database instance.
-   - Configure environment variables (`DATABASE_URL`).
-3. **Drizzle ORM Setup**: 
-   - Define the schema in `src/db/schema.ts` based on `@Backend_req.md`.
-   - Set up the migration runner.
+
+1. **Supabase project**
+   - Create a project at [supabase.com](https://supabase.com).
+   - In Settings → API: copy **Project URL** and **service_role** key (keep secret).
+
+2. **Environment variables**
+   - Copy `.env.example` to `.env`.
+   - Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+
+3. **Database schema**
+   - Run the SQL in `supabase/migrations/00001_initial_schema.sql` in the Supabase SQL Editor (or use Supabase CLI: `supabase db push`).
+   - This creates enums, `public.users`, `societies`, `posts`, `comments`, `reactions`, `society_members`, and RLS policies.
+
+4. **Run the API server** (optional; for custom endpoints)
+   - `npm run server` (runs `tsx server/src/index.ts`).
 
 ---
 
 ## Phase 2: Core Infrastructure
-1. **Identity Management**:
-   - Create an `IdentityService` to generate anonymous handles (e.g., `#Confess_1234`) and unique avatar seeds.
-   - Implement JWT-based anonymous sessions (no password required).
-2. **Middleware**:
-   - **Auth Middleware**: Extracts and validates the anonymous identity from the header.
-   - **Privacy Middleware**: Ensures no sensitive user IDs are leaked in API responses.
-   - **Rate Limiter**: Limits post creation frequency to prevent spam.
+
+1. **Identity**
+   - Anonymous identity (`identity_id`, `avatar_seed`, `user_id_custom` with 2004 prefix) is stored in `public.users` and created on signup (server or DB trigger).
+
+2. **Auth**
+   - **Middleware**: Validates Supabase JWT via `supabase.auth.getUser(token)`.
+   - **Endpoints**: Register and login use Supabase Auth; server creates/reads profile from `public.users`.
+
+3. **Rate limiting**
+   - To be added (e.g. Express middleware or Supabase Edge Function).
 
 ---
 
 ## Phase 3: API Implementation
-1. **Auth Endpoints**: 
-   - `POST /auth/anonymous-login`
-2. **Post Management**: 
-   - `GET /posts` (with pagination & filtering)
-   - `POST /posts` (with identity injection)
-   - `GET /posts/trending` (logic for sorting by recent engagement)
-3. **Society Management**:
-   - `GET /societies`
-   - `POST /societies/join/:id`
-4. **Interaction Endpoints**:
-   - `POST /reactions` (atomic updates to post reaction counts)
-   - `POST /comments`
+
+- **Auth**: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/forgot-password`
+- **Posts**: `GET /api/posts`, `POST /api/posts`, `GET /api/posts/:id`
+- **Societies**: `GET /api/societies`, `POST /api/societies/join/:id`
+- **Interactions**: `POST /api/interactions/react`, `POST /api/interactions/comment`
+
+The app can also call Supabase directly from the client (with anon key) where RLS allows.
 
 ---
 
 ## Phase 4: Real-time & Optimization
-1. **WebSockets (Socket.io)**:
-   - Implement a notification system for when someone reacts to or comments on a user's post.
-2. **Caching (Redis)**:
-   - Cache trending post results to avoid heavy DB queries on every request.
-3. **Analytics**:
-   - Track post velocity to feed the "Trending" algorithm.
+
+- **Supabase Realtime**: Subscribe to table changes (e.g. new comments, reactions) from the client.
+- **Edge Functions**: Use for tracking, heavy logic, or rate limiting if needed.
 
 ---
 
 ## Phase 5: Deployment & Hardening
-1. **Security Review**: 
-   - Verify that real user IDs are never returned to the frontend.
-2. **Scaling**: 
-   - Configure connection pooling for PostgreSQL.
-3. **Publishing**: 
-   - Deploy the backend as a Replit Autoscale deployment.
+
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client; use it only on the server.
+- RLS policies restrict what the anon key can do; service role bypasses RLS (use only in trusted server code).
+- Deploy the Express server to your chosen host (e.g. Railway, Render, Fly.io).
 
 ---
 
-## Why this works best:
-By using **TypeScript** on both sides, we ensure that the `Post` object the backend sends is exactly what the frontend expects, eliminating 90% of integration bugs.
+## Why Supabase
+
+- Single platform for Auth, Database, Storage, and Realtime.
+- PostgreSQL with RLS for secure, fine-grained access.
+- No direct PostgreSQL connection or ORM to maintain; use Supabase client and SQL migrations.
