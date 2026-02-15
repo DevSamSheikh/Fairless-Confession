@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet, Linking, Platform } from 'react-native';
 import { HomeScreen } from './app/screens/HomeScreen';
 import { TrendingScreen } from './app/screens/TrendingScreen';
 import { PostScreen } from './app/screens/PostScreen';
@@ -14,18 +14,23 @@ import { WelcomeScreen } from './app/screens/auth/WelcomeScreen';
 import { LoginScreen } from './app/screens/auth/LoginScreen';
 import { RegisterScreen } from './app/screens/auth/RegisterScreen';
 import { ForgetPasswordScreen } from './app/screens/auth/ForgetPasswordScreen';
+import { NewPasswordScreen } from './app/screens/auth/NewPasswordScreen';
 import { OnboardingScreen } from './app/screens/OnboardingScreen';
 import { SocietyDetailScreen } from './app/screens/SocietyDetailScreen';
 import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { MyConfessionsScreen } from './app/screens/MyConfessionsScreen';
 import { PrivacySecurityScreen } from './app/screens/PrivacySecurityScreen';
+import { PrivacyPolicyScreen } from './app/screens/PrivacyPolicyScreen';
+import { AppSafetyScreen } from './app/screens/AppSafetyScreen';
 import { AppSettingsScreen } from './app/screens/AppSettingsScreen';
 import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNavigationContainerRef } from '@react-navigation/native';
 import { useUserStore } from './app/store/user.store';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
 
 function TabNavigator() {
   const [refreshing, setRefreshing] = useState(false);
@@ -136,12 +141,49 @@ function TabNavigator() {
   );
 }
 
+function parseResetTokenFromUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const hash = Platform.OS === 'web' ? window.location.hash : (url.split('#')[1] || '');
+    if (!hash) return null;
+    const params = new URLSearchParams(hash);
+    return params.get('access_token');
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   const { user, isHydrated, hydrate } = useUserStore();
+  const [navReady, setNavReady] = useState(false);
+  const hasHandledInitialUrl = useRef(false);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    if (!isHydrated || user || !navReady) return;
+    const handleUrl = (url: string | null) => {
+      const token = parseResetTokenFromUrl(url);
+      if (token && navigationRef.isReady()) {
+        navigationRef.navigate('NewPassword', { resetToken: token });
+        if (Platform.OS === 'web' && typeof window !== 'undefined' && window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname || '/');
+        }
+      }
+    };
+    if (!hasHandledInitialUrl.current) {
+      hasHandledInitialUrl.current = true;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        handleUrl(window.location.href);
+      } else {
+        Linking.getInitialURL().then(handleUrl);
+      }
+    }
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, [isHydrated, user, navReady]);
 
   if (!isHydrated) {
     return (
@@ -153,7 +195,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
       <StatusBar style="light" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
@@ -163,6 +205,9 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
+            <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+            <Stack.Screen name="AppSafety" component={AppSafetyScreen} />
           </>
         ) : (
           <>

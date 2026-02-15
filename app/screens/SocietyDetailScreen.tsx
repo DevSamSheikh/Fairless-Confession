@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { PostCard } from '../components/PostCard';
+import { createPost, ContentBlockedError } from '../api/posts';
 
 const SOCIETY_CONFESSIONS = [
   {
@@ -38,6 +39,7 @@ export const SocietyDetailScreen: React.FC = () => {
   const [showPostBox, setShowPostBox] = useState(false);
   const [activeTab, setActiveTab] = useState("Latest");
   const [showGuidelines, setShowGuidelines] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     let interval: any;
@@ -195,15 +197,64 @@ export const SocietyDetailScreen: React.FC = () => {
                     onChangeText={setConfession}
                   />
                 </View>
-                <TouchableOpacity style={styles.confessButton} onPress={() => {
-                  if (confession.trim()) {
-                    setConfession('');
-                    setTitle('');
-                    setShowPostBox(false);
-                    alert('Confession posted to society!');
-                  }
-                }}>
-                  <Text style={styles.confessButtonText}>Confess</Text>
+                <TouchableOpacity
+                  style={styles.confessButton}
+                  disabled={!confession.trim() || posting}
+                  onPress={async () => {
+                    if (!confession.trim() || posting) return;
+                    setPosting(true);
+                    try {
+                      await createPost({
+                        title: title.trim() || undefined,
+                        content: confession.trim(),
+                        category: 'Secrets',
+                        societyId: society?.id ?? null,
+                      });
+                      setConfession('');
+                      setTitle('');
+                      setShowPostBox(false);
+                      Alert.alert('Success', 'Confession posted to society!');
+                    } catch (e: any) {
+                      if (e instanceof ContentBlockedError) {
+                        setPosting(false);
+                        Alert.alert(
+                          'Content not allowed',
+                          'Your confession contains words that are not allowed. You can edit your text or post a filtered version.',
+                          [
+                            { text: 'Edit Content', style: 'cancel' },
+                            {
+                              text: 'Post Filtered',
+                              onPress: async () => {
+                                setPosting(true);
+                                try {
+                                  await createPost({
+                                    title: e.sanitizedTitle || undefined,
+                                    content: e.sanitizedContent,
+                                    category: 'Secrets',
+                                    societyId: society?.id ?? null,
+                                  });
+                                  setConfession('');
+                                  setTitle('');
+                                  setShowPostBox(false);
+                                  Alert.alert('Success', 'Confession posted to society!');
+                                } catch (err: any) {
+                                  Alert.alert('Error', err?.message ?? 'Failed to post');
+                                } finally {
+                                  setPosting(false);
+                                }
+                              },
+                            },
+                          ]
+                        );
+                        return;
+                      }
+                      Alert.alert('Error', e?.message ?? 'Failed to post');
+                    } finally {
+                      setPosting(false);
+                    }
+                  }}
+                >
+                  {posting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confessButtonText}>Confess</Text>}
                 </TouchableOpacity>
               </View>
             )}

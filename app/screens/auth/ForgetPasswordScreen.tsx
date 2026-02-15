@@ -1,29 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { forgetPassword } from '../../api/auth';
 
 export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'email' | 'phone'>('email');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
+  const handleSendLink = async () => {
     setError('');
     setMessage('');
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
       setError('Please enter your email.');
+      return;
+    }
+    const atIndex = trimmedEmail.indexOf('@');
+    if (atIndex < 1 || atIndex === trimmedEmail.length - 1) {
+      setError('Please enter a valid email address.');
       return;
     }
     setLoading(true);
     try {
       await forgetPassword(trimmedEmail);
-      setMessage('Check your email for the reset link.');
+      setMessage('Check your email for the reset link. Click it to set a new password, then sign in.');
     } catch (e: any) {
-      setError(e?.message || 'Failed to send reset email.');
+      setError(e?.message || 'Failed to send reset link.');
     } finally {
       setLoading(false);
     }
@@ -37,8 +41,8 @@ export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
         </View>
       </TouchableOpacity>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Forget Password</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.subtitle}>
           Enter your email and we'll send you a link to reset your password.
         </Text>
@@ -59,10 +63,10 @@ export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
           />
         </View>
 
-        <TouchableOpacity style={styles.nextButton} onPress={handleSubmit} disabled={loading}>
+        <TouchableOpacity style={styles.nextButton} onPress={handleSendLink} disabled={loading}>
           {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.nextButtonText}>Send Reset Link</Text>}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 12, backgroundColor: '#1A1D23',
     justifyContent: 'center', alignItems: 'center',
   },
-  content: { flex: 1, paddingHorizontal: 30, paddingTop: 20 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 30, paddingTop: 20, paddingBottom: 40 },
   title: {
     color: '#FFFFFF', fontSize: 40, fontFamily: 'Poppins_600SemiBold',
     marginBottom: 16, lineHeight: 50,

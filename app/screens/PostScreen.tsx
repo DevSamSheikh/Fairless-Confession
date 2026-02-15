@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { CATEGORIES, Category, COLORS, RATE_LIMITS } from '../utils/constants';
 import { useUserStore } from '../store/user.store';
+import { createPost, ContentBlockedError } from '../api/posts';
 
 export const PostScreen: React.FC = () => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const userStore = useUserStore();
-  
+
   const postsToday = userStore?.postsToday ?? 0;
   const incrementPosts = userStore?.incrementPosts ?? (() => {});
 
@@ -16,7 +18,7 @@ export const PostScreen: React.FC = () => {
   const canPost = postsToday < limits.POSTS_PER_DAY;
   const remainingPosts = limits.POSTS_PER_DAY - postsToday;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!content.trim()) {
       Alert.alert('Error', 'Please write your confession');
       return;
@@ -30,11 +32,57 @@ export const PostScreen: React.FC = () => {
       return;
     }
 
-    incrementPosts();
-    setContent('');
-    setTitle('');
-    setSelectedCategory(null);
-    Alert.alert('Success', 'Your confession has been posted anonymously!');
+    setSubmitting(true);
+    try {
+      await createPost({
+        title: title.trim() || undefined,
+        content: content.trim(),
+        category: selectedCategory,
+      });
+      incrementPosts();
+      setContent('');
+      setTitle('');
+      setSelectedCategory(null);
+      Alert.alert('Success', 'Your confession has been posted anonymously!');
+    } catch (e: any) {
+      if (e instanceof ContentBlockedError) {
+        setSubmitting(false);
+        Alert.alert(
+          'Content not allowed',
+          'Your post contains words that are not allowed. You can edit your text or post a filtered version.',
+          [
+            { text: 'Edit Content', style: 'cancel' },
+            {
+              text: 'Post Filtered',
+              onPress: async () => {
+                setSubmitting(true);
+                try {
+                  await createPost({
+                    title: e.sanitizedTitle || undefined,
+                    content: e.sanitizedContent,
+                    category: selectedCategory,
+                  });
+                  incrementPosts();
+                  setContent('');
+                  setTitle('');
+                  setSelectedCategory(null);
+                  Alert.alert('Success', 'Your confession has been posted anonymously!');
+                } catch (err: any) {
+                  Alert.alert('Error', err?.message ?? 'Failed to post');
+                } finally {
+                  setSubmitting(false);
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+      const msg = e?.message ?? 'Failed to post';
+      Alert.alert('Error', msg.includes('reach server') ? 'Cannot reach server. Check your connection and backend URL.' : msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -90,11 +138,15 @@ export const PostScreen: React.FC = () => {
       </Text>
 
       <Pressable
-        style={[styles.submitButton, !canPost && styles.disabledButton]}
+        style={[styles.submitButton, (!canPost || submitting) && styles.disabledButton]}
         onPress={handleSubmit}
-        disabled={!canPost}
+        disabled={!canPost || submitting}
       >
-        <Text style={styles.submitText}>Post Anonymously</Text>
+        {submitting ? (
+          <ActivityIndicator color={COLORS.text} />
+        ) : (
+          <Text style={styles.submitText}>Post Anonymously</Text>
+        )}
       </Pressable>
     </ScrollView>
   );

@@ -12,6 +12,7 @@ export interface User {
   created_at: string;
   posts_count: number;
   reactions_count: number;
+  sign_in_dates?: string[];
 }
 
 export interface Society {

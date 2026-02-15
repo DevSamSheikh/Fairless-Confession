@@ -2,14 +2,24 @@ import { Router } from 'express';
 import { supabase } from '../db/client.js';
 import { authMiddleware, type AuthRequest } from '../middleware/auth.js';
 import { getClientInfo } from '../lib/tracking.js';
+import { filterPostContent } from '../lib/contentFilter.js';
 
 const router = Router();
 
-// POST /api/post - Create confession (from profile or society); trace details
+// POST /api/post - Create confession (from profile or society); trace details (unique id, username, date/time, category, society id, heading, content, engagement)
 router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { title, content, category, visibility, societyId } = req.body;
     if (!req.userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const filter = filterPostContent(String(title ?? ''), String(content ?? ''));
+    if (!filter.allowed) {
+      return res.status(400).json({
+        error: filter.error ?? 'Content not allowed',
+        sanitizedTitle: filter.sanitizedTitle,
+        sanitizedContent: filter.sanitizedContent,
+      });
+    }
 
     const { data: profile } = await supabase.from('users').select('identity_id').eq('id', req.userId).single();
 

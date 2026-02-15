@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "npx expo start",
-    "start:clear": "npx expo start --clear",
-    "android": "npx expo start --android",
-    "ios": "npx expo start --ios",
-    "web": "EXPO_PUBLIC_PORT=5000 npx expo start --web --port 5000 --tunnel",
+    "start": "expo start",
+    "start:clear": "expo start --clear",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "EXPO_PUBLIC_PORT=5000 expo start --web --port 5000 --tunnel",
     "server": "tsx server/src/index.ts",
     "seed": "tsx server/scripts/seed.ts"
   },

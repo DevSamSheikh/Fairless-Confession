@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL_OVERRIDE_KEY = '@confessbox_api_url';
 let cachedOverride: string | null = null;
@@ -8,14 +7,18 @@ let cachedOverride: string | null = null;
 export async function setApiUrlOverride(url: string): Promise<void> {
   const trimmed = url.trim().replace(/\/+$/, '');
   cachedOverride = trimmed || null;
-  if (trimmed) await AsyncStorage.setItem(API_URL_OVERRIDE_KEY, trimmed);
-  else await AsyncStorage.removeItem(API_URL_OVERRIDE_KEY);
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    if (trimmed) await AsyncStorage.setItem(API_URL_OVERRIDE_KEY, trimmed);
+    else await AsyncStorage.removeItem(API_URL_OVERRIDE_KEY);
+  } catch (_) {}
 }
 
 /** Get backend API base URL. Call at request time so Expo Go host is available. */
 export async function getApiUrl(): Promise<string> {
   if (cachedOverride) return cachedOverride;
   try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
     const stored = await AsyncStorage.getItem(API_URL_OVERRIDE_KEY);
     if (stored && stored.length > 0) {
       cachedOverride = stored;

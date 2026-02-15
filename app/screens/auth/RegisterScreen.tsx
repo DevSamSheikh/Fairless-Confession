@@ -19,7 +19,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const handleRegister = async () => {
     setError('');
     if (!agreed) {
-      setError('You must agree to the Rules & Regulations.');
+      setError('You must agree to the Privacy Policy and App Safety to sign up.');
       return;
     }
     const trimmedEmail = email.trim();
@@ -100,7 +100,11 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             <Ionicons name={agreed ? 'checkbox' : 'square-outline'} size={24} color={agreed ? '#6B5CE7' : '#6B7280'} />
           </TouchableOpacity>
           <Text style={styles.agreementText}>
-            I agree to the <Text style={styles.linkText}>Rules & Regulations</Text> of ConfessBox
+            I agree to the{' '}
+            <Text style={styles.linkText} onPress={() => navigation.navigate('PrivacyPolicy')}>Privacy Policy</Text>
+            {' '}and{' '}
+            <Text style={styles.linkText} onPress={() => navigation.navigate('AppSafety')}>App Safety</Text>
+            {' '}of ConfessBox
           </Text>
         </View>
 

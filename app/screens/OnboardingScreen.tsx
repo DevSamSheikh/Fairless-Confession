@@ -16,7 +16,7 @@ const { width, height } = Dimensions.get("window");
 const SLIDES = [
   {
     id: "1",
-    title: "Speak Freely.\nNo Names. No Judgement.",
+    title: "Speak Anonymously.\nWithout Judgement.",
     subtitle:
       "Share what you can’t say anywhere else.\nYour thoughts stay yours — always anonymous, always safe.",
     image: require("../../assets/images/onboarding_safety.png"),

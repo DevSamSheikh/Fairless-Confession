@@ -172,3 +172,17 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN
   CREATE POLICY "Authenticated can insert reports" ON public.reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- Migration 00003: sign_in_dates (history of sign-ins) + always lowercase email
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS sign_in_dates TIMESTAMPTZ[] DEFAULT '{}' NOT NULL;
+CREATE OR REPLACE FUNCTION public.lowercase_user_email() RETURNS TRIGGER AS $$
+BEGIN
+  NEW.email := LOWER(TRIM(NEW.email));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS users_lowercase_email ON public.users;
+CREATE TRIGGER users_lowercase_email
+  BEFORE INSERT OR UPDATE OF email ON public.users
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.lowercase_user_email();

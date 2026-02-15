@@ -82,10 +82,25 @@ export async function forgetPassword(email: string): Promise<void> {
   const res = await authFetch(`${baseUrl}/api/auth/forget-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data?.error || 'Failed to send reset email');
+    throw new Error(data?.error || 'Failed to send reset link');
   }
+}
+
+export async function setNewPassword(
+  resetToken: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<void> {
+  const baseUrl = await getApiUrl();
+  const res = await authFetch(`${baseUrl}/api/auth/set-new-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resetToken, newPassword, confirmPassword }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || 'Failed to update password');
 }
