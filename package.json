@@ -5,11 +5,11 @@
   "scripts": {
     "start": "expo start",
     "start:clear": "expo start --clear",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "EXPO_PUBLIC_PORT=5000 expo start --web --port 5000 --tunnel",
-    "server": "tsx server/src/index.ts",
-    "seed": "tsx server/scripts/seed.ts"
+    "server": "cd server && npm start",
+    "seed": "cd server && npm run seed"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
@@ -22,30 +22,24 @@
     "@react-navigation/native": "^7.0.0",
     "@react-navigation/native-stack": "^7.11.0",
     "@supabase/supabase-js": "^2.47.10",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.6",
-    "@types/node": "^20.17.17",
-    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "expo": "~54.0.0",
     "expo-clipboard": "~8.0.8",
+    "expo-constants": "~18.0.13",
     "expo-font": "^14.0.11",
     "expo-haptics": "^15.0.8",
     "expo-status-bar": "~3.0.0",
-    "express": "^5.2.1",
-    "helmet": "^8.1.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-native": "^0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-toast-message": "^2.3.3",
     "react-native-web": "~0.21.0",
-    "tsx": "^4.21.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@types/react": "~18.3.12",
+    "@types/react": "~19.1.10",
     "typescript": "~5.9.2"
   },
   "private": true
