@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet, Linking, Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { HomeScreen } from './app/screens/HomeScreen';
 import { TrendingScreen } from './app/screens/TrendingScreen';
 import { PostScreen } from './app/screens/PostScreen';
@@ -19,6 +20,9 @@ import { OnboardingScreen } from './app/screens/OnboardingScreen';
 import { SocietyDetailScreen } from './app/screens/SocietyDetailScreen';
 import { CreateSocietyScreen } from './app/screens/CreateSocietyScreen';
 import { MyConfessionsScreen } from './app/screens/MyConfessionsScreen';
+import { SavedSecretsScreen } from './app/screens/SavedSecretsScreen';
+import { MyReactionsScreen } from './app/screens/MyReactionsScreen';
+import { EditConfessionScreen } from './app/screens/EditConfessionScreen';
 import { PrivacySecurityScreen } from './app/screens/PrivacySecurityScreen';
 import { PrivacyPolicyScreen } from './app/screens/PrivacyPolicyScreen';
 import { AppSafetyScreen } from './app/screens/AppSafetyScreen';
@@ -195,32 +199,113 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
-      <StatusBar style="light" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!user ? (
-          <>
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-            <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
-            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-            <Stack.Screen name="AppSafety" component={AppSafetyScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Main" component={TabNavigator} />
-            <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
-            <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
-            <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
-            <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-            <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
+        <StatusBar style="light" />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!user ? (
+            <>
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
+              <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
+              <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+              <Stack.Screen name="AppSafety" component={AppSafetyScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Main" component={TabNavigator} />
+              <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
+              <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
+              <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+              <Stack.Screen name="EditConfession" component={EditConfessionScreen} />
+              <Stack.Screen name="SavedSecrets" component={SavedSecretsScreen} />
+              <Stack.Screen name="MyReactions" component={MyReactionsScreen} />
+              <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+              <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <Toast config={{
+        success: (props) => (
+          <View style={{
+            backgroundColor: COLORS.accent,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginHorizontal: 20,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 5,
+          }}>
+            <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+              {props.text1}
+            </Text>
+            <TouchableOpacity onPress={() => Toast.hide()}>
+              <Ionicons name="close" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        ),
+        error: (props) => (
+          <View style={{
+            backgroundColor: '#FF4B4B',
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginHorizontal: 20,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 5,
+          }}>
+            <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+              {props.text1}
+            </Text>
+            <TouchableOpacity onPress={() => Toast.hide()}>
+              <Ionicons name="close" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        ),
+        info: (props) => (
+          <View style={{
+            backgroundColor: '#1E222B',
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginHorizontal: 20,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.1)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 5,
+          }}>
+            <Ionicons name="information-circle" size={24} color={COLORS.accent} />
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+              {props.text1}
+            </Text>
+            <TouchableOpacity onPress={() => Toast.hide()}>
+              <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ),
+      }} />
+    </>
   );
 }
 

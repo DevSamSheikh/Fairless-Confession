@@ -18,10 +18,11 @@ export interface Post {
   createdAt: Date;
   comments?: Comment[];
   isOwner?: boolean;
+  myReactionType?: string | null;
 }
 
-// We'll use emojis as keys for reactions as per requirements
-export type PostReaction = '❤️' | '😮' | '😢' | '😡' | '😂';
+// Keep reaction keys aligned with backend enum values
+export type PostReaction = 'Like' | 'Funny' | 'Supportive' | 'Unbelievable' | 'Thought' | 'Anger';
 
 interface FeedState {
   posts: Post[];
@@ -31,6 +32,7 @@ interface FeedState {
   setTrendingPosts: (posts: Post[]) => void;
   setLoading: (loading: boolean) => void;
   addReaction: (postId: string, reaction: string) => void;
+  syncReactionState: (postId: string, summary: Record<string, number>, myReactionType: string | null) => void;
   deletePost: (postId: string) => void;
   updatePost: (postId: string, content: string) => void;
   refreshFeed: () => void;
@@ -48,7 +50,7 @@ const dummyPosts: Post[] = [
     content: 'I secretly hate group projects but always end up doing all the work anyway. It\'s so frustrating when people just slack off.',
     category: 'College',
     societyName: 'Midnight Society',
-    reactions: { '❤️': 234, '😮': 45, '😢': 12, '😡': 89, '😂': 156 },
+    reactions: { Like: 234, Supportive: 45, Thought: 12, Anger: 89, Funny: 156 },
     commentCount: 67,
     createdAt: new Date(Date.now() - 3600000),
     comments: dummyComments,
@@ -59,7 +61,7 @@ const dummyPosts: Post[] = [
     title: 'Beach work life',
     content: 'My boss thinks I work from home but I actually work from the beach most days. The view is amazing and I\'m more productive here.',
     category: 'Work',
-    reactions: { '❤️': 567, '😮': 123, '😢': 8, '😡': 34, '😂': 445 },
+    reactions: { Like: 567, Supportive: 123, Thought: 8, Anger: 34, Funny: 445 },
     commentCount: 89,
     createdAt: new Date(Date.now() - 7200000),
     comments: dummyComments,
@@ -70,7 +72,7 @@ const dummyPosts: Post[] = [
     title: 'Secret crush',
     content: 'Still in love with someone who doesn\'t even know I exist. I see them every day and my heart just melts.',
     category: 'Love',
-    reactions: { '❤️': 890, '😮': 23, '😢': 456, '😡': 12, '😂': 34 },
+    reactions: { Like: 890, Supportive: 23, Thought: 456, Anger: 12, Funny: 34 },
     commentCount: 234,
     createdAt: new Date(Date.now() - 10800000),
     comments: dummyComments,
@@ -81,7 +83,7 @@ const dummyPosts: Post[] = [
     title: 'Testing the waters',
     content: 'I started a rumor about myself just to see who would believe it. It turned out to be quite revealing about my friends.',
     category: 'Drama',
-    reactions: { '❤️': 123, '😮': 567, '😢': 23, '😡': 45, '😂': 678 },
+    reactions: { Like: 123, Supportive: 567, Thought: 23, Anger: 45, Funny: 678 },
     commentCount: 156,
     createdAt: new Date(Date.now() - 14400000),
     comments: dummyComments,
@@ -92,7 +94,7 @@ const dummyPosts: Post[] = [
     title: 'Uncontrollable laughter',
     content: 'Sometimes I laugh at completely inappropriate moments and can\'t stop. It\'s a problem, especially during serious meetings.',
     category: 'Funny',
-    reactions: { '❤️': 345, '😮': 67, '😢': 12, '😡': 8, '😂': 890 },
+    reactions: { Like: 345, Supportive: 67, Thought: 12, Anger: 8, Funny: 890 },
     commentCount: 78,
     createdAt: new Date(Date.now() - 18000000),
     comments: dummyComments,
@@ -119,8 +121,36 @@ export const useFeedStore = create<FeedState>((set) => ({
     set((state) => {
       const updatedPosts = state.posts.map((post) =>
         post.id === postId
-          ? { ...post, reactions: { ...post.reactions, [reaction]: (post.reactions[reaction] || 0) + 1 } }
+          ? (() => {
+              const current = post.myReactionType ?? null;
+              const next = reaction;
+              const nextReactions = { ...post.reactions };
+
+              if (!current) {
+                nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+                return { ...post, reactions: nextReactions, myReactionType: next };
+              }
+
+              if (current === next) {
+                nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+                return { ...post, reactions: nextReactions, myReactionType: null };
+              }
+
+              nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+              nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+              return { ...post, reactions: nextReactions, myReactionType: next };
+            })()
           : post
+      );
+      return {
+        posts: updatedPosts,
+        trendingPosts: sortByTrending(updatedPosts),
+      };
+    }),
+  syncReactionState: (postId, summary, myReactionType) =>
+    set((state) => {
+      const updatedPosts = state.posts.map((post) =>
+        post.id === postId ? { ...post, reactions: summary ?? {}, myReactionType } : post
       );
       return {
         posts: updatedPosts,

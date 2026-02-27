@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { login } from '../../api/auth';
 import { setApiUrlOverride } from '../../api/config';
 
@@ -35,9 +36,9 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const { token, user } = await login(trimmedEmail, password);
-      await setAuth(token, user);
-      navigation.replace('Main');
+      const data = await login(trimmedEmail, password);
+      setAuth(data.token, data.user);
+      showSuccessToast('Welcome back!');
     } catch (e: any) {
       setError(e?.message || 'Login failed. Check your credentials.');
     } finally {

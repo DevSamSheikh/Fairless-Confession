@@ -13,6 +13,7 @@ import { COLORS } from "../../utils/constants";
 import { useFeedStore } from "../../store/feed.store";
 import { useNavigation } from "@react-navigation/native";
 import { SearchBar } from "../../components/SearchBar";
+import { isServerPostId, reactToPost } from "../../api/interactions";
 
 interface Society {
   id: string;
@@ -62,7 +63,7 @@ const ALL_SOCIETIES: Society[] = [
 
 export const SocietiesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts } = useFeedStore();
+  const { posts, addReaction, syncReactionState } = useFeedStore();
   const joinedSocieties = ["Midnight Society"]; 
 
   const [activeTab, setActiveTab] = React.useState("Confessions");
@@ -79,6 +80,21 @@ export const SocietiesScreen: React.FC = () => {
   const filteredSocieties = searchQuery
     ? ALL_SOCIETIES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description.toLowerCase().includes(searchQuery.toLowerCase()))
     : ALL_SOCIETIES;
+
+  const handleReact = async (postId: string, reactionType: string) => {
+    addReaction(postId, reactionType);
+
+    if (!isServerPostId(postId)) {
+      return;
+    }
+
+    try {
+      const result = await reactToPost({ postId, reactionType });
+      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+    } catch {
+      // ignore; local optimistic state remains
+    }
+  };
 
   const renderSocietyItem = ({ item }: { item: Society }) => (
     <View style={styles.societyCard}>
@@ -162,7 +178,7 @@ export const SocietiesScreen: React.FC = () => {
           renderItem={({ item }) => (
             <PostCard
               post={item}
-              onReact={() => {}}
+              onReact={(reactionType) => handleReact(item.id, reactionType)}
             />
           )}
           contentContainerStyle={styles.list}

@@ -20,7 +20,34 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data ?? []);
+
+    const rows = data ?? [];
+    const postIds = rows.map((row: any) => row.id);
+
+    let myReactionByPostId: Record<string, string | null> = {};
+    if (postIds.length > 0) {
+      const { data: myReactions, error: myReactionsError } = await supabase
+        .from('reactions')
+        .select('post_id, reaction_type')
+        .eq('user_id', userId)
+        .in('post_id', postIds);
+
+      if (myReactionsError) throw myReactionsError;
+
+      for (const row of myReactions ?? []) {
+        const postId = (row as any).post_id as string;
+        const reactionType = (row as any).reaction_type as string | undefined;
+        if (!postId) continue;
+        myReactionByPostId[postId] = reactionType ?? null;
+      }
+    }
+
+    res.json(
+      rows.map((row: any) => ({
+        ...row,
+        myReactionType: myReactionByPostId[row.id] ?? null,
+      })),
+    );
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch my confessions' });
   }

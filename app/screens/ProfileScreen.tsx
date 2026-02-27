@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
 import { useNavigation } from '@react-navigation/native';
+import { showSuccessToast } from '../utils/toast';
 import { useUserStore } from '../store/user.store';
 
 interface SettingsItem {
@@ -19,6 +20,7 @@ export const ProfileScreen: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
+    showSuccessToast('Logged out successfully');
   };
 
   return (
@@ -89,14 +91,20 @@ export const ProfileScreen: React.FC = () => {
             <Text style={styles.menuText}>My Confessions</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('MyReactions')}
+          >
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(255, 75, 75, 0.1)' }]}>
               <Ionicons name="heart" size={20} color="#FF4B4B" />
             </View>
             <Text style={styles.menuText}>My Reactions</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('SavedSecrets')}
+          >
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(253, 203, 110, 0.1)' }]}>
               <Ionicons name="bookmark" size={20} color="#FDCB6E" />
             </View>

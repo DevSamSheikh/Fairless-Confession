@@ -19,10 +19,14 @@ import { Tabs } from "../components/ui/Tabs";
 import { useNavigation } from "@react-navigation/native";
 import { SearchBar } from "../components/SearchBar";
 import { useCenterHaptics } from "../hooks/useCenterHaptics";
+import { isServerPostId, reactToPost } from "../api/interactions";
+import { deleteMyConfession } from "../api/myConfessions";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { Alert } from "react-native";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts, trendingPosts, addReaction, refreshFeed } = useFeedStore();
+  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,8 +45,44 @@ export const HomeScreen: React.FC = () => {
     lastTap.current = now;
   };
 
-  const handleReact = (postId: string, reaction: string) => {
-    addReaction(postId, reaction as any);
+  const handleReact = async (postId: string, reactionType: string) => {
+    // Optimistic local update
+    addReaction(postId, reactionType as any);
+
+    if (!isServerPostId(postId)) {
+      return;
+    }
+
+    try {
+      const result = await reactToPost({ postId, reactionType });
+      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+    } catch {
+      // If server fails, refresh feed state by reloading from store shuffle (best-effort)
+      refreshFeed();
+    }
+  };
+
+  const handleDelete = (post: any) => {
+    Alert.alert(
+      "Delete Confession",
+      "Are you sure you want to delete this confession? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMyConfession(post.id);
+              deletePost(post.id);
+              showSuccessToast("Confession deleted successfully");
+            } catch (error: any) {
+              showErrorToast(error?.message ?? "Failed to delete confession");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const displayPosts = activeTab === "Latest" ? posts : trendingPosts;
@@ -120,7 +160,8 @@ export const HomeScreen: React.FC = () => {
                 <PostCard
                   post={item}
                   rank={activeTab === "Trending" ? index + 1 : undefined}
-                  onReact={(reaction) => handleReact(item.id, reaction)}
+                  onReact={(reactionType) => handleReact(item.id, reactionType)}
+                  onDeleteConfession={handleDelete}
                 />
               </TouchableOpacity>
             </View>

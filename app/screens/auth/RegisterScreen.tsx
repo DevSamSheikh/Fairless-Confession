@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
+import { showSuccessToast } from '../../utils/toast';
 import { register } from '../../api/auth';
 
 const { width } = Dimensions.get('window');
@@ -29,13 +30,9 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     }
     setLoading(true);
     try {
-      const result = await register(trimmedEmail, password, fullName.trim(), true);
-      await setAuth(result.token || null, result.user);
-      if (result.token) {
-        navigation.replace('Main');
-      } else {
-        setError('Registration successful. Please check your email to verify your account.');
-      }
+      const data = await register(trimmedEmail, password, fullName.trim(), agreed);
+      setAuth(data.token || null, data.user);
+      showSuccessToast('Account created successfully!');
     } catch (e: any) {
       setError(e?.message || 'Registration failed.');
     } finally {

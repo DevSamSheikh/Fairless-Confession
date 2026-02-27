@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,56 +13,50 @@ import {
   Platform,
   Dimensions,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnonymousAvatar } from "./AnonymousAvatar";
 import { Post } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 import { useUserStore } from "../store/user.store";
+import { useSavedSecretsStore } from "../store/savedSecrets.store";
+import * as Clipboard from "expo-clipboard";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
+import {
+  addCommentToPost,
+  deleteComment,
+  editComment,
+  fetchCommentsForPost,
+  isServerPostId,
+  type PostComment,
+  voteOnComment,
+} from "../api/interactions";
 
 const { width } = Dimensions.get("window");
 
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: Date;
-  userId?: string;
+interface CommentView extends PostComment {
+  createdAtDate: Date;
 }
 
 interface PostCardProps {
   post: Post;
-  onReact: (reaction: string) => void;
+  onReact: (reactionType: string) => void;
   rank?: number;
+  onEditConfession?: (post: Post) => void;
+  onDeleteConfession?: (post: Post) => void;
+  pinned?: boolean;
+  onTogglePin?: (post: Post, nextPinned: boolean) => void;
 }
 
-const DEMO_COMMENTS: Comment[] = [
-  {
-    id: "1",
-    content: "Stay strong, we are here for you! ❤️",
-    createdAt: new Date(Date.now() - 120000),
-    userId: "other-user-1",
-  },
-  {
-    id: "2",
-    content: "This society is exactly what I needed today.",
-    createdAt: new Date(Date.now() - 600000),
-    userId: "other-user-2",
-  },
-  {
-    id: "3",
-    content: "I can relate to this so much.",
-    createdAt: new Date(Date.now() - 900000),
-    userId: "other-user-3",
-  },
-];
-
 const REACTIONS = [
-  { emoji: "👍", label: "Like" },
-  { emoji: "🤣", label: "Funny" },
-  { emoji: "🥂", label: "Supportive" },
-  { emoji: "🤯", label: "Unbelievable" },
-  { emoji: "🤔", label: "Thought" },
-  { emoji: "😡", label: "Anger" },
+  { emoji: "👍", type: "Like" },
+  { emoji: "🤣", type: "Funny" },
+  { emoji: "🥂", type: "Supportive" },
+  { emoji: "🤯", type: "Unbelievable" },
+  { emoji: "🤔", type: "Thought" },
+  { emoji: "😡", type: "Anger" },
 ];
 
 const SHARE_OPTIONS = [
@@ -75,7 +69,8 @@ const SHARE_OPTIONS = [
   { name: "Copy Link", icon: "link", color: "#6B5CE7" },
 ];
 
-const formatTime = (date: Date): string => {
+const formatTime = (dateInput: Date | string): string => {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const minutes = Math.floor(diff / 60000);
@@ -87,58 +82,172 @@ const formatTime = (date: Date): string => {
   return `${Math.floor(hours / 24)}d ago`;
 };
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
+export const PostCard: React.FC<PostCardProps> = ({
+  post,
+  onReact,
+  rank,
+  onEditConfession,
+  onDeleteConfession,
+  pinned,
+  onTogglePin,
+}) => {
   const { userId } = useUserStore();
+  const { save, remove, isSaved } = useSavedSecretsStore();
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+  const [showHeaderMoreMenu, setShowHeaderMoreMenu] = useState(false);
+  const [selectedReactionType, setSelectedReactionType] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<Comment[]>(DEMO_COMMENTS);
+  const [comments, setComments] = useState<CommentView[]>([]);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentActionLoadingId, setCommentActionLoadingId] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [activeCommentMenuId, setActiveCommentMenuId] = useState<string | null>(null);
+  const [activeCommentAction, setActiveCommentAction] = useState<CommentView | null>(null);
+
+  const saved = isSaved(post.id);
+
+  useEffect(() => {
+    setSelectedReactionType(post.myReactionType ?? null);
+  }, [post.myReactionType, post.id, post.reactions]);
 
   const totalReactions = Object.values(post.reactions).reduce(
     (a, b) => a + b,
     0,
   );
 
-  const handleAddComment = () => {
-    if (commentText.trim()) {
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        content: commentText,
-        createdAt: new Date(),
-        userId: userId || "anonymous-current",
-      };
-      setComments([newComment, ...comments]);
-      setCommentText("");
+  const mapComment = (comment: PostComment): CommentView => ({
+    ...comment,
+    createdAtDate: new Date(comment.createdAt),
+  });
+
+  const applyComments = (nextComments: PostComment[]) => {
+    setComments(nextComments.map(mapComment));
+    setCommentsLoaded(true);
+  };
+
+  const loadComments = async () => {
+    if (!showFullView || commentsLoaded || !isServerPostId(post.id)) return;
+    setLoadingComments(true);
+    try {
+      const result = await fetchCommentsForPost(post.id);
+      applyComments(result);
+    } catch (error: any) {
+      Alert.alert("Comments", error?.message ?? "Failed to load comments.");
+    } finally {
+      setLoadingComments(false);
     }
+  };
+
+  useEffect(() => {
+    if (showFullView) {
+      void loadComments();
+      return;
+    }
+    setActiveCommentAction(null);
+    setEditingCommentId(null);
+    setShowHeaderMoreMenu(false);
+  }, [showFullView]);
+
+  const handleAddComment = async () => {
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+
+    if (!isServerPostId(post.id)) {
+      Alert.alert("Comments", "Comments are only available for server posts.");
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      const nextComments = await addCommentToPost(post.id, trimmed);
+      applyComments(nextComments);
+      setCommentText("");
+      showSuccessToast("Comment posted");
+    } catch (error: any) {
+      showErrorToast(error?.message ?? "Unable to add comment");
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleSaveEdit = async (commentId: string) => {
+    const trimmed = editingText.trim();
+    if (!trimmed) return;
+
+    setCommentActionLoadingId(commentId);
+    try {
+      const nextComments = await editComment(commentId, trimmed);
+      applyComments(nextComments);
+      setEditingCommentId(null);
+      setEditingText("");
+      showSuccessToast("Comment updated");
+    } catch (error: any) {
+      showErrorToast(error?.message ?? "Unable to edit comment");
+    } finally {
+      setCommentActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    setCommentActionLoadingId(commentId);
+    try {
+      const nextComments = await deleteComment(commentId);
+      applyComments(nextComments);
+      setActiveCommentAction(null);
+      showSuccessToast("Comment deleted");
+    } catch (error: any) {
+      showErrorToast(error?.message ?? "Unable to delete comment");
+    } finally {
+      setCommentActionLoadingId(null);
+    }
+  };
+
+  const handleVoteComment = async (commentId: string, direction: "up" | "down") => {
+    setCommentActionLoadingId(commentId);
+    try {
+      const nextComments = await voteOnComment(commentId, direction);
+      applyComments(nextComments);
+    } catch (error: any) {
+      Alert.alert("Vote Failed", error?.message ?? "Unable to vote right now.");
+    } finally {
+      setCommentActionLoadingId(null);
+    }
+  };
+
+  const isOwnComment = (comment: CommentView) => comment.userId === userId;
+
+  const openCommentAction = (comment: CommentView) => {
+    setActiveCommentAction(comment);
+  };
+
+  const canEditComment = (comment: CommentView): boolean => {
+    const ageMinutes = (Date.now() - comment.createdAtDate.getTime()) / 60000;
+    return ageMinutes <= 5;
+  };
+
+  const canEditPost = (): boolean => {
+    const ageMinutes = (Date.now() - post.createdAt.getTime()) / 60000;
+    return ageMinutes <= 10;
   };
 
   const handleLongPress = () => {
     setShowReactions(true);
   };
 
-  const handleSelectReaction = (reaction: string) => {
-    if (selectedReaction === reaction) {
-      setSelectedReaction(null);
-    } else {
-      setSelectedReaction(reaction);
-      onReact(reaction);
-    }
+  const selectedReactionEmoji = REACTIONS.find((r) => r.type === selectedReactionType)?.emoji;
+
+  const handleSelectReaction = (reactionType: string) => {
+    onReact(reactionType);
     setShowReactions(false);
   };
 
   const toggleLike = () => {
-    if (selectedReaction) {
-      setSelectedReaction(null);
-    } else {
-      setSelectedReaction("👍");
-      onReact("👍");
-    }
+    onReact("Like");
   };
 
   const contentPreview =
@@ -149,7 +258,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
 
   return (
     <View style={styles.container}>
-      {rank !== undefined && (
+      {pinned ? (
+        <View style={styles.rankBadge}>
+          <View style={styles.rankIconContainer}>
+            <Ionicons name="pin" size={14} color="#FFFFFF" />
+            <Text style={styles.rankText}>Pinned</Text>
+          </View>
+        </View>
+      ) : rank !== undefined ? (
         <View style={styles.rankBadge}>
           <View style={styles.rankIconContainer}>
             <Ionicons name="flame" size={14} color="#FFFFFF" />
@@ -159,7 +275,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
             </Text>
           </View>
         </View>
-      )}
+      ) : null}
 
       <TouchableOpacity
         activeOpacity={0.9}
@@ -211,8 +327,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                 <View style={styles.reactionPicker}>
                   {REACTIONS.map((r) => (
                     <TouchableOpacity
-                      key={r.emoji}
-                      onPress={() => handleSelectReaction(r.emoji)}
+                      key={r.type}
+                      onPress={() => handleSelectReaction(r.type)}
                       style={styles.reactionOption}
                     >
                       <Text style={styles.reactionEmoji}>{r.emoji}</Text>
@@ -231,11 +347,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               <View
                 style={[
                   styles.iconWrapper,
-                  selectedReaction && styles.activeIconWrapper,
+                  !!selectedReactionType && styles.activeIconWrapper,
                 ]}
               >
-                {selectedReaction ? (
-                  <Text style={{ fontSize: 20 }}>{selectedReaction}</Text>
+                {selectedReactionEmoji ? (
+                  <Text style={{ fontSize: 20 }}>{selectedReactionEmoji}</Text>
                 ) : (
                   <Ionicons
                     name="thumbs-up-outline"
@@ -247,13 +363,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               <Text
                 style={[
                   styles.interactionLabel,
-                  selectedReaction && {
+                  !!selectedReactionType && {
                     color: COLORS.accent,
                     fontFamily: "Poppins_600SemiBold",
                   },
                 ]}
               >
-                {totalReactions + (selectedReaction ? 1 : 0)}
+                {totalReactions}
               </Text>
             </TouchableOpacity>
           </View>
@@ -270,7 +386,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                 color={COLORS.textSecondary}
               />
             </View>
-            <Text style={styles.interactionLabel}>{comments.length}</Text>
+            <Text style={styles.interactionLabel}>
+              {commentsLoaded ? comments.length : post.commentCount}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -336,38 +454,88 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
           <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
             <TouchableWithoutFeedback>
               <View style={styles.centeredMenu}>
+                {post.isOwner && (onEditConfession || onDeleteConfession || onTogglePin) && (
+                  <>
+                    {onEditConfession && canEditPost() && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowMoreMenu(false);
+                          onEditConfession(post);
+                        }}
+                      >
+                        <Ionicons name="pencil" size={20} color={COLORS.accent} />
+                        <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                          Edit Confession
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {onDeleteConfession && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowMoreMenu(false);
+                          onDeleteConfession(post);
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+                        <Text style={[styles.menuItemLabel, { color: "#FF4B4B" }]}>
+                          Delete Confession
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {onTogglePin && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowMoreMenu(false);
+                          onTogglePin(post, !pinned);
+                        }}
+                      >
+                        <Ionicons
+                          name={pinned ? "pin" : "pin-outline"}
+                          size={20}
+                          color={COLORS.accent}
+                        />
+                        <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                          {pinned ? "Unpin from top" : "Pin to top"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
                 <TouchableOpacity
                   style={styles.menuItemRow}
                   onPress={() => {
                     setShowMoreMenu(false);
-                    alert("Confession saved!");
+                    if (saved) {
+                      remove(post.id);
+                    } else {
+                      save(post);
+                    }
                   }}
                 >
-                  <Ionicons name="bookmark-outline" size={20} color="#FFF" />
-                  <Text style={styles.menuItemLabel}>Save Confession</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.menuItemRow}
-                  onPress={() => {
-                    setShowMoreMenu(false);
-                    alert("Post reported.");
-                  }}
-                >
-                  <Ionicons name="flag-outline" size={20} color="#FF4B4B" />
-                  <Text style={[styles.menuItemLabel, { color: "#FF4B4B" }]}>
-                    Report Post
+                  <Ionicons
+                    name={saved ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                    color="#FFF"
+                  />
+                  <Text style={styles.menuItemLabel}>
+                    {saved ? "Remove from Saved" : "Save Confession"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.menuItemRow}
-                  onPress={() => setShowMoreMenu(false)}
-                >
-                  <Ionicons name="eye-off-outline" size={20} color="#FFF" />
-                  <Text style={styles.menuItemLabel}>Hide Post</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.menuItemRow}
-                  onPress={() => setShowMoreMenu(false)}
+                  onPress={async () => {
+                    try {
+                      await Clipboard.setStringAsync(post.content);
+                      setShowMoreMenu(false);
+                      alert("Content copied to clipboard.");
+                    } catch {
+                      setShowMoreMenu(false);
+                      alert("Failed to copy content.");
+                    }
+                  }}
                 >
                   <Ionicons name="copy-outline" size={20} color="#FFF" />
                   <Text style={styles.menuItemLabel}>Copy Content</Text>
@@ -385,17 +553,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
         onRequestClose={() => setShowFullView(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-          >
-            <View style={styles.modalHeader}>
+          <View style={styles.modalHeader}>
               <TouchableOpacity onPress={() => setShowFullView(false)}>
                 <Ionicons name="close" size={28} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={styles.modalHeaderText}>Confession</Text>
               <TouchableOpacity
-                onPress={() => setShowMoreMenu(true)}
+                onPress={() => setShowHeaderMoreMenu(true)}
               >
                 <Ionicons
                   name="ellipsis-horizontal"
@@ -408,6 +572,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
             <FlatList
               data={comments}
               keyExtractor={(item) => item.id}
+              nestedScrollEnabled={true}
+              scrollEnabled={true}
               ListHeaderComponent={() => (
                 <View style={styles.modalContent}>
                   <View style={styles.header}>
@@ -434,7 +600,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
 
                   <View style={styles.metaDivider} />
                   <View style={styles.statsRow}>
-                    <Text style={styles.statsText}>{totalReactions + (selectedReaction ? 1 : 0)} Reactions</Text>
+                    <Text style={styles.statsText}>{totalReactions} Reactions</Text>
                     <View style={styles.dot} />
                     <Text style={styles.statsText}>{comments.length} Comments</Text>
                   </View>
@@ -443,7 +609,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                   <View style={styles.commentSectionHeader}>
                     <Text style={styles.commentTitle}>Comments</Text>
                   </View>
-                  {comments.length === 0 && (
+                  {loadingComments && (
+                    <View style={styles.commentLoadingState}>
+                      <ActivityIndicator color={COLORS.accent} />
+                    </View>
+                  )}
+                  {comments.length === 0 && !loadingComments && (
                     <View style={styles.noComments}>
                       <Ionicons
                         name="chatbubbles-outline"
@@ -465,57 +636,44 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                       <View style={styles.commentInfo}>
                         <Text style={styles.commentUser}>Anonymous</Text>
                         <Text style={styles.commentTime}>
-                          {formatTime(item.createdAt)}
+                          {formatTime(item.createdAtDate)}
                         </Text>
                       </View>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setActiveCommentMenuId(activeCommentMenuId === item.id ? null : item.id)}
-                    >
-                      <Ionicons name="ellipsis-horizontal" size={18} color={COLORS.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
-
-                  {activeCommentMenuId === item.id && (
-                    <View style={styles.commentMenuInline}>
-                      {(item.userId === userId || item.userId === "anonymous-current") ? (
-                        <>
-                          <TouchableOpacity
-                            style={styles.commentMenuItem}
-                            onPress={() => {
-                              setEditingCommentId(item.id);
-                              setEditingText(item.content);
-                              setActiveCommentMenuId(null);
-                            }}
-                          >
-                            <Ionicons name="pencil" size={16} color={COLORS.accent} />
-                            <Text style={[styles.commentMenuText, { color: COLORS.accent }]}>Edit</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.commentMenuItem}
-                            onPress={() => {
-                              setComments(comments.filter(c => c.id !== item.id));
-                              setActiveCommentMenuId(null);
-                            }}
-                          >
-                            <Ionicons name="trash-outline" size={16} color="#FF4B4B" />
-                            <Text style={[styles.commentMenuText, { color: "#FF4B4B" }]}>Delete</Text>
-                          </TouchableOpacity>
-                        </>
-                      ) : (
+                      <View style={styles.commentVoteRail}>
                         <TouchableOpacity
-                          style={styles.commentMenuItem}
-                          onPress={() => {
-                            setActiveCommentMenuId(null);
-                            alert("Comment reported.");
-                          }}
+                          style={[
+                            styles.voteArrowButton,
+                            item.myVote > 0 && styles.voteArrowButtonActive,
+                          ]}
+                          onPress={() => handleVoteComment(item.id, "up")}
+                          disabled={commentActionLoadingId === item.id}
                         >
-                          <Ionicons name="flag-outline" size={16} color="#FF4B4B" />
-                          <Text style={[styles.commentMenuText, { color: "#FF4B4B" }]}>Report</Text>
+                          <Ionicons
+                            name={item.myVote > 0 ? "arrow-up" : "arrow-up-outline"}
+                            size={18}
+                            color={item.myVote > 0 ? COLORS.accent : COLORS.textSecondary}
+                          />
                         </TouchableOpacity>
-                      )}
+
+                        <Text style={styles.voteScoreText}>{item.score}</Text>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.voteArrowButton,
+                            item.myVote < 0 && styles.voteArrowButtonActive,
+                          ]}
+                          onPress={() => handleVoteComment(item.id, "down")}
+                          disabled={commentActionLoadingId === item.id}
+                        >
+                          <Ionicons
+                            name={item.myVote < 0 ? "arrow-down" : "arrow-down-outline"}
+                            size={18}
+                            color={item.myVote < 0 ? "#FF4B4B" : COLORS.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  )}
+                  </View>
 
                   <View style={styles.commentBubble}>
                     {editingCommentId === item.id ? (
@@ -532,20 +690,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
                             <Text style={styles.cancelText}>Cancel</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
-                            onPress={() => {
-                              setComments(comments.map(c => 
-                                c.id === item.id ? { ...c, content: editingText } : c
-                              ));
-                              setEditingCommentId(null);
-                            }}
+                            onPress={() => handleSaveEdit(item.id)}
                           >
-                            <Text style={styles.saveText}>Save</Text>
+                            {commentActionLoadingId === item.id ? (
+                              <ActivityIndicator size="small" color={COLORS.accent} />
+                            ) : (
+                              <Text style={styles.saveText}>Save</Text>
+                            )}
                           </TouchableOpacity>
                         </View>
                       </View>
                     ) : (
-                      <Text style={styles.commentText}>{item.content}</Text>
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onLongPress={() => openCommentAction(item)}
+                      >
+                        <Text style={styles.commentText}>{item.content}</Text>
+                      </TouchableOpacity>
                     )}
+                  </View>
+
+                  <View style={styles.commentFooterRow}>
+                    <Text style={styles.voteMetaText}>
+                      {item.upvotes} up • {item.downvotes} down
+                    </Text>
                   </View>
                 </View>
               )}
@@ -566,16 +734,180 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onReact, rank }) => {
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  !commentText.trim() && { opacity: 0.5 },
+                  (!commentText.trim() || submittingComment) && { opacity: 0.5 },
                 ]}
                 onPress={handleAddComment}
-                disabled={!commentText.trim()}
+                disabled={!commentText.trim() || submittingComment}
               >
-                <Ionicons name="send" size={20} color="#FFFFFF" />
+                {submittingComment ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="send" size={20} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
         </SafeAreaView>
+      </Modal>
+
+      {/* Header More Menu (inside full-view stack) */}
+      <Modal visible={showHeaderMoreMenu} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowHeaderMoreMenu(false)}>
+          <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+            <TouchableWithoutFeedback>
+              <View style={styles.centeredMenu}>
+                {post.isOwner && (onEditConfession || onDeleteConfession || onTogglePin) && (
+                  <>
+                    {onEditConfession && canEditPost() && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowHeaderMoreMenu(false);
+                          onEditConfession(post);
+                        }}
+                      >
+                        <Ionicons name="pencil" size={20} color={COLORS.accent} />
+                        <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                          Edit Confession
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {onDeleteConfession && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowHeaderMoreMenu(false);
+                          onDeleteConfession(post);
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+                        <Text style={[styles.menuItemLabel, { color: "#FF4B4B" }]}>
+                          Delete Confession
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {onTogglePin && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setShowHeaderMoreMenu(false);
+                          onTogglePin(post, !pinned);
+                        }}
+                      >
+                        <Ionicons
+                          name={pinned ? "pin" : "pin-outline"}
+                          size={20}
+                          color={COLORS.accent}
+                        />
+                        <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                          {pinned ? "Unpin from top" : "Pin to top"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={() => {
+                    setShowHeaderMoreMenu(false);
+                    if (saved) {
+                      remove(post.id);
+                    } else {
+                      save(post);
+                    }
+                  }}
+                >
+                  <Ionicons
+                    name={saved ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                    color="#FFF"
+                  />
+                  <Text style={styles.menuItemLabel}>
+                    {saved ? "Remove from Saved" : "Save Confession"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={async () => {
+                    try {
+                      await Clipboard.setStringAsync(post.content);
+                      setShowHeaderMoreMenu(false);
+                      Alert.alert("Copied", "Content copied to clipboard.");
+                    } catch {
+                      setShowHeaderMoreMenu(false);
+                      Alert.alert("Copy Failed", "Unable to copy content right now.");
+                    }
+                  }}
+                >
+                  <Ionicons name="copy-outline" size={20} color="#FFF" />
+                  <Text style={styles.menuItemLabel}>Copy Content</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Long-press Own Comment Action Popup */}
+      <Modal visible={!!activeCommentAction} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setActiveCommentAction(null)}>
+          <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+            <TouchableWithoutFeedback>
+              <View style={styles.centeredMenu}>
+                {activeCommentAction && activeCommentAction.userId === userId && (
+                  <>
+                    {canEditComment(activeCommentAction) && (
+                      <TouchableOpacity
+                        style={styles.menuItemRow}
+                        onPress={() => {
+                          setEditingCommentId(activeCommentAction.id);
+                          setEditingText(activeCommentAction.content);
+                          setActiveCommentAction(null);
+                        }}
+                      >
+                        <Ionicons name="pencil" size={20} color={COLORS.accent} />
+                        <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                          Edit Comment
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.menuItemRow}
+                      onPress={async () => {
+                        if (!activeCommentAction) return;
+                        try {
+                          await Clipboard.setStringAsync(activeCommentAction.content);
+                          setActiveCommentAction(null);
+                          Alert.alert("Copied", "Comment copied to clipboard.");
+                        } catch {
+                          Alert.alert("Copy Failed", "Unable to copy comment content.");
+                        }
+                      }}
+                    >
+                      <Ionicons name="copy-outline" size={20} color="#FFF" />
+                      <Text style={styles.menuItemLabel}>Copy Content</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.menuItemRow}
+                      onPress={() => {
+                        if (!activeCommentAction) return;
+                        const targetId = activeCommentAction.id;
+                        setActiveCommentAction(null);
+                        void handleDeleteComment(targetId);
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+                      <Text style={[styles.menuItemLabel, { color: "#FF4B4B" }]}>Delete</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -688,24 +1020,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontFamily: "Poppins_500Medium",
-  },
-  commentMenuInline: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 8,
-    gap: 20,
-    justifyContent: 'flex-end',
-  },
-  commentMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  commentMenuText: {
-    fontSize: 13,
-    fontFamily: "Poppins_600SemiBold",
   },
   reactionPickerContainer: {
     position: "absolute",
@@ -935,6 +1249,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "Poppins_700Bold",
   },
+  commentLoadingState: {
+    paddingVertical: 10,
+    alignItems: "center",
+  },
   commentItemCard: {
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -948,9 +1266,12 @@ const styles = StyleSheet.create({
   commentUserRow: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    justifyContent: "space-between",
   },
   commentInfo: {
     marginLeft: 10,
+    flex: 1,
   },
   commentUser: {
     color: "#FFFFFF",
@@ -973,6 +1294,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     fontFamily: "Poppins_400Regular",
+  },
+  commentFooterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginLeft: 42,
+    marginTop: 10,
+  },
+  commentVoteRail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  voteArrowButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  voteArrowButtonActive: {
+    borderColor: "rgba(107, 92, 231, 0.45)",
+    backgroundColor: "rgba(107, 92, 231, 0.14)",
+  },
+  voteScoreText: {
+    color: "#FFFFFF",
+    minWidth: 24,
+    textAlign: "center",
+    fontSize: 14,
+    fontFamily: "Poppins_700Bold",
+  },
+  voteMetaText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontFamily: "Poppins_500Medium",
   },
   commentInputContainer: {
     flexDirection: "row",

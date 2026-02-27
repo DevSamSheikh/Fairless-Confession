@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { PostCard } from "../components/PostCard";
 import { useFeedStore } from "../store/feed.store";
+import { isServerPostId, reactToPost } from "../api/interactions";
 
 const MOCK_SOCIETIES = [
   {
@@ -65,7 +66,7 @@ export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
-  const { posts } = useFeedStore();
+  const { posts, addReaction, syncReactionState } = useFeedStore();
   const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const lastCenterId = useRef<string | null>(null);
@@ -168,6 +169,21 @@ export const TrendingScreen: React.FC = () => {
     }
   });
 
+  const handleReact = async (postId: string, reactionType: string) => {
+    addReaction(postId, reactionType);
+
+    if (!isServerPostId(postId)) {
+      return;
+    }
+
+    try {
+      const result = await reactToPost({ postId, reactionType });
+      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+    } catch {
+      // ignore; local optimistic state remains
+    }
+  };
+
   const joinedPosts = posts.filter(p => {
     // This is mock logic since posts don't have societyId yet
     // In a real app: return joinedSocieties.includes(p.societyId)
@@ -237,7 +253,7 @@ export const TrendingScreen: React.FC = () => {
         data={activeTab === "Confessions" ? (joinedPosts as any[]) : (filteredSocieties as any[])}
         renderItem={({ item }) => {
           if (activeTab === "Confessions") {
-            return <PostCard post={item as any} onReact={() => {}} />;
+            return <PostCard post={item as any} onReact={(reactionType) => handleReact((item as any).id, reactionType)} />;
           }
           return renderSocietyCard({ item: item as any });
         }}

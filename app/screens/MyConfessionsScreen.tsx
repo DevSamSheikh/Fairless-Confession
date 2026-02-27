@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,33 +11,49 @@ import {
   TextInput,
   Modal,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
-import { useFeedStore } from "../store/feed.store";
+import type { Post } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 import { THEME } from "../utils/theme";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { deleteMyConfession, editMyConfession, fetchMyConfessions } from "../api/myConfessions";
+import { reactToPost } from "../api/interactions";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
 
 export const MyConfessionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts, deletePost, updatePost } = useFeedStore();
-  const myConfessions = posts.filter((p) => p.isOwner);
+  const [myConfessions, setMyConfessions] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const [editingPost, setEditingPost] = useState<any>(null);
-  const [editContent, setEditContent] = useState("");
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
-  const handleEdit = (post: any) => {
-    setEditingPost(post);
-    setEditContent(post.content);
+  const loadMyConfessions = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchMyConfessions();
+      setMyConfessions(data);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Failed to load your confessions.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSaveEdit = () => {
-    if (editContent.trim()) {
-      updatePost(editingPost.id, editContent);
-      setEditingPost(null);
-      Alert.alert("Success", "Confession updated successfully.");
-    }
+  useEffect(() => {
+    loadMyConfessions();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMyConfessions();
+    }, [])
+  );
+
+  const handleEdit = (post: Post) => {
+    navigation.navigate("EditConfession", { post });
   };
 
   const handleDelete = (postId: string) => {
@@ -49,11 +65,80 @@ export const MyConfessionsScreen: React.FC = () => {
         { 
           text: "Delete", 
           style: "destructive", 
-          onPress: () => deletePost(postId) 
+            onPress: async () => {
+              try {
+                await deleteMyConfession(postId);
+                setMyConfessions((prev) => prev.filter((p) => p.id !== postId));
+                showSuccessToast("Confession deleted successfully");
+              } catch (e: any) {
+                showErrorToast(e?.message ?? "Failed to delete confession");
+              }
+            } 
         },
       ]
     );
   };
+
+  const handleTogglePin = (post: Post, nextPinned: boolean) => {
+    setPinnedIds((prev) =>
+      nextPinned ? [post.id, ...prev.filter((id) => id !== post.id)] : prev.filter((id) => id !== post.id)
+    );
+  };
+
+  const handleReact = async (postId: string, reactionType: string) => {
+    const previous = myConfessions;
+
+    // Optimistic single-reaction toggle/switch locally
+    setMyConfessions((prev) =>
+      prev.map((p: any) => {
+        if (p.id !== postId) return p;
+
+        const current = (p.myReactionType ?? null) as string | null;
+        const next = reactionType;
+        const nextReactions: Record<string, number> = { ...(p.reactions ?? {}) };
+
+        if (!current) {
+          nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+          return { ...p, reactions: nextReactions, myReactionType: next };
+        }
+
+        if (current === next) {
+          nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+          return { ...p, reactions: nextReactions, myReactionType: null };
+        }
+
+        nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+        nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+        return { ...p, reactions: nextReactions, myReactionType: next };
+      })
+    );
+
+    try {
+      const result = await reactToPost({ postId, reactionType });
+      setMyConfessions((prev) =>
+        prev.map((p: any) =>
+          p.id === postId
+            ? {
+                ...p,
+                reactions: result.summary ?? {},
+                myReactionType: result.currentReactionType,
+              }
+            : p
+        )
+      );
+    } catch (e: any) {
+      setMyConfessions(previous);
+      Alert.alert("Reaction Failed", e?.message ?? "Unable to react right now.");
+    }
+  };
+
+  const sortedConfessions = [...myConfessions].sort((a, b) => {
+    const aPinned = pinnedIds.includes(a.id);
+    const bPinned = pinnedIds.includes(b.id);
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,17 +152,28 @@ export const MyConfessionsScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={myConfessions}
+        data={sortedConfessions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <PostCard
             post={item}
-            onReact={() => {}}
-            // Note: PostCard needs to be updated to handle these internal menus
-            // For now we assume PostCard shows the owner menu correctly
+            onReact={(reactionType) => handleReact(item.id, reactionType)}
+            onEditConfession={handleEdit}
+            onDeleteConfession={(post) => handleDelete(post.id)}
+            pinned={pinnedIds.includes(item.id)}
+            onTogglePin={handleTogglePin}
           />
         )}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          loading
+            ? () => (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={COLORS.accent} />
+                </View>
+              )
+            : undefined
+        }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Ionicons name="document-text-outline" size={60} color={COLORS.border} />
@@ -86,27 +182,6 @@ export const MyConfessionsScreen: React.FC = () => {
         )}
       />
 
-      <Modal visible={!!editingPost} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.editModal}>
-            <Text style={styles.modalTitle}>Edit Confession</Text>
-            <TextInput
-              style={styles.editInput}
-              value={editContent}
-              onChangeText={setEditContent}
-              multiline
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => setEditingPost(null)} style={styles.cancelButton}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSaveEdit} style={styles.saveButton}>
-                <Text style={styles.saveText}>Save Changes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -137,6 +212,11 @@ const styles = StyleSheet.create({
   list: {
     paddingVertical: 10,
     paddingBottom: 40,
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyContainer: {
     flex: 1,

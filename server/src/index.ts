@@ -11,6 +11,7 @@ import postRoutes from './routes/post.js';
 import interactionRoutes from './routes/interactions.js';
 import meRoutes from './routes/me.js';
 import myConfessionsRoutes from './routes/myConfessions.js';
+import myReactionsRoutes from './routes/myReactions.js';
 import searchRoutes from './routes/search.js';
 import reportRoutes from './routes/report.js';
 import leaveSocietyRoutes from './routes/leaveSociety.js';
@@ -19,7 +20,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ 
+  origin: true, 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 // Auth: /api/auth/register, /api/auth/login, /api/auth/forget-password, /api/auth/logout
@@ -52,6 +58,9 @@ app.use('/api/me', meRoutes);
 // My confessions: GET /api/my-confessions, DELETE /api/my-confession/delete/:id, PATCH /api/my-confession/edit/:id
 app.use('/api/my-confessions', myConfessionsRoutes);
 app.use('/api/my-confession', myConfessionsRoutes);
+
+// My reactions: GET /api/my-reactions
+app.use('/api/my-reactions', myReactionsRoutes);
 
 // Search: GET /api/search?q=
 app.use('/api/search', searchRoutes);

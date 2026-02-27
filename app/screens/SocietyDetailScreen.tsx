@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { PostCard } from '../components/PostCard';
 import { createPost, ContentBlockedError } from '../api/posts';
+import { scanPostContent, softFilterInput } from '../utils/contentFilter';
+import { showSuccessToast } from '../utils/toast';
+import { useUserStore } from '../store/user.store';
 
-const SOCIETY_CONFESSIONS = [
+interface SocietyConfession {
+  id: string;
+  content: string;
+  category: any;
+  reactions: Record<string, number>;
+  commentCount: number;
+  createdAt: Date;
+}
+
+const SOCIETY_CONFESSIONS: SocietyConfession[] = [
   {
     id: 's1',
     content: 'I joined this society just to see if anyone would recognize my stories.',
     category: 'Secrets' as any,
-    reactions: { '❤️': 12, '😮': 2, '😢': 0, '😡': 0, '😂': 5 },
+    reactions: { Like: 12, Thought: 2, Supportive: 0, Anger: 0, Funny: 5 },
     commentCount: 3,
     createdAt: new Date(),
   },
@@ -19,7 +31,7 @@ const SOCIETY_CONFESSIONS = [
     id: 's2',
     content: 'The hook text for this society is actually true, and that scares me.',
     category: 'Drama' as any,
-    reactions: { '❤️': 5, '😮': 15, '😢': 1, '😡': 0, '😂': 2 },
+    reactions: { Like: 5, Thought: 15, Supportive: 1, Anger: 0, Funny: 2 },
     commentCount: 8,
     createdAt: new Date(Date.now() - 3600000),
   }
@@ -38,8 +50,15 @@ export const SocietyDetailScreen: React.FC = () => {
   const [title, setTitle] = useState('');
   const [showPostBox, setShowPostBox] = useState(false);
   const [activeTab, setActiveTab] = useState("Latest");
+  const [societyConfessions, setSocietyConfessions] = useState(SOCIETY_CONFESSIONS);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [moderation, setModeration] = useState<{
+    message: string;
+    sanitizedTitle: string;
+    sanitizedContent: string;
+  } | null>(null);
+  const userStore = useUserStore();
 
   useEffect(() => {
     let interval: any;
@@ -60,6 +79,62 @@ export const SocietyDetailScreen: React.FC = () => {
     setShowWarning(false);
     setIsJoined(true);
     // Add logic to save joined society in store if needed
+  };
+
+  const handleReact = (postId: string, reactionType: string) => {
+    setSocietyConfessions((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              reactions: {
+                ...post.reactions,
+                [reactionType]: (post.reactions?.[reactionType] ?? 0) + 1,
+              },
+            }
+          : post
+      )
+    );
+  };
+
+  const renderHighlighted = (original: string, sanitized: string) => {
+    if (!original) return original;
+    const nodes: React.ReactNode[] = [];
+    let buf = '';
+    let inBad = false;
+    const len = Math.min(original.length, sanitized.length);
+
+    for (let i = 0; i < len; i++) {
+      const o = original[i];
+      const s = sanitized[i];
+      const isBad = s === '*' && o !== '*';
+      if (isBad !== inBad) {
+        if (buf) {
+          nodes.push(
+            <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+              {buf}
+            </Text>
+          );
+          buf = '';
+        }
+        inBad = isBad;
+      }
+      buf += o;
+    }
+
+    if (len < original.length) {
+      buf += original.slice(len);
+    }
+
+    if (buf) {
+      nodes.push(
+        <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+          {buf}
+        </Text>
+      );
+    }
+
+    return nodes;
   };
 
   if (isJoined && route.params?.isFromSocieties) {
@@ -186,7 +261,7 @@ export const SocietyDetailScreen: React.FC = () => {
                     placeholderTextColor={COLORS.textSecondary}
                     maxLength={25}
                     value={title}
-                    onChangeText={setTitle}
+                    onChangeText={(text) => setTitle(softFilterInput(text))}
                   />
                   <TextInput
                     style={styles.confessInput}
@@ -194,7 +269,7 @@ export const SocietyDetailScreen: React.FC = () => {
                     placeholderTextColor={COLORS.textSecondary}
                     multiline
                     value={confession}
-                    onChangeText={setConfession}
+                    onChangeText={(text) => setConfession(softFilterInput(text))}
                   />
                 </View>
                 <TouchableOpacity
@@ -202,55 +277,64 @@ export const SocietyDetailScreen: React.FC = () => {
                   disabled={!confession.trim() || posting}
                   onPress={async () => {
                     if (!confession.trim() || posting) return;
+
+                    // Check authentication before proceeding
+                    const currentState = useUserStore.getState();
+                    if (!currentState.isHydrated) {
+                      Alert.alert('Loading', 'Please wait while we verify your session...');
+                      return;
+                    }
+                    if (!currentState.token || !currentState.isAuthenticated) {
+                      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      return;
+                    }
+
+                    // Deep scan before any network call
+                    // Use trimmed values for accurate comparison
+                    const trimmedTitle = title.trim();
+                    const trimmedContent = confession.trim();
+                    const scan = scanPostContent(trimmedTitle, trimmedContent);
+                    
+                    if (scan.hasIssues) {
+                      setModeration({
+                        message: 'Your post contains restricted words. What do you want to do?',
+                        sanitizedTitle: scan.sanitizedTitle,
+                        sanitizedContent: scan.sanitizedContent,
+                      });
+                      return;
+                    }
+
+                    // Content is clean - post directly without popup
                     setPosting(true);
                     try {
                       await createPost({
-                        title: title.trim() || undefined,
-                        content: confession.trim(),
+                        title: trimmedTitle || undefined,
+                        content: trimmedContent,
                         category: 'Secrets',
+                        visibility: 'society',
                         societyId: society?.id ?? null,
                       });
                       setConfession('');
                       setTitle('');
                       setShowPostBox(false);
-                      Alert.alert('Success', 'Confession posted to society!');
+                      showSuccessToast('Confession posted to society!');
                     } catch (e: any) {
+                      setPosting(false);
+                      console.error('[SocietyDetailScreen] Post error:', e);
                       if (e instanceof ContentBlockedError) {
-                        setPosting(false);
-                        Alert.alert(
-                          'Content not allowed',
-                          'Your confession contains words that are not allowed. You can edit your text or post a filtered version.',
-                          [
-                            { text: 'Edit Content', style: 'cancel' },
-                            {
-                              text: 'Post Filtered',
-                              onPress: async () => {
-                                setPosting(true);
-                                try {
-                                  await createPost({
-                                    title: e.sanitizedTitle || undefined,
-                                    content: e.sanitizedContent,
-                                    category: 'Secrets',
-                                    societyId: society?.id ?? null,
-                                  });
-                                  setConfession('');
-                                  setTitle('');
-                                  setShowPostBox(false);
-                                  Alert.alert('Success', 'Confession posted to society!');
-                                } catch (err: any) {
-                                  Alert.alert('Error', err?.message ?? 'Failed to post');
-                                } finally {
-                                  setPosting(false);
-                                }
-                              },
-                            },
-                          ]
-                        );
+                        // Backend still found something – fall back to popup flow
+                        setModeration({
+                          message:
+                            e.message ||
+                            'Your post contains words or sensitive details that are not allowed. You can edit the red parts or post a filtered version.',
+                          sanitizedTitle: e.sanitizedTitle,
+                          sanitizedContent: e.sanitizedContent,
+                        });
                         return;
                       }
-                      Alert.alert('Error', e?.message ?? 'Failed to post');
-                    } finally {
-                      setPosting(false);
+                      // Show the actual error message from server
+                      const errorMsg = e?.message || 'Failed to post';
+                      Alert.alert('Error', errorMsg);
                     }
                   }}
                 >
@@ -261,12 +345,12 @@ export const SocietyDetailScreen: React.FC = () => {
 
             {/* Society Feed */}
             <Text style={styles.feedTitle}>Society Confessions</Text>
-            {SOCIETY_CONFESSIONS.map((post, index) => (
+            {societyConfessions.map((post, index) => (
               <PostCard 
                 key={post.id} 
                 post={{ ...post, category: society.name } as any} 
                 rank={activeTab === "Trending" ? index + 1 : undefined}
-                onReact={() => {}} 
+                onReact={(reactionType) => handleReact(post.id, reactionType)} 
               />
             ))}
           </View>
@@ -279,6 +363,89 @@ export const SocietyDetailScreen: React.FC = () => {
       </ScrollView>
 
       <GuidelinesModal visible={showGuidelines} onClose={() => setShowGuidelines(false)} />
+
+      {moderation && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible
+          onRequestClose={() => setModeration(null)}
+        >
+          <View style={styles.moderationOverlay}>
+            <View style={styles.moderationCard}>
+              <Text style={styles.moderationTitle}>Content not allowed</Text>
+              <Text style={styles.moderationMessage}>{moderation.message}</Text>
+
+              <Text style={styles.moderationPreviewLabel}>
+                Problematic parts are highlighted in <Text style={styles.highlightedBadText}>red</Text>:
+              </Text>
+
+              <ScrollView style={styles.moderationPreview}>
+                {title ? (
+                  <>
+                    <Text style={styles.moderationSectionLabel}>Title</Text>
+                    <Text style={styles.moderationText}>
+                      {renderHighlighted(title, moderation.sanitizedTitle)}
+                    </Text>
+                  </>
+                ) : null}
+
+                <Text style={styles.moderationSectionLabel}>Confession</Text>
+                <Text style={styles.moderationText}>
+                  {renderHighlighted(confession, moderation.sanitizedContent)}
+                </Text>
+              </ScrollView>
+
+              <View style={styles.moderationButtonRow}>
+                <Pressable
+                  style={[styles.moderationButton, styles.moderationSecondaryButton]}
+                  onPress={() => setModeration(null)}
+                >
+                  <Text style={styles.moderationButtonTextSecondary}>Edit Content</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.moderationButton, styles.moderationPrimaryButton]}
+                  onPress={async () => {
+                    // Check authentication before proceeding
+                    const currentState = useUserStore.getState();
+                    if (!currentState.isHydrated) {
+                      Alert.alert('Loading', 'Please wait while we verify your session...');
+                      return;
+                    }
+                    if (!currentState.token || !currentState.isAuthenticated) {
+                      setModeration(null);
+                      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      return;
+                    }
+
+                    setPosting(true);
+                    try {
+                      await createPost({
+                        title: moderation.sanitizedTitle || undefined,
+                        content: moderation.sanitizedContent,
+                        category: 'Secrets',
+                        visibility: 'society',
+                        societyId: society?.id ?? null,
+                      });
+                      setConfession('');
+                      setTitle('');
+                      setShowPostBox(false);
+                      setModeration(null);
+                      showSuccessToast('Confession posted to society!');
+                    } catch (err: any) {
+                      Alert.alert('Error', err?.message ?? 'Failed to post');
+                    } finally {
+                      setPosting(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.moderationButtonText}>Post Filtered</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -609,5 +776,83 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  moderationOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moderationCard: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  moderationTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  moderationMessage: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  moderationPreviewLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  moderationPreview: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  moderationSectionLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  moderationText: {
+    color: COLORS.text,
+    fontSize: 14,
+  },
+  highlightedBadText: {
+    color: '#ff4b4b',
+    fontWeight: '600',
+  },
+  moderationButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 8,
+  },
+  moderationButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  moderationSecondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  moderationPrimaryButton: {
+    backgroundColor: COLORS.accent,
+  },
+  moderationButtonText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  moderationButtonTextSecondary: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
