@@ -33,6 +33,8 @@ import {
   type PostComment,
   voteOnComment,
 } from "../api/interactions";
+import { FormattedText } from "../utils/textFormatting";
+import { FormattedTextInput } from "./FormattedTextInput";
 
 const { width } = Dimensions.get("window");
 
@@ -310,7 +312,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
         <View style={styles.contentContainer}>
           {post.title && <Text style={styles.title}>{post.title}</Text>}
-          <Text style={styles.content}>{contentPreview}</Text>
+          <FormattedText text={contentPreview} style={styles.content} />
           {isLongText && (
             <View style={styles.seeMoreContainer}>
               <Text style={styles.seeMore}>Read more</Text>
@@ -574,6 +576,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               keyExtractor={(item) => item.id}
               nestedScrollEnabled={true}
               scrollEnabled={true}
+              showsVerticalScrollIndicator={true}
               ListHeaderComponent={() => (
                 <View style={styles.modalContent}>
                   <View style={styles.header}>
@@ -596,7 +599,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   {post.title && (
                     <Text style={styles.fullTitle}>{post.title}</Text>
                   )}
-                  <Text style={styles.fullContent}>{post.content}</Text>
+                  <FormattedText text={post.content} style={styles.fullContent} />
 
                   <View style={styles.metaDivider} />
                   <View style={styles.statsRow}>
@@ -705,7 +708,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         activeOpacity={0.8}
                         onLongPress={() => openCommentAction(item)}
                       >
-                        <Text style={styles.commentText}>{item.content}</Text>
+                        <FormattedText text={item.content} style={styles.commentText} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -717,19 +720,25 @@ export const PostCard: React.FC<PostCardProps> = ({
                   </View>
                 </View>
               )}
-              contentContainerStyle={{ paddingBottom: 120 }}
+              contentContainerStyle={{ paddingBottom: 180 }}
             />
 
             <View style={styles.commentInputContainer}>
               <View style={styles.commentInputWrapper}>
-                <TextInput
+                <FormattedTextInput
                   style={styles.input}
                   placeholder="Add a supportive comment..."
                   placeholderTextColor="#8E9196"
                   value={commentText}
-                  onChangeText={setCommentText}
+                  onChangeText={(text) => {
+                    if (text.length <= 500) {
+                      setCommentText(text);
+                    }
+                  }}
                   multiline
+                  maxLength={500}
                 />
+                <Text style={styles.charCount}>{commentText.length}/500</Text>
               </View>
               <TouchableOpacity
                 style={[
@@ -1193,6 +1202,8 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.background,
+    overflow: "scroll",
+
   },
   modalHeader: {
     flexDirection: "row",
@@ -1202,7 +1213,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingTop: Platform.OS === "ios" ? 20 : 40,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.05)",
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "#0f1115",
+    position: "sticky",
+    top: 0,
+    zIndex: 1000,
+
   },
   modalHeaderText: {
     color: "#FFFFFF",
@@ -1234,6 +1250,10 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
+    position: "sticky",
+    top:30,
+    zIndex:1100,
+    backgroundColor:"#0f1115",
   },
   statsText: {
     color: COLORS.textSecondary,
@@ -1341,7 +1361,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.05)",
     backgroundColor: COLORS.background,
-    position: 'absolute',
+    position: 'sticky',
     bottom: 0,
     left: 0,
     right: 0,
@@ -1361,6 +1381,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     maxHeight: 100,
     fontFamily: "Poppins_400Regular",
+  },
+  charCount: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontFamily: "Poppins_400Regular",
+    marginTop: 4,
+    textAlign: "right",
   },
   sendButton: {
     width: 48,
