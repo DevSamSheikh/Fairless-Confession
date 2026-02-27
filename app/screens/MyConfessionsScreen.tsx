@@ -22,11 +22,16 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { deleteMyConfession, editMyConfession, fetchMyConfessions } from "../api/myConfessions";
 import { reactToPost } from "../api/interactions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { SearchBar } from "../components/SearchBar";
 
 export const MyConfessionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const [myConfessions, setMyConfessions] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
@@ -34,6 +39,8 @@ export const MyConfessionsScreen: React.FC = () => {
     try {
       setLoading(true);
       const data = await fetchMyConfessions();
+      console.log('Loaded confessions:', data.length, 'posts');
+      console.log('First post isOwner:', data[0]?.isOwner);
       setMyConfessions(data);
     } catch (e: any) {
       Alert.alert("Error", e?.message ?? "Failed to load your confessions.");
@@ -57,26 +64,31 @@ export const MyConfessionsScreen: React.FC = () => {
   };
 
   const handleDelete = (postId: string) => {
-    Alert.alert(
-      "Delete Confession",
-      "Are you sure you want to delete this confession? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive", 
-            onPress: async () => {
-              try {
-                await deleteMyConfession(postId);
-                setMyConfessions((prev) => prev.filter((p) => p.id !== postId));
-                showSuccessToast("Confession deleted successfully");
-              } catch (e: any) {
-                showErrorToast(e?.message ?? "Failed to delete confession");
-              }
-            } 
-        },
-      ]
-    );
+    console.log('handleDelete called with postId:', postId);
+    setPostToDelete(postId);
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    
+    try {
+      console.log('Deleting post:', postToDelete);
+      await deleteMyConfession(postToDelete);
+      setMyConfessions((prev) => prev.filter((p) => p.id !== postToDelete));
+      showSuccessToast("Confession deleted successfully");
+    } catch (e: any) {
+      console.error('Delete error:', e);
+      showErrorToast(e?.message ?? "Failed to delete confession");
+    } finally {
+      setDeleteConfirmVisible(false);
+      setPostToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmVisible(false);
+    setPostToDelete(null);
   };
 
   const handleTogglePin = (post: Post, nextPinned: boolean) => {
@@ -140,19 +152,46 @@ export const MyConfessionsScreen: React.FC = () => {
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
+  const filteredConfessions = searchQuery
+    ? sortedConfessions.filter(p => 
+        p.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : sortedConfessions;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Confessions</Text>
-        <View style={{ width: 40 }} />
+        {!isSearchVisible ? (
+          <>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Confessions</Text>
+            <TouchableOpacity 
+              style={styles.searchButton}
+              onPress={() => setIsSearchVisible(true)}
+            >
+              <Ionicons name="search" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </>
+        ) : (
+          <SearchBar
+            isVisible={isSearchVisible}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            onClose={() => {
+              setIsSearchVisible(false);
+              setSearchQuery("");
+            }}
+            placeholder="Search your confessions..."
+          />
+        )}
       </View>
 
       <FlatList
-        data={sortedConfessions}
+        data={filteredConfessions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <PostCard
@@ -182,6 +221,43 @@ export const MyConfessionsScreen: React.FC = () => {
         )}
       />
 
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={deleteConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDelete}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={cancelDelete}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.deleteModal}>
+              <Text style={styles.deleteModalTitle}>Delete Confession</Text>
+              <Text style={styles.deleteModalMessage}>
+                Are you sure you want to delete this confession? This action cannot be undone.
+              </Text>
+              <View style={styles.deleteModalActions}>
+                <TouchableOpacity
+                  style={styles.deleteCancelButton}
+                  onPress={cancelDelete}
+                >
+                  <Text style={styles.deleteCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteConfirmButton}
+                  onPress={confirmDelete}
+                >
+                  <Text style={styles.deleteConfirmText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -197,11 +273,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    paddingTop: Platform.OS === 'ios' ? 20 : 40,
+    paddingTop: 40,
     borderBottomWidth: 1,
     borderBottomColor: THEME.colors.border,
   },
   backButton: {
+    padding: 8,
+  },
+  searchButton: {
     padding: 8,
   },
   headerTitle: {
@@ -282,5 +361,55 @@ const styles = StyleSheet.create({
   saveText: {
     color: "#FFFFFF",
     fontFamily: THEME.typography.fontFamily.semiBold,
+  },
+  deleteModal: {
+    backgroundColor: THEME.colors.card,
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    minWidth: 300,
+  },
+  deleteModalTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontFamily: THEME.typography.fontFamily.semiBold,
+    marginBottom: 12,
+  },
+  deleteModalMessage: {
+    color: THEME.colors.textSecondary,
+    fontSize: 14,
+    fontFamily: THEME.typography.fontFamily.regular,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  deleteModalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  deleteCancelButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+  },
+  deleteCancelText: {
+    color: THEME.colors.textSecondary,
+    fontFamily: THEME.typography.fontFamily.semiBold,
+    fontSize: 14,
+  },
+  deleteConfirmButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#FF4B4B",
+  },
+  deleteConfirmText: {
+    color: "#FFFFFF",
+    fontFamily: THEME.typography.fontFamily.semiBold,
+    fontSize: 14,
   },
 });

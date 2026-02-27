@@ -8,11 +8,13 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { Post } from "../store/feed.store";
-import { COLORS } from "../utils/constants";
+import { COLORS, CATEGORIES, Category } from "../utils/constants";
 import { THEME } from "../utils/theme";
 import { editMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
@@ -26,11 +28,17 @@ export const EditConfessionScreen: React.FC = () => {
   const route = useRoute<any>();
   const { post } = route.params as RouteParams;
   const [content, setContent] = useState(post.content);
+  const [title, setTitle] = useState(post.title || "");
+  const [selectedCategory, setSelectedCategory] = useState<Category>(post.category as Category);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     if (!content.trim()) {
       Alert.alert("Error", "Content cannot be empty.");
+      return;
+    }
+    if (!selectedCategory) {
+      Alert.alert("Error", "Please select a category");
       return;
     }
     setSaving(true);
@@ -56,29 +64,64 @@ export const EditConfessionScreen: React.FC = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.body}>
-        {post.title ? (
-          <Text style={styles.title}>{post.title}</Text>
-        ) : null}
-        <TextInput
-          style={styles.input}
-          value={content}
-          onChangeText={setContent}
-          placeholder="Update your confession..."
-          placeholderTextColor={THEME.colors.textSecondary}
-          multiline
-          textAlignVertical="top"
-        />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.subtitle}>Update your confession</Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Title (Optional)"
+            placeholderTextColor={COLORS.textSecondary}
+            value={title}
+            onChangeText={setTitle}
+            maxLength={25}
+          />
+          <TextInput
+            style={styles.contentInput}
+            placeholder="What's on your mind?"
+            placeholderTextColor={COLORS.textSecondary}
+            multiline
+            numberOfLines={6}
+            value={content}
+            onChangeText={setContent}
+            maxLength={500}
+          />
+        </View>
+        <Text style={styles.charCount}>{content.length}/500</Text>
+
+        <Text style={styles.sectionTitle}>Select Category</Text>
+        <View style={styles.categories}>
+          {CATEGORIES.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryChip,
+                selectedCategory === category && styles.selectedChip
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text style={[
+                styles.categoryText,
+                selectedCategory === category && styles.selectedCategoryText
+              ]}>{category}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TouchableOpacity
-          style={[styles.saveButton, saving && { opacity: 0.6 }]}
+          style={[styles.saveButton, saving && styles.disabledButton]}
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Text>
+          {saving ? (
+            <ActivityIndicator color={COLORS.text} />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          )}
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -106,36 +149,96 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: THEME.typography.fontFamily.semiBold,
   },
-  body: {
+  scrollView: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    color: "#FFFFFF",
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  headerContainer: {
+    paddingBottom: 8,
+  },
+  subtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  inputContainer: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+  },
+  titleInput: {
+    color: COLORS.text,
     fontSize: 18,
-    fontFamily: THEME.typography.fontFamily.semiBold,
+    fontWeight: "600",
+    marginBottom: 8,
+    padding: 0,
+  },
+  contentInput: {
+    color: COLORS.text,
+    fontSize: 16,
+    minHeight: 120,
+    textAlignVertical: "top",
+    padding: 0,
+  },
+  charCount: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 8,
+  },
+  sectionTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 24,
     marginBottom: 12,
   },
-  input: {
-    flex: 1,
-    color: "#FFFFFF",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 16,
-    fontFamily: THEME.typography.fontFamily.regular,
+  categories: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.cardBackground,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  selectedChip: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.accent,
+  },
+  categoryText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  selectedCategoryText: {
+    color: COLORS.text,
+    fontWeight: "600",
   },
   saveButton: {
-    marginTop: 20,
     backgroundColor: COLORS.accent,
-    borderRadius: 24,
-    paddingVertical: 14,
+    borderRadius: 30,
+    padding: 16,
     alignItems: "center",
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   saveButtonText: {
-    color: "#FFFFFF",
+    color: COLORS.text,
     fontSize: 16,
-    fontFamily: THEME.typography.fontFamily.semiBold,
+    fontWeight: "600",
   },
 });
 

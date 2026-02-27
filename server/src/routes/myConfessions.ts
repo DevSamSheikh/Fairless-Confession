@@ -46,6 +46,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
       rows.map((row: any) => ({
         ...row,
         myReactionType: myReactionByPostId[row.id] ?? null,
+        isOwner: true,
       })),
     );
   } catch (error) {
