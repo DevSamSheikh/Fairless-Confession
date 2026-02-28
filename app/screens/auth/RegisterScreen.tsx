@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Scro
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
 import { showSuccessToast } from '../../utils/toast';
+import { showAlert } from '../../utils/customAlert';
 import { register } from '../../api/auth';
 
 const { width } = Dimensions.get('window');
@@ -14,18 +15,20 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const setAuth = useUserStore((s) => s.setAuth);
 
   const handleRegister = async () => {
-    setError('');
     if (!agreed) {
-      setError('You must agree to the Privacy Policy and App Safety to sign up.');
+      showAlert('Agreement Required', 'You must agree to the Privacy Policy and App Safety to sign up.');
       return;
     }
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      setError('Please enter email and password.');
+      showAlert('Missing Information', 'Please enter email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      showAlert('Password Too Short', 'Password must be at least 6 characters long.');
       return;
     }
     setLoading(true);
@@ -34,7 +37,8 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       setAuth(data.token || null, data.user);
       showSuccessToast('Account created successfully!');
     } catch (e: any) {
-      setError(e?.message || 'Registration failed.');
+      const errorMessage = e?.message || 'Registration failed.';
+      showAlert('Registration Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -51,8 +55,6 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Create your{"\n"}Account</Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
         <View style={styles.inputContainer}>
           <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
           <TextInput
@@ -60,7 +62,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             placeholder="Full Name"
             placeholderTextColor="#6B7280"
             value={fullName}
-            onChangeText={(t) => { setFullName(t); setError(''); }}
+            onChangeText={setFullName}
           />
         </View>
 
@@ -73,7 +75,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(t) => { setEmail(t); setError(''); }}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -85,7 +87,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(t) => { setPassword(t); setError(''); }}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
@@ -150,8 +152,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', fontSize: 40, fontFamily: 'Poppins_600SemiBold',
     marginBottom: 24, lineHeight: 50,
   },
-  errorText: { color: '#EF4444', marginBottom: 12, fontSize: 14 },
-  inputContainer: {
+    inputContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D23',
     borderRadius: 16, paddingHorizontal: 16, height: 60, marginBottom: 16,
     borderWidth: 1, borderColor: '#2A2E37',

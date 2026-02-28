@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { showAlert } from '../../utils/customAlert';
 import { forgetPassword } from '../../api/auth';
 
 export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
 
   const handleSendLink = async () => {
-    setError('');
     setMessage('');
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setError('Please enter your email.');
+      showAlert('Missing Email', 'Please enter your email.');
       return;
     }
     const atIndex = trimmedEmail.indexOf('@');
     if (atIndex < 1 || atIndex === trimmedEmail.length - 1) {
-      setError('Please enter a valid email address.');
+      showAlert('Invalid Email', 'Please enter a valid email address.');
       return;
     }
     setLoading(true);
@@ -27,7 +26,7 @@ export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
       await forgetPassword(trimmedEmail);
       setMessage('Check your email for the reset link. Click it to set a new password, then sign in.');
     } catch (e: any) {
-      setError(e?.message || 'Failed to send reset link.');
+      showAlert('Failed', e?.message || 'Failed to send reset link.');
     } finally {
       setLoading(false);
     }
@@ -47,7 +46,6 @@ export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
           Enter your email and we'll send you a link to reset your password.
         </Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
         {message ? <Text style={styles.messageText}>{message}</Text> : null}
 
         <View style={styles.inputContainer}>
@@ -59,7 +57,7 @@ export const ForgetPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(t) => { setEmail(t); setError(''); setMessage(''); }}
+            onChangeText={(t) => { setEmail(t); setMessage(''); }}
           />
         </View>
 
@@ -86,8 +84,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#6B7280', fontSize: 16, lineHeight: 24, fontFamily: 'Poppins_400Regular', marginBottom: 24,
   },
-  errorText: { color: '#EF4444', marginBottom: 12, fontSize: 14 },
-  messageText: { color: '#22C55E', marginBottom: 12, fontSize: 14 },
+    messageText: { color: '#22C55E', marginBottom: 12, fontSize: 14 },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D23',
     borderRadius: 16, paddingHorizontal: 16, height: 60, marginBottom: 24,

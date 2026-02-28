@@ -20,13 +20,14 @@ export interface RegisterResponse {
 
 async function authFetch(url: string, options: RequestInit): Promise<Response> {
   try {
-    return await fetch(url, options);
+    const response = await fetch(url, options);
+    return response;
   } catch (e: any) {
     const msg = e?.message ?? '';
-    if (msg.includes('Network') || msg.includes('fetch') || msg.includes('Failed to connect')) {
-      throw new Error('Cannot reach server. Ensure the backend is running and your device is on the same Wi‑Fi as this computer.');
+    if (msg.includes('Network') || msg.includes('fetch') || msg.includes('Failed to connect') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
+      throw new Error('Cannot reach server. Please ensure:\n1. Backend server is running (npm start in server folder)\n2. Your device is on the same WiFi as this computer\n3. Check the EXPO_PUBLIC_API_URL in your .env file');
     }
-    throw e;
+    throw new Error(`Network error: ${msg}`);
   }
 }
 

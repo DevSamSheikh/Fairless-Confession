@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, Acti
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../../store/user.store';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { showAlert } from '../../utils/customAlert';
 import { login } from '../../api/auth';
 import { setApiUrlOverride } from '../../api/config';
 
@@ -11,27 +12,24 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [serverUrl, setServerUrl] = useState('');
   const [serverUrlSaved, setServerUrlSaved] = useState(false);
+  const [showServerUrlHelp, setShowServerUrlHelp] = useState(false);
   const setAuth = useUserStore((s) => s.setAuth);
-  const showServerUrlHelp = error.includes('Cannot reach server');
 
   const handleSetServerUrl = async () => {
     const url = serverUrl.trim();
     if (!url) return;
     await setApiUrlOverride(url);
     setServerUrlSaved(true);
-    setError('');
     setServerUrl('');
   };
 
   const handleLogin = async () => {
-    setError('');
     setServerUrlSaved(false);
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      setError('Please enter email and password.');
+      showAlert('Missing Information', 'Please enter email and password.');
       return;
     }
     setLoading(true);
@@ -40,7 +38,11 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setAuth(data.token, data.user);
       showSuccessToast('Welcome back!');
     } catch (e: any) {
-      setError(e?.message || 'Login failed. Check your credentials.');
+      const errorMessage = e?.message || 'Login failed. Check your credentials.';
+      if (errorMessage.includes('Cannot reach server')) {
+        setShowServerUrlHelp(true);
+      }
+      showAlert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,7 +59,6 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Login Your{"\n"}Account</Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
         {serverUrlSaved ? <Text style={styles.successText}>Server URL saved. Try Login again.</Text> : null}
 
         {showServerUrlHelp ? (
@@ -87,7 +88,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(t) => { setEmail(t); setError(''); }}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -99,7 +100,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(t) => { setPassword(t); setError(''); }}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
@@ -156,8 +157,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', fontSize: 40, fontFamily: 'Poppins_600SemiBold',
     marginBottom: 24, lineHeight: 50,
   },
-  errorText: { color: '#EF4444', marginBottom: 12, fontSize: 14 },
-  successText: { color: '#22C55E', marginBottom: 12, fontSize: 14 },
+    successText: { color: '#22C55E', marginBottom: 12, fontSize: 14 },
   serverUrlBox: { marginBottom: 16, padding: 12, backgroundColor: '#1A1D23', borderRadius: 12, borderWidth: 1, borderColor: '#2A2E37' },
   serverUrlLabel: { color: '#9CA3AF', fontSize: 12, marginBottom: 8 },
   serverUrlInput: { backgroundColor: '#0F1115', borderRadius: 8, padding: 12, color: '#FFF', fontSize: 14, marginBottom: 8 },

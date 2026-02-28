@@ -200,37 +200,48 @@ export default function App() {
   }
 
   return (
-    <CustomAlertProvider>
-      <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
-        <StatusBar style="light" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {!user ? (
-            <>
-              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
-              <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
-              <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-              <Stack.Screen name="AppSafety" component={AppSafetyScreen} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Main" component={TabNavigator} />
-              <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
-              <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
-              <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
-              <Stack.Screen name="EditConfession" component={EditConfessionScreen} />
-              <Stack.Screen name="SavedSecrets" component={SavedSecretsScreen} />
-              <Stack.Screen name="MyReactions" component={MyReactionsScreen} />
-              <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
-              <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-      <View style={{ zIndex: 1000000, elevation: 1000000, position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' }}>
+    <View style={{ flex: 1 }}>
+      <CustomAlertProvider>
+        <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
+          <StatusBar style="light" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!user ? (
+              <>
+                <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="Register" component={RegisterScreen} />
+                <Stack.Screen name="ForgetPassword" component={ForgetPasswordScreen} />
+                <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
+                <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+                <Stack.Screen name="AppSafety" component={AppSafetyScreen} />
+              </>
+            ) : (
+              <>
+                <Stack.Screen name="Main" component={TabNavigator} />
+                <Stack.Screen name="SocietyDetail" component={SocietyDetailScreen} />
+                <Stack.Screen name="CreateSociety" component={CreateSocietyScreen} />
+                <Stack.Screen name="MyConfessions" component={MyConfessionsScreen} />
+                <Stack.Screen name="EditConfession" component={EditConfessionScreen} />
+                <Stack.Screen name="SavedSecrets" component={SavedSecretsScreen} />
+                <Stack.Screen name="MyReactions" component={MyReactionsScreen} />
+                <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+                <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
+              </>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </CustomAlertProvider>
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        zIndex: 999999999, 
+        elevation: 999999999,
+        alignItems: 'center',
+        pointerEvents: 'none'
+      }}>
         <Toast config={{
           success: (props) => (
             <View style={{
@@ -246,7 +257,8 @@ export default function App() {
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
-              elevation: 1000000,
+              elevation: 999999999,
+              pointerEvents: 'auto'
             }}>
               <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
               <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
@@ -271,7 +283,8 @@ export default function App() {
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
-              elevation: 1000000,
+              elevation: 999999999,
+              pointerEvents: 'auto'
             }}>
               <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
               <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
@@ -298,7 +311,8 @@ export default function App() {
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
-              elevation: 1000000,
+              elevation: 999999999,
+              pointerEvents: 'auto'
             }}>
               <Ionicons name="information-circle" size={24} color={COLORS.accent} />
               <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
@@ -311,7 +325,7 @@ export default function App() {
           ),
         }} />
       </View>
-    </CustomAlertProvider>
+    </View>
   );
 }
 

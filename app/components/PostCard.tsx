@@ -212,14 +212,33 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   const handleVoteComment = async (commentId: string, direction: "up" | "down") => {
-    setCommentActionLoadingId(commentId);
+    // Optimistic update - update UI immediately
+    const currentComments = [...comments];
+    const commentIndex = comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return;
+    
+    const comment = comments[commentIndex];
+    const wasVotedDown = comment.myVote < 0;
+    const newVote = wasVotedDown ? 0 : -1;
+    const scoreChange = wasVotedDown ? 1 : -1;
+    
+    // Apply optimistic update immediately
+    const optimisticComments = [...comments];
+    optimisticComments[commentIndex] = {
+      ...comment,
+      myVote: newVote,
+      score: comment.score + scoreChange
+    };
+    applyComments(optimisticComments);
+    
+    // Then make API call
     try {
       const nextComments = await voteOnComment(commentId, direction);
       applyComments(nextComments);
     } catch (error: any) {
+      // Revert on error
+      applyComments(currentComments);
       showAlert("Vote Failed", error?.message ?? "Unable to vote right now.");
-    } finally {
-      setCommentActionLoadingId(null);
     }
   };
 
@@ -671,7 +690,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <TouchableOpacity
                           style={[
                             styles.voteArrowButton,
-                            item.myVote < 0 && styles.voteArrowButtonActive,
+                            item.myVote < 0 && styles.voteArrowButtonActiveDown,
                           ]}
                           onPress={() => handleVoteComment(item.id, "down")}
                           disabled={commentActionLoadingId === item.id}
@@ -1348,6 +1367,10 @@ const styles = StyleSheet.create({
   voteArrowButtonActive: {
     borderColor: "rgba(107, 92, 231, 0.45)",
     backgroundColor: "rgba(107, 92, 231, 0.14)",
+  },
+  voteArrowButtonActiveDown: {
+    borderColor: "rgba(255, 75, 75, 0.45)",
+    backgroundColor: "rgba(255, 75, 75, 0.14)",
   },
   voteScoreText: {
     color: "#FFFFFF",

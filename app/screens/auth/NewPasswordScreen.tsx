@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { showAlert } from '../../utils/customAlert';
 import { setNewPassword } from '../../api/auth';
 
 export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
@@ -18,24 +19,22 @@ export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ n
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleReset = async () => {
-    setError('');
     if (!password.trim()) {
-      setError('Please enter a new password.');
+      showAlert('Missing Password', 'Please enter a new password.');
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      showAlert('Password Too Short', 'Password must be at least 6 characters.');
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      showAlert('Password Mismatch', 'Passwords do not match.');
       return;
     }
     if (!resetToken) {
-      setError('Link expired. Please request a new reset link.');
+      showAlert('Link Expired', 'Link expired. Please request a new reset link.');
       navigation.replace('ForgetPassword');
       return;
     }
@@ -44,7 +43,7 @@ export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ n
       await setNewPassword(resetToken, password, confirmPassword);
       navigation.replace('Login');
     } catch (e: any) {
-      setError(e?.message || 'Failed to update password.');
+      showAlert('Failed', e?.message || 'Failed to update password.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,6 @@ export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ n
         <Text style={styles.title}>Reset Your{'\n'}Password</Text>
         <Text style={styles.subtitle}>Enter your new password and confirm it.</Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>
           <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
@@ -76,10 +74,7 @@ export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ n
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setError('');
-            }}
+onChangeText={setPassword}
           />
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
@@ -101,10 +96,7 @@ export const NewPasswordScreen: React.FC<{ navigation: any; route: any }> = ({ n
             placeholderTextColor="#6B7280"
             secureTextEntry={!showPassword}
             value={confirmPassword}
-            onChangeText={(t) => {
-              setConfirmPassword(t);
-              setError('');
-            }}
+onChangeText={setConfirmPassword}
           />
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
@@ -160,8 +152,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
     marginBottom: 24,
   },
-  errorText: { color: '#EF4444', marginBottom: 12, fontSize: 14 },
-  inputContainer: {
+    inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1A1D23',
