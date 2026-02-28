@@ -31,6 +31,7 @@ import { COLORS } from './app/utils/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { useUserStore } from './app/store/user.store';
+import { CustomAlertProvider } from './app/components/CustomAlertProvider';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -171,7 +172,7 @@ export default function App() {
     const handleUrl = (url: string | null) => {
       const token = parseResetTokenFromUrl(url);
       if (token && navigationRef.isReady()) {
-        navigationRef.navigate('NewPassword', { resetToken: token });
+        (navigationRef as any).navigate('NewPassword', { resetToken: token });
         if (Platform.OS === 'web' && typeof window !== 'undefined' && window.history.replaceState) {
           window.history.replaceState(null, '', window.location.pathname || '/');
         }
@@ -199,7 +200,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <CustomAlertProvider>
       <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
         <StatusBar style="light" />
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -229,83 +230,88 @@ export default function App() {
           )}
         </Stack.Navigator>
       </NavigationContainer>
-      <Toast config={{
-        success: (props) => (
-          <View style={{
-            backgroundColor: COLORS.accent,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginHorizontal: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 5,
-          }}>
-            <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-              {props.text1}
-            </Text>
-            <TouchableOpacity onPress={() => Toast.hide()}>
-              <Ionicons name="close" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        ),
-        error: (props) => (
-          <View style={{
-            backgroundColor: '#FF4B4B',
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginHorizontal: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 5,
-          }}>
-            <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
-            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-              {props.text1}
-            </Text>
-            <TouchableOpacity onPress={() => Toast.hide()}>
-              <Ionicons name="close" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        ),
-        info: (props) => (
-          <View style={{
-            backgroundColor: '#1E222B',
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginHorizontal: 20,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.1)',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 5,
-          }}>
-            <Ionicons name="information-circle" size={24} color={COLORS.accent} />
-            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-              {props.text1}
-            </Text>
-            <TouchableOpacity onPress={() => Toast.hide()}>
-              <Ionicons name="close" size={20} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        ),
-      }} />
-    </>
+      <View style={{ zIndex: 1000000, elevation: 1000000, position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' }}>
+        <Toast config={{
+          success: (props) => (
+            <View style={{
+              backgroundColor: COLORS.accent,
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              minWidth: 300,
+              maxWidth: '90%',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 1000000,
+            }}>
+              <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                {props.text1}
+              </Text>
+              <TouchableOpacity onPress={() => Toast.hide()}>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ),
+          error: (props) => (
+            <View style={{
+              backgroundColor: '#FF4B4B',
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              minWidth: 300,
+              maxWidth: '90%',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 1000000,
+            }}>
+              <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                {props.text1}
+              </Text>
+              <TouchableOpacity onPress={() => Toast.hide()}>
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ),
+          info: (props) => (
+            <View style={{
+              backgroundColor: '#1E222B',
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              minWidth: 300,
+              maxWidth: '90%',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.1)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 1000000,
+            }}>
+              <Ionicons name="information-circle" size={24} color={COLORS.accent} />
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                {props.text1}
+              </Text>
+              <TouchableOpacity onPress={() => Toast.hide()}>
+                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          ),
+        }} />
+      </View>
+    </CustomAlertProvider>
   );
 }
 

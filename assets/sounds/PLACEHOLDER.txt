@@ -1,0 +1,13 @@
+Placeholder sound files needed. 
+
+For now, download free sound effects from:
+- https://pixabay.com/sound-effects/
+- https://freesound.org/
+
+Required files:
+1. like.mp3 - Short pop/ding sound
+2. comment.mp3 - Soft whoosh sound  
+3. post.mp3 - Success chime
+4. notification.mp3 - Alert bell
+
+The app will work with haptics only until you add these files.

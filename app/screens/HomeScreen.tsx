@@ -11,6 +11,7 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+import { showAlert } from "../utils/customAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
 import { useFeedStore } from "../store/feed.store";
@@ -63,7 +64,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   const handleDelete = (post: any) => {
-    Alert.alert(
+    showAlert(
       "Delete Confession",
       "Are you sure you want to delete this confession? This action cannot be undone.",
       [

@@ -4,11 +4,13 @@ import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SCREEN_CENTER = SCREEN_HEIGHT / 2;
-const THRESHOLD = 3;
+const TRIGGER_THRESHOLD = 50;
+const RESET_THRESHOLD = 150;
 
 export const useCenterHaptics = () => {
-  const lastCrossedIndexRef = useRef<number | null>(null);
+  const triggeredCardsRef = useRef<Set<number>>(new Set());
   const itemLayoutsRef = useRef<{ [key: string]: { y: number; height: number } }>({});
+  const lastScrollYRef = useRef<number>(0);
 
   const onLayoutItem = useCallback((id: string, y: number, height: number) => {
     itemLayoutsRef.current[id] = { y, height };
@@ -17,33 +19,40 @@ export const useCenterHaptics = () => {
   const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollOffset = event.nativeEvent.contentOffset.y;
     const layouts = itemLayoutsRef.current;
-
-    let foundIndex: number | null = null;
+    
+    const scrollDelta = scrollOffset - lastScrollYRef.current;
+    const velocity = Math.abs(scrollDelta);
+    lastScrollYRef.current = scrollOffset;
 
     for (const [id, layout] of Object.entries(layouts)) {
-      const cardCenter = layout.y - scrollOffset + layout.height / 2;
+      const index = parseInt(id.split('-')[1]);
+      if (isNaN(index)) continue;
       
-      // Check if cardCenter is within the threshold zone around SCREEN_CENTER
-      if (Math.abs(cardCenter - SCREEN_CENTER) <= THRESHOLD) {
-        const index = parseInt(id.split('-')[1]) || 0; // Assuming id is post-{index}
-        if (lastCrossedIndexRef.current !== index) {
-          Haptics.selectionAsync();
-          lastCrossedIndexRef.current = index;
+      const cardTop = layout.y - scrollOffset;
+      const cardCenter = cardTop + layout.height / 2;
+      
+      const distanceFromCenter = Math.abs(cardCenter - SCREEN_CENTER);
+      
+      if (distanceFromCenter <= TRIGGER_THRESHOLD) {
+        if (!triggeredCardsRef.current.has(index)) {
+          triggeredCardsRef.current.add(index);
+          
+          if (velocity > 20) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } else if (velocity > 5) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          }
         }
-        foundIndex = index;
-        break;
+      } else if (distanceFromCenter > RESET_THRESHOLD) {
+        triggeredCardsRef.current.delete(index);
       }
-    }
-
-    if (foundIndex === null) {
-      // If we are not in any threshold zone, we can reset if we've moved significantly
-      // This allows re-triggering when scrolling back
-      lastCrossedIndexRef.current = null;
     }
   }, []);
 
   const onMomentumScrollEnd = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    triggeredCardsRef.current.clear();
   }, []);
 
   return {

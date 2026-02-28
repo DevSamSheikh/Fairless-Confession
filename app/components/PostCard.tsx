@@ -12,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Dimensions,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +22,7 @@ import { useUserStore } from "../store/user.store";
 import { useSavedSecretsStore } from "../store/savedSecrets.store";
 import * as Clipboard from "expo-clipboard";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { showAlert } from "../utils/customAlert";
 import {
   addCommentToPost,
   deleteComment,
@@ -34,6 +34,7 @@ import {
 } from "../api/interactions";
 import { FormattedText } from "../utils/textFormatting";
 import { FormattedTextInput } from "./FormattedTextInput";
+import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 
 const { width } = Dimensions.get("window");
 
@@ -94,6 +95,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 }) => {
   const { userId } = useUserStore();
   const { save, remove, isSaved } = useSavedSecretsStore();
+  const { triggerFeedback } = useInteractionFeedback();
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -138,7 +140,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       const result = await fetchCommentsForPost(post.id);
       applyComments(result);
     } catch (error: any) {
-      Alert.alert("Comments", error?.message ?? "Failed to load comments.");
+      showAlert("Comments", error?.message ?? "Failed to load comments.");
     } finally {
       setLoadingComments(false);
     }
@@ -159,7 +161,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     if (!trimmed) return;
 
     if (!isServerPostId(post.id)) {
-      Alert.alert("Comments", "Comments are only available for server posts.");
+      showAlert("Comments", "Comments are only available for server posts.");
       return;
     }
 
@@ -168,6 +170,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       const nextComments = await addCommentToPost(post.id, trimmed);
       applyComments(nextComments);
       setCommentText("");
+      triggerFeedback('comment');
       showSuccessToast("Comment posted");
     } catch (error: any) {
       showErrorToast(error?.message ?? "Unable to add comment");
@@ -214,7 +217,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       const nextComments = await voteOnComment(commentId, direction);
       applyComments(nextComments);
     } catch (error: any) {
-      Alert.alert("Vote Failed", error?.message ?? "Unable to vote right now.");
+      showAlert("Vote Failed", error?.message ?? "Unable to vote right now.");
     } finally {
       setCommentActionLoadingId(null);
     }
@@ -243,11 +246,17 @@ export const PostCard: React.FC<PostCardProps> = ({
   const selectedReactionEmoji = REACTIONS.find((r) => r.type === selectedReactionType)?.emoji;
 
   const handleSelectReaction = (reactionType: string) => {
+    if (selectedReactionType !== reactionType) {
+      triggerFeedback('like');
+    }
     onReact(reactionType);
     setShowReactions(false);
   };
 
   const toggleLike = () => {
+    if (selectedReactionType !== "Like") {
+      triggerFeedback('like');
+    }
     onReact("Like");
   };
 
@@ -841,10 +850,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                     try {
                       await Clipboard.setStringAsync(post.content);
                       setShowHeaderMoreMenu(false);
-                      Alert.alert("Copied", "Content copied to clipboard.");
+                      showAlert("Copied", "Content copied to clipboard.");
                     } catch {
                       setShowHeaderMoreMenu(false);
-                      Alert.alert("Copy Failed", "Unable to copy content right now.");
+                      showAlert("Copy Failed", "Unable to copy content right now.");
                     }
                   }}
                 >
@@ -888,9 +897,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                         try {
                           await Clipboard.setStringAsync(activeCommentAction.content);
                           setActiveCommentAction(null);
-                          Alert.alert("Copied", "Comment copied to clipboard.");
+                          showAlert("Copied", "Comment copied to clipboard.");
                         } catch {
-                          Alert.alert("Copy Failed", "Unable to copy comment content.");
+                          showAlert("Copy Failed", "Unable to copy comment content.");
                         }
                       }}
                     >

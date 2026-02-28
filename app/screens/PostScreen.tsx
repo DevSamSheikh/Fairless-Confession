@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { showAlert } from '../utils/customAlert';
 import { CATEGORIES, Category, COLORS, RATE_LIMITS } from '../utils/constants';
 import { useUserStore } from '../store/user.store';
 import { createPost, ContentBlockedError } from '../api/posts';
 import { scanPostContent, softFilterInput } from '../utils/contentFilter';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
+import { useInteractionFeedback } from '../hooks/useInteractionFeedback';
 
 export const PostScreen: React.FC = () => {
   const [content, setContent] = useState('');
@@ -17,6 +19,7 @@ export const PostScreen: React.FC = () => {
     sanitizedContent: string;
   } | null>(null);
   const userStore = useUserStore();
+  const { triggerFeedback } = useInteractionFeedback();
 
   const postsToday = userStore?.postsToday ?? 0;
   const incrementPosts = userStore?.incrementPosts ?? (() => {});
@@ -67,26 +70,26 @@ export const PostScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      Alert.alert('Error', 'Please write your confession');
+      showAlert('Error', 'Please write your confession');
       return;
     }
     if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a category');
+      showAlert('Error', 'Please select a category');
       return;
     }
     if (!canPost) {
-      Alert.alert('Limit Reached', 'You have reached your daily posting limit');
+      showAlert('Limit Reached', 'You have reached your daily posting limit');
       return;
     }
 
     // Check authentication before proceeding
     const currentState = useUserStore.getState();
     if (!currentState.isHydrated) {
-      Alert.alert('Loading', 'Please wait while we verify your session...');
+      showAlert('Loading', 'Please wait while we verify your session...');
       return;
     }
     if (!currentState.token || !currentState.isAuthenticated) {
-      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
       return;
     }
 
@@ -108,6 +111,7 @@ export const PostScreen: React.FC = () => {
         content: content.trim(),
         category: selectedCategory,
       });
+      triggerFeedback('post');
       showSuccessToast('Confession posted successfully!');
       setTitle('');
       setContent('');
@@ -128,7 +132,7 @@ export const PostScreen: React.FC = () => {
         return;
       }
       const msg = e?.message ?? 'Failed to post';
-      Alert.alert('Error', msg.includes('reach server') ? 'Cannot reach server. Check your connection and backend URL.' : msg);
+      showAlert('Error', msg.includes('reach server') ? 'Cannot reach server. Check your connection and backend URL.' : msg);
     } finally {
       setSubmitting(false);
     }
@@ -242,19 +246,19 @@ export const PostScreen: React.FC = () => {
                   onPress={async () => {
                     if (!selectedCategory) {
                       setModeration(null);
-                      Alert.alert('Error', 'Please select a category');
+                      showAlert('Error', 'Please select a category');
                       return;
                     }
                     
                     // Check authentication before proceeding
                     const currentState = useUserStore.getState();
                     if (!currentState.isHydrated) {
-                      Alert.alert('Loading', 'Please wait while we verify your session...');
+                      showAlert('Loading', 'Please wait while we verify your session...');
                       return;
                     }
                     if (!currentState.token || !currentState.isAuthenticated) {
                       setModeration(null);
-                      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
                       return;
                     }
                     

@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
-  Alert,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
@@ -18,6 +17,7 @@ import { COLORS, CATEGORIES, Category } from "../utils/constants";
 import { THEME } from "../utils/theme";
 import { editMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { showAlert } from "../utils/customAlert";
 
 type RouteParams = {
   post: Post;
@@ -34,11 +34,11 @@ export const EditConfessionScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!content.trim()) {
-      Alert.alert("Error", "Content cannot be empty.");
+      showAlert("Error", "Content cannot be empty.");
       return;
     }
     if (!selectedCategory) {
-      Alert.alert("Error", "Please select a category");
+      showAlert("Error", "Please select a category");
       return;
     }
     setSaving(true);

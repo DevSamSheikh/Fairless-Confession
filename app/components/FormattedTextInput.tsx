@@ -28,30 +28,13 @@ export const FormattedTextInput: React.FC<FormattedTextInputProps> = ({
   
   return (
     <View style={styles.container}>
-      {/* Formatted preview overlay */}
-      {value.trim() && (
-        <ScrollView 
-          style={[
-            styles.previewOverlay, 
-            previewStyle, 
-            { height: currentHeight }
-          ]} 
-          pointerEvents="none"
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={false}
-        >
-          <FormattedText text={value} style={[style, styles.previewText]} />
-        </ScrollView>
-      )}
-      
-      {/* Actual TextInput (transparent text when formatted) */}
+      {/* Simple TextInput without overlay to fix cursor issues */}
       <TextInput
         {...props}
         value={value}
         onChangeText={onChangeText}
         style={[
           style, 
-          value.trim() && styles.transparentText,
           { height: currentHeight }
         ]}
         multiline
