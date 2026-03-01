@@ -34,6 +34,7 @@ import {
 } from "../api/interactions";
 import { FormattedText } from "../utils/textFormatting";
 import { FormattedTextInput } from "./FormattedTextInput";
+import { softFilterInput, sanitizeText } from "../utils/contentFilter";
 import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 
 const { width } = Dimensions.get("window");
@@ -167,7 +168,9 @@ export const PostCard: React.FC<PostCardProps> = ({
 
     setSubmittingComment(true);
     try {
-      const nextComments = await addCommentToPost(post.id, trimmed);
+      // Sanitize the comment text before submission
+      const sanitizedComment = sanitizeText(trimmed);
+      const nextComments = await addCommentToPost(post.id, sanitizedComment);
       applyComments(nextComments);
       setCommentText("");
       triggerFeedback('comment');
@@ -185,7 +188,9 @@ export const PostCard: React.FC<PostCardProps> = ({
 
     setCommentActionLoadingId(commentId);
     try {
-      const nextComments = await editComment(commentId, trimmed);
+      // Sanitize the edited comment text before submission
+      const sanitizedComment = sanitizeText(trimmed);
+      const nextComments = await editComment(commentId, sanitizedComment);
       applyComments(nextComments);
       setEditingCommentId(null);
       setEditingText("");
@@ -279,6 +284,45 @@ export const PostCard: React.FC<PostCardProps> = ({
     setActiveCommentAction(comment);
   };
 
+  const renderHighlightedComment = (content: string) => {
+    if (!content) return content;
+    
+    // Sanitize the content to see what would be filtered
+    const sanitized = sanitizeText(content);
+    const nodes: React.ReactNode[] = [];
+    let buf = '';
+    let inBad = false;
+    const len = Math.min(content.length, sanitized.length);
+
+    for (let i = 0; i < len; i++) {
+      const o = content[i];
+      const s = sanitized[i];
+      const isBad = s === '*' && o !== '*';
+      if (isBad !== inBad) {
+        if (buf) {
+          nodes.push(
+            <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+              {buf}
+            </Text>
+          );
+          buf = '';
+        }
+        inBad = isBad;
+      }
+      buf += o;
+    }
+
+    if (buf) {
+      nodes.push(
+        <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+          {buf}
+        </Text>
+      );
+    }
+
+    return nodes;
+  };
+
   const canEditComment = (comment: CommentView): boolean => {
     const ageMinutes = (Date.now() - comment.createdAtDate.getTime()) / 60000;
     return ageMinutes <= 5;
@@ -369,7 +413,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         </View>
 
         <View style={styles.contentContainer}>
-          {post.title && <Text style={styles.title}>{post.title}</Text>}
+          {post.title && !["Empty", "empty", "EMPTY"].includes(post.title.trim()) && <Text style={styles.title}>{post.title}</Text>}
           <FormattedText text={contentPreview} style={styles.content} />
           {isLongText && (
             <View style={styles.seeMoreContainer}>
@@ -654,7 +698,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                       </View>
                     </View>
                   </View>
-                  {post.title && (
+                  {post.title && !["Empty", "empty", "EMPTY"].includes(post.title.trim()) && (
                     <Text style={styles.fullTitle}>{post.title}</Text>
                   )}
                   <FormattedText text={post.content} style={styles.fullContent} />
@@ -742,7 +786,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <TextInput
                           style={styles.editInput}
                           value={editingText}
-                          onChangeText={setEditingText}
+                          onChangeText={(text) => setEditingText(softFilterInput(text))}
                           multiline
                           autoFocus
                         />
@@ -766,7 +810,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                         activeOpacity={0.8}
                         onLongPress={() => openCommentAction(item)}
                       >
-                        <FormattedText text={item.content} style={styles.commentText} />
+                        <Text style={styles.commentText}>
+                          {renderHighlightedComment(item.content)}
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -790,7 +836,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   value={commentText}
                   onChangeText={(text) => {
                     if (text.length <= 500) {
-                      setCommentText(text);
+                      setCommentText(softFilterInput(text));
                     }
                   }}
                   multiline
@@ -929,6 +975,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         style={styles.menuItemRow}
                         onPress={() => {
                           setEditingCommentId(activeCommentAction.id);
+                          // Use the original content for editing (not the displayed filtered version)
                           setEditingText(activeCommentAction.content);
                           setActiveCommentAction(null);
                         }}
@@ -1191,7 +1238,7 @@ const styles = StyleSheet.create({
   moreButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.03)",
@@ -1502,5 +1549,10 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
     fontSize: 14,
     fontFamily: "Poppins_600SemiBold",
+  },
+  highlightedBadText: {
+    backgroundColor: "rgba(255, 59, 48, 0.2)",
+    color: "#FF3B30",
+    fontWeight: "600",
   },
 });

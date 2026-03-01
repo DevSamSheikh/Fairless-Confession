@@ -161,12 +161,19 @@ export const useFeedStore = create<FeedState>((set) => ({
     }),
   syncReactionState: (postId, summary, myReactionType) =>
     set((state) => {
+      // Update posts array
       const updatedPosts = state.posts.map((post) =>
         post.id === postId ? { ...post, reactions: summary ?? {}, myReactionType } : post
       );
+      
+      // Update trending posts array separately for efficiency
+      const updatedTrendingPosts = state.trendingPosts.map((post) =>
+        post.id === postId ? { ...post, reactions: summary ?? {}, myReactionType } : post
+      );
+      
       return {
         posts: updatedPosts,
-        trendingPosts: sortByTrending(updatedPosts),
+        trendingPosts: updatedTrendingPosts,
       };
     }),
   deletePost: (postId) =>

@@ -20,8 +20,10 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { PostCard } from "../components/PostCard";
 import { EnhancedLoadingAnimation } from "../components/EnhancedLoadingAnimation";
+import { SocietyCardSkeleton } from "../components/skeletons/SocietyCardSkeleton";
 import { useFeedStore } from "../store/feed.store";
 import { useSocietyStore } from "../store/society.store";
+import { useUserStore } from "../store/user.store";
 import { isServerPostId, reactToPost } from "../api/interactions";
 
 export const TrendingScreen: React.FC = () => {
@@ -30,7 +32,8 @@ export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
-  const { posts, addReaction, syncReactionState } = useFeedStore();
+  const { posts, addReaction, syncReactionState, loadTrending } = useFeedStore();
+  const { user } = useUserStore();
   const { 
     societies, 
     loading: societiesLoading, 
@@ -70,6 +73,14 @@ export const TrendingScreen: React.FC = () => {
   useEffect(() => {
     loadSocieties(0, false);
   }, [loadSocieties]);
+
+  // Sync reactions when user changes (login/logout)
+  useEffect(() => {
+    if (user && posts.length > 0) {
+      // Refresh trending posts to get user-specific reaction data
+      loadTrending();
+    }
+  }, [user?.id, loadTrending]); // Trigger when user ID changes
 
   const loadMoreSocieties = useCallback(() => {
     if (!societiesLoading && !societiesLoadingMore && societiesHasMore) {
@@ -153,17 +164,28 @@ export const TrendingScreen: React.FC = () => {
   });
 
   const handleReact = async (postId: string, reactionType: string) => {
-    addReaction(postId, reactionType);
-
     if (!isServerPostId(postId)) {
+      // For local posts, just do optimistic update
+      addReaction(postId, reactionType);
       return;
     }
 
+    // Get current state before optimistic update
+    const currentPost = posts.find(p => p.id === postId);
+    const previousReactionType = currentPost?.myReactionType || null;
+    const previousReactions = currentPost?.reactions || {};
+
+    // Optimistic local update
+    addReaction(postId, reactionType);
+
     try {
       const result = await reactToPost({ postId, reactionType });
+      // Sync with server response immediately
       syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
-    } catch {
-      // ignore; local optimistic state remains
+    } catch (error) {
+      // Revert to previous state on error
+      syncReactionState(postId, previousReactions, previousReactionType);
+      console.error('Reaction failed:', error);
     }
   };
 
@@ -233,8 +255,18 @@ export const TrendingScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={activeTab === "Confessions" ? (joinedPosts as any[]) : (filteredSocieties as any[])}
+        data={
+          societiesLoading && activeTab !== "Confessions" && filteredSocieties.length === 0 
+            ? Array(3).fill(null) 
+            : activeTab === "Confessions" 
+              ? (joinedPosts as any[]) 
+              : (filteredSocieties as any[])
+        }
+        keyExtractor={(item, index) => item?.id || `skeleton-${index}`}
         renderItem={({ item }) => {
+          if (societiesLoading && activeTab !== "Confessions" && filteredSocieties.length === 0) {
+            return <SocietyCardSkeleton />;
+          }
           if (activeTab === "Confessions") {
             return <PostCard post={item as any} onReact={(reactionType) => handleReact((item as any).id, reactionType)} />;
           }
@@ -244,14 +276,13 @@ export const TrendingScreen: React.FC = () => {
         onEndReached={activeTab !== "Confessions" ? loadMoreSocieties : undefined}
         onEndReachedThreshold={0.5}
         scrollEventThrottle={16}
-        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContainer,
           activeTab === "Confessions" && { paddingHorizontal: 0 }
         ]}
         ListEmptyComponent={
-          searchQuery ? (
+          societiesLoading ? null : searchQuery ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No societies found for "{searchQuery}"</Text>
             </View>

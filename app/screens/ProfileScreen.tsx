@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Sta
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
+import { ProfileSkeleton } from '../components/skeletons/ProfileSkeleton';
 import { useNavigation } from '@react-navigation/native';
 import { showSuccessToast } from '../utils/toast';
 import { useUserStore } from '../store/user.store';
@@ -64,22 +65,26 @@ export const ProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.profileHero}>
-          <View style={styles.avatarContainer}>
-            <AnonymousAvatar size={100} />
-            <TouchableOpacity style={styles.editAvatar}>
-              <Ionicons name="camera" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.userName}>Anonymous User</Text>
-          <Text style={styles.userEmail}>{displayEmail}</Text>
-          <Text style={styles.userId}>{displayId}</Text>
-          
-          <View style={styles.statsContainer}>
-            {loadingStats ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color={COLORS.accent} size="small" />
+        {loadingStats && !user ? (
+          <ProfileSkeleton />
+        ) : (
+          <>
+            <View style={styles.profileHero}>
+              <View style={styles.avatarContainer}>
+                <AnonymousAvatar size={100} />
+                <TouchableOpacity style={styles.editAvatar}>
+                  <Ionicons name="camera" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
+              <Text style={styles.userName}>Anonymous User</Text>
+              <Text style={styles.userEmail}>{displayEmail}</Text>
+              <Text style={styles.userId}>{displayId}</Text>
+              
+              <View style={styles.statsContainer}>
+                {loadingStats ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color={COLORS.accent} size="small" />
+                  </View>
             ) : (
               <>
                 <View style={styles.statItem}>
@@ -165,6 +170,8 @@ export const ProfileScreen: React.FC = () => {
         </TouchableOpacity>
         
         <Text style={styles.version}>Version 1.0.0</Text>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

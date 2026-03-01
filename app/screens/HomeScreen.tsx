@@ -15,7 +15,10 @@ import { showAlert } from "../utils/customAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
 import { EnhancedLoadingAnimation } from "../components/EnhancedLoadingAnimation";
+import { SkeletonList } from "../components/skeletons/SkeletonList";
+import { PostCardSkeleton } from "../components/skeletons/PostCardSkeleton";
 import { useFeedStore } from "../store/feed.store";
+import { useUserStore } from "../store/user.store";
 import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -29,6 +32,7 @@ import { Alert } from "react-native";
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading, loadingMore, hasMore, currentPage } = useFeedStore();
+  const { user } = useUserStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,11 +41,28 @@ export const HomeScreen: React.FC = () => {
 
   const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
 
+// Debounce utility to prevent rapid API calls
+const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): T => {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  }) as T;
+};
+
   useEffect(() => {
     // Load real data on component mount
     loadFeed(0, false);
     loadTrending();
   }, []); // Empty dependency array for mount-only effect
+
+  // Sync reactions when user changes (login/logout)
+  useEffect(() => {
+    if (user && posts.length > 0) {
+      // Refresh feed to get user-specific reaction data
+      refreshFeed();
+    }
+  }, [user?.id]); // Only trigger when user ID changes
 
   const loadMorePosts = useCallback(() => {
     if (!loading && !loadingMore && hasMore) {
@@ -54,25 +75,39 @@ export const HomeScreen: React.FC = () => {
     const DOUBLE_TAP_DELAY = 300;
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      await refreshFeed();
+      refreshFeed(); // Use existing refresh function
     }
     lastTap.current = now;
   };
 
-  const handleReact = async (postId: string, reactionType: string) => {
-    // Optimistic local update
-    addReaction(postId, reactionType as any);
+  // Debounced reaction sync to improve performance
+const debouncedSyncReaction = debounce((postId: string, summary: Record<string, number>, myReactionType: string | null) => {
+  syncReactionState(postId, summary, myReactionType);
+}, 100);
 
+const handleReact = async (postId: string, reactionType: string) => {
     if (!isServerPostId(postId)) {
+      // For local posts, just do optimistic update
+      addReaction(postId, reactionType as any);
       return;
     }
 
+    // Get current state before optimistic update
+    const currentPost = posts.find(p => p.id === postId);
+    const previousReactionType = currentPost?.myReactionType || null;
+    const previousReactions = currentPost?.reactions || {};
+
+    // Optimistic local update
+    addReaction(postId, reactionType as any);
+
     try {
       const result = await reactToPost({ postId, reactionType });
-      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
-    } catch {
-      // If server fails, refresh feed state by reloading from store shuffle (best-effort)
-      refreshFeed();
+      // Use debounced sync to reduce UI lag
+      debouncedSyncReaction(postId, result.summary ?? {}, result.currentReactionType);
+    } catch (error) {
+      // Revert to previous state on error immediately (no debounce)
+      syncReactionState(postId, previousReactions, previousReactionType);
+      console.error('Reaction failed:', error);
     }
   };
 
@@ -166,20 +201,25 @@ export const HomeScreen: React.FC = () => {
 
         <FlatList
           ref={flatListRef}
-          data={filteredPosts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <View onLayout={(e) => onLayoutItem(`post-${index}`, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
-              <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
-                <PostCard
-                  post={item}
-                  rank={activeTab === "Trending" ? index + 1 : undefined}
-                  onReact={(reactionType) => handleReact(item.id, reactionType)}
-                  onDeleteConfession={handleDelete}
-                />
-              </TouchableOpacity>
-            </View>
-          )}
+          data={loading && filteredPosts.length === 0 ? Array(3).fill(null) : filteredPosts}
+          keyExtractor={(item, index) => item?.id || `skeleton-${index}`}
+          renderItem={({ item, index }) => {
+            if (loading && filteredPosts.length === 0) {
+              return <PostCardSkeleton />;
+            }
+            return (
+              <View onLayout={(e) => onLayoutItem(`post-${index}`, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+                <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
+                  <PostCard
+                    post={item}
+                    rank={activeTab === "Trending" ? index + 1 : undefined}
+                    onReact={(reactionType) => handleReact(item.id, reactionType)}
+                    onDeleteConfession={handleDelete}
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          }}
           onScroll={onScroll}
           onMomentumScrollEnd={onMomentumScrollEnd}
           onEndReached={activeTab === "Latest" ? loadMorePosts : undefined}
@@ -188,7 +228,7 @@ export const HomeScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            searchQuery ? (
+            loading ? null : searchQuery ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
               </View>
