@@ -28,6 +28,7 @@ import { PrivacyPolicyScreen } from './app/screens/PrivacyPolicyScreen';
 import { AppSafetyScreen } from './app/screens/AppSafetyScreen';
 import { AppSettingsScreen } from './app/screens/AppSettingsScreen';
 import { COLORS } from './app/utils/constants';
+import { EmailVerificationGuard } from './app/components/EmailVerificationGuard';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { useUserStore } from './app/store/user.store';
@@ -202,9 +203,10 @@ export default function App() {
   return (
     <View style={{ flex: 1 }}>
       <CustomAlertProvider>
-        <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
-          <StatusBar style="light" />
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <EmailVerificationGuard>
+          <NavigationContainer ref={navigationRef as any} onReady={() => setNavReady(true)}>
+            <StatusBar style="light" />
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
             {!user ? (
               <>
                 <Stack.Screen name="Onboarding" component={OnboardingScreen} />
@@ -231,6 +233,7 @@ export default function App() {
             )}
           </Stack.Navigator>
         </NavigationContainer>
+        </EmailVerificationGuard>
       </CustomAlertProvider>
       <View style={{ 
         position: 'absolute', 

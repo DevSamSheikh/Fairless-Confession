@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Category } from '../utils/constants';
+import { getHomeFeed, getTrendingFeed, type HomePost } from '../api/home';
 
 export interface Comment {
   id: string;
@@ -36,6 +37,8 @@ interface FeedState {
   deletePost: (postId: string) => void;
   updatePost: (postId: string, content: string) => void;
   refreshFeed: () => void;
+  loadFeed: () => Promise<void>;
+  loadTrending: () => Promise<void>;
 }
 
 const dummyComments: Comment[] = [
@@ -111,8 +114,8 @@ const sortByTrending = (posts: Post[]): Post[] => {
 };
 
 export const useFeedStore = create<FeedState>((set) => ({
-  posts: dummyPosts,
-  trendingPosts: sortByTrending(dummyPosts),
+  posts: [],
+  trendingPosts: [],
   loading: false,
   setPosts: (posts) => set({ posts, trendingPosts: sortByTrending(posts) }),
   setTrendingPosts: (posts) => set({ trendingPosts: posts }),
@@ -175,10 +178,75 @@ export const useFeedStore = create<FeedState>((set) => ({
         trendingPosts: sortByTrending(updatedPosts),
       };
     }),
-  refreshFeed: () =>
-    set((state) => ({
-      // Shuffle posts to simulate "refresh"
-      posts: [...state.posts].sort(() => Math.random() - 0.5),
-      trendingPosts: sortByTrending(state.posts)
-    })),
+  refreshFeed: async () => {
+    // Reload real data
+    try {
+      const homePosts = await getHomeFeed();
+      const posts = homePosts.map((post: HomePost) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category as Category,
+        societyName: post.societyName,
+        reactions: post.reactions_summary || post.reactions || {},
+        commentCount: post.comment_count || post.commentCount || 0,
+        createdAt: new Date(post.created_at || post.createdAt || Date.now()),
+        isOwner: post.isOwner || false,
+        myReactionType: post.myReactionType || null,
+      }));
+      set({ posts, trendingPosts: sortByTrending(posts) });
+    } catch (error) {
+      console.error('Failed to refresh feed:', error);
+    }
+  },
+  loadFeed: async () => {
+    set({ loading: true });
+    try {
+      console.log('Loading home feed...');
+      const homePosts = await getHomeFeed();
+      console.log('Home posts loaded:', homePosts);
+      const posts = homePosts.map((post: HomePost) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category as Category,
+        societyName: post.societyName,
+        reactions: post.reactions_summary || post.reactions || {},
+        commentCount: post.comment_count || post.commentCount || 0,
+        createdAt: new Date(post.created_at || post.createdAt || Date.now()),
+        isOwner: post.isOwner || false,
+        myReactionType: post.myReactionType || null,
+      }));
+      console.log('Processed posts for store:', posts);
+      set({ posts, loading: false });
+    } catch (error) {
+      console.error('Failed to load feed:', error);
+      set({ loading: false });
+    }
+  },
+  loadTrending: async () => {
+    set({ loading: true });
+    try {
+      console.log('Loading trending feed...');
+      const trendingPosts = await getTrendingFeed();
+      console.log('Trending posts loaded:', trendingPosts);
+      const posts = trendingPosts.map((post: HomePost) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category as Category,
+        societyName: post.societyName,
+        reactions: post.reactions_summary || post.reactions || {},
+        commentCount: post.comment_count || post.commentCount || 0,
+        createdAt: new Date(post.created_at || post.createdAt || Date.now()),
+        isOwner: post.isOwner || false,
+        myReactionType: post.myReactionType || null,
+      }));
+      console.log('Processed trending posts for store:', posts);
+      set({ trendingPosts: posts, loading: false });
+    } catch (error) {
+      console.error('Failed to load trending:', error);
+      set({ loading: false });
+    }
+  },
 }));

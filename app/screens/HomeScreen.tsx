@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -27,7 +27,7 @@ import { Alert } from "react-native";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost } = useFeedStore();
+  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,12 +36,18 @@ export const HomeScreen: React.FC = () => {
 
   const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
 
-  const handleDoubleTap = () => {
+  useEffect(() => {
+    // Load real data on component mount
+    loadFeed();
+    loadTrending();
+  }, []); // Empty dependency array for mount-only effect
+
+  const handleDoubleTap = async () => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      refreshFeed();
+      await refreshFeed();
     }
     lastTap.current = now;
   };

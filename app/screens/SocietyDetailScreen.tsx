@@ -7,6 +7,7 @@ import { PostCard } from '../components/PostCard';
 import { createPost, ContentBlockedError } from '../api/posts';
 import { scanPostContent, softFilterInput } from '../utils/contentFilter';
 import { showSuccessToast } from '../utils/toast';
+import { showAlert } from '../utils/customAlert';
 import { useUserStore } from '../store/user.store';
 
 interface SocietyConfession {
@@ -281,11 +282,11 @@ export const SocietyDetailScreen: React.FC = () => {
                     // Check authentication before proceeding
                     const currentState = useUserStore.getState();
                     if (!currentState.isHydrated) {
-                      Alert.alert('Loading', 'Please wait while we verify your session...');
+                      showAlert('Loading', 'Please wait while we verify your session...');
                       return;
                     }
                     if (!currentState.token || !currentState.isAuthenticated) {
-                      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
                       return;
                     }
 
@@ -334,7 +335,7 @@ export const SocietyDetailScreen: React.FC = () => {
                       }
                       // Show the actual error message from server
                       const errorMsg = e?.message || 'Failed to post';
-                      Alert.alert('Error', errorMsg);
+                      showAlert('Error', errorMsg);
                     }
                   }}
                 >
@@ -409,12 +410,12 @@ export const SocietyDetailScreen: React.FC = () => {
                     // Check authentication before proceeding
                     const currentState = useUserStore.getState();
                     if (!currentState.isHydrated) {
-                      Alert.alert('Loading', 'Please wait while we verify your session...');
+                      showAlert('Loading', 'Please wait while we verify your session...');
                       return;
                     }
                     if (!currentState.token || !currentState.isAuthenticated) {
                       setModeration(null);
-                      Alert.alert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
                       return;
                     }
 
@@ -433,7 +434,7 @@ export const SocietyDetailScreen: React.FC = () => {
                       setModeration(null);
                       showSuccessToast('Confession posted to society!');
                     } catch (err: any) {
-                      Alert.alert('Error', err?.message ?? 'Failed to post');
+                      showAlert('Error', err?.message ?? 'Failed to post');
                     } finally {
                       setPosting(false);
                     }

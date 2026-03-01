@@ -55,6 +55,10 @@ export const useUserStore = create<UserState>((set, get) => ({
       isAuthenticated: !!user,
       userId: user ? user.id : null,
     });
+    // Update the API client with the new token
+    setAuthTokenStore({
+      getState: () => ({ token }),
+    });
   },
 
   logout: async () => {
@@ -64,6 +68,10 @@ export const useUserStore = create<UserState>((set, get) => ({
       user: null,
       isAuthenticated: false,
       userId: null,
+    });
+    // Update the API client with no token
+    setAuthTokenStore({
+      getState: () => ({ token: null }),
     });
   },
 

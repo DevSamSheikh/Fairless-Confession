@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
 import { useNavigation } from '@react-navigation/native';
 import { showSuccessToast } from '../utils/toast';
 import { useUserStore } from '../store/user.store';
+import { getUserStats, type UserStats } from '../api/userStats';
 
 interface SettingsItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -16,12 +17,48 @@ interface SettingsItem {
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { user, logout } = useUserStore();
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  const displayEmail = user?.email || 'No email';
   const displayId = user?.identityId || user?.userIdCustom || '#Confess_****';
 
   const handleLogout = async () => {
     await logout();
     showSuccessToast('Logged out successfully');
   };
+
+  useEffect(() => {
+    const loadUserStats = async () => {
+      if (user) {
+        try {
+          const stats = await getUserStats();
+          setUserStats(stats);
+        } catch (error) {
+          console.error('Failed to load user stats:', error);
+        } finally {
+          setLoadingStats(false);
+        }
+      }
+    };
+    
+    loadUserStats();
+  }, [user]);
+
+  // Refresh stats when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (user) {
+        setLoadingStats(true);
+        getUserStats()
+          .then(setUserStats)
+          .catch(console.error)
+          .finally(() => setLoadingStats(false));
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, user]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,23 +72,32 @@ export const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.userName}>Anonymous User</Text>
+          <Text style={styles.userEmail}>{displayEmail}</Text>
           <Text style={styles.userId}>{displayId}</Text>
           
           <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Confessions</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>128</Text>
-              <Text style={styles.statLabel}>Reactions</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>5</Text>
-              <Text style={styles.statLabel}>Societies</Text>
-            </View>
+            {loadingStats ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color={COLORS.accent} size="small" />
+              </View>
+            ) : (
+              <>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats?.confessionsCount || 0}</Text>
+                  <Text style={styles.statLabel}>Confessions</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats?.reactionsCount || 0}</Text>
+                  <Text style={styles.statLabel}>Reactions</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats?.societiesCount || 0}</Text>
+                  <Text style={styles.statLabel}>Societies</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -164,11 +210,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins_700Bold',
   },
+  userEmail: {
+    fontSize: 16,
+    color: COLORS.accent,
+    fontFamily: 'Poppins_600SemiBold',
+    marginTop: 4,
+  },
   userId: {
     fontSize: 14,
     color: COLORS.textSecondary,
     fontFamily: 'Poppins_400Regular',
     marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
   },
   statsContainer: {
     flexDirection: 'row',

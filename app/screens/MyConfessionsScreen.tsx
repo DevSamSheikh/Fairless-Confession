@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  Alert,
   TextInput,
   Modal,
   Platform,
@@ -22,6 +21,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { deleteMyConfession, editMyConfession, fetchMyConfessions } from "../api/myConfessions";
 import { reactToPost } from "../api/interactions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { showAlert } from '../utils/customAlert';
 import { SearchBar } from "../components/SearchBar";
 
 export const MyConfessionsScreen: React.FC = () => {
@@ -43,7 +43,7 @@ export const MyConfessionsScreen: React.FC = () => {
       console.log('First post isOwner:', data[0]?.isOwner);
       setMyConfessions(data);
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to load your confessions.");
+      showAlert("Error", e?.message ?? "Failed to load your confessions.");
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,7 @@ export const MyConfessionsScreen: React.FC = () => {
       );
     } catch (e: any) {
       setMyConfessions(previous);
-      Alert.alert("Reaction Failed", e?.message ?? "Unable to react right now.");
+      showAlert("Reaction Failed", e?.message ?? "Unable to react right now.");
     }
   };
 

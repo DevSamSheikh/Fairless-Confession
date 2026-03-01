@@ -6,6 +6,7 @@ export interface AuthUser {
   identityId?: string;
   avatarSeed?: string;
   userIdCustom?: string;
+  emailVerified?: boolean;
 }
 
 export interface LoginResponse {
@@ -18,7 +19,7 @@ export interface RegisterResponse {
   user: AuthUser;
 }
 
-async function authFetch(url: string, options: RequestInit): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit): Promise<Response> {
   try {
     const response = await fetch(url, options);
     return response;

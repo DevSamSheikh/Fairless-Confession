@@ -218,9 +218,40 @@ export const PostCard: React.FC<PostCardProps> = ({
     if (commentIndex === -1) return;
     
     const comment = comments[commentIndex];
-    const wasVotedDown = comment.myVote < 0;
-    const newVote = wasVotedDown ? 0 : -1;
-    const scoreChange = wasVotedDown ? 1 : -1;
+    let newVote: number;
+    let scoreChange: number;
+    
+    if (direction === "up") {
+      // Up vote logic
+      if (comment.myVote > 0) {
+        // Already voted up -> remove vote
+        newVote = 0;
+        scoreChange = -1;
+      } else if (comment.myVote < 0) {
+        // Was voted down -> change to up vote
+        newVote = 1;
+        scoreChange = 2; // +1 for removing down vote, +1 for adding up vote
+      } else {
+        // No vote -> add up vote
+        newVote = 1;
+        scoreChange = 1;
+      }
+    } else {
+      // Down vote logic
+      if (comment.myVote < 0) {
+        // Already voted down -> remove vote
+        newVote = 0;
+        scoreChange = 1;
+      } else if (comment.myVote > 0) {
+        // Was voted up -> change to down vote
+        newVote = -1;
+        scoreChange = -2; // -1 for removing up vote, -1 for adding down vote
+      } else {
+        // No vote -> add down vote
+        newVote = -1;
+        scoreChange = -1;
+      }
+    }
     
     // Apply optimistic update immediately
     const optimisticComments = [...comments];
@@ -1242,7 +1273,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.05)",
     backgroundColor: "#0f1115",
-    position: "sticky",
+    position: "relative",
     top: 0,
     zIndex: 1000,
 
@@ -1277,7 +1308,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    position: "sticky",
+    position: "relative",
     top:30,
     zIndex:1100,
     backgroundColor:"#0f1115",
@@ -1392,7 +1423,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.05)",
     backgroundColor: COLORS.background,
-    position: 'sticky',
+    position: 'relative',
     bottom: 0,
     left: 0,
     right: 0,

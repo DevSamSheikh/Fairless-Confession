@@ -80,13 +80,34 @@ router.post('/register', async (req, res) => {
     } catch (_) { /* non-fatal */ }
 
     const { data: profile } = await supabase.from('users').select('id, identity_id, avatar_seed, email, user_id_custom').eq('id', userId).single();
-    const user = { id: userId, identityId: profile?.identity_id ?? identityId, avatarSeed: profile?.avatar_seed ?? avatarSeed, email: emailNorm, userIdCustom: profile?.user_id_custom ?? userIdCustom };
+    const user = { 
+      id: userId, 
+      identityId: profile?.identity_id ?? identityId, 
+      avatarSeed: profile?.avatar_seed ?? avatarSeed, 
+      email: emailNorm, 
+      userIdCustom: profile?.user_id_custom ?? userIdCustom,
+      emailVerified: authData.user?.email_confirmed_at != null
+    };
+    
+    // Always try to sign in after registration to get a token
     let token = authData.session?.access_token;
     if (!token) {
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: emailNorm, password });
-      if (!signInErr && signInData?.session) token = signInData.session.access_token;
+      if (signInErr) {
+        console.error('Auto sign-in after registration failed:', signInErr);
+        return res.status(500).json({ error: 'Account created but auto sign-in failed. Please try signing in manually.' });
+      }
+      if (!signInData?.session) {
+        return res.status(500).json({ error: 'Account created but session not established. Please try signing in manually.' });
+      }
+      token = signInData.session.access_token;
     }
-    res.status(201).json(token ? { token, user } : { user });
+    
+    if (!token) {
+      return res.status(500).json({ error: 'Failed to establish session after registration. Please try signing in manually.' });
+    }
+    
+    res.status(201).json({ token, user });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -127,7 +148,14 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token: data.session.access_token,
-      user: { id: data.user.id, email: profile?.email ?? data.user.email ?? emailNorm, identityId: profile?.identity_id, avatarSeed: profile?.avatar_seed, userIdCustom: profile?.user_id_custom }
+      user: { 
+        id: data.user.id, 
+        email: profile?.email ?? data.user.email ?? emailNorm, 
+        identityId: profile?.identity_id, 
+        avatarSeed: profile?.avatar_seed, 
+        userIdCustom: profile?.user_id_custom,
+        emailVerified: data.user.email_confirmed_at != null
+      }
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });

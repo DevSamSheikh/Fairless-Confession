@@ -15,6 +15,7 @@ import myReactionsRoutes from './routes/myReactions.js';
 import searchRoutes from './routes/search.js';
 import reportRoutes from './routes/report.js';
 import leaveSocietyRoutes from './routes/leaveSociety.js';
+import userRoutes from './routes/user.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -67,6 +68,9 @@ app.use('/api/search', searchRoutes);
 
 // Report: POST /api/report/:postid
 app.use('/api/report', reportRoutes);
+
+// User: GET /api/user/stats
+app.use('/api/user', userRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

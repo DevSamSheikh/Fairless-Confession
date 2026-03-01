@@ -41,6 +41,17 @@ router.get('/trending', authMiddleware, async (req: AuthRequest, res) => {
     const period = (req.query.period as string) || 'week'; // 24h, week, month
     const userId = req.userId;
 
+    // Calculate time filter based on period
+    const now = new Date();
+    let timeFilterDate: Date;
+    if (period === '24h') {
+      timeFilterDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (period === 'week') {
+      timeFilterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else {
+      timeFilterDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // month default
+    }
+
     const { data: posts, error } = await supabase
       .from('posts')
       .select(`
@@ -48,9 +59,8 @@ router.get('/trending', authMiddleware, async (req: AuthRequest, res) => {
         user:users(identity_id, avatar_seed, user_id_custom)
       `)
       .eq('visibility', 'public')
-      .eq('is_trending', true)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .gte('created_at', timeFilterDate.toISOString())
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -65,9 +75,12 @@ router.get('/trending', authMiddleware, async (req: AuthRequest, res) => {
         isOwner: userId ? p.user_id === userId : false,
       };
     });
-    withScore.sort((a: { _score: number }, b: { _score: number }) => b._score - a._score);
+    
+    // Filter out posts with zero interactions and sort by engagement
+    const withInteractions = withScore.filter(post => post._score > 0);
+    withInteractions.sort((a: { _score: number }, b: { _score: number }) => b._score - a._score);
 
-    res.json(withScore.slice(0, limit));
+    res.json(withInteractions.slice(0, limit));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch trending' });
   }
