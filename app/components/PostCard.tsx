@@ -116,6 +116,12 @@ export const PostCard: React.FC<PostCardProps> = ({
   const saved = isSaved(post.id);
 
   useEffect(() => {
+    console.log('PostCard reaction state:', {
+      postId: post.id,
+      title: post.title,
+      myReactionType: post.myReactionType,
+      reactions: post.reactions
+    });
     setSelectedReactionType(post.myReactionType ?? null);
   }, [post.myReactionType, post.id, post.reactions]);
 
@@ -634,10 +640,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                     try {
                       await Clipboard.setStringAsync(post.content);
                       setShowMoreMenu(false);
-                      alert("Content copied to clipboard.");
+                      showSuccessToast("Content copied to clipboard.");
                     } catch {
                       setShowMoreMenu(false);
-                      alert("Failed to copy content.");
+                      showErrorToast("Failed to copy content.");
                     }
                   }}
                 >
@@ -946,10 +952,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                     try {
                       await Clipboard.setStringAsync(post.content);
                       setShowHeaderMoreMenu(false);
-                      showAlert("Copied", "Content copied to clipboard.");
+                      showSuccessToast("Content copied to clipboard.");
                     } catch {
                       setShowHeaderMoreMenu(false);
-                      showAlert("Copy Failed", "Unable to copy content right now.");
+                      showErrorToast("Unable to copy content.");
                     }
                   }}
                 >
@@ -994,9 +1000,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                         try {
                           await Clipboard.setStringAsync(activeCommentAction.content);
                           setActiveCommentAction(null);
-                          showAlert("Copied", "Comment copied to clipboard.");
+                          showSuccessToast("Comment copied to clipboard.");
                         } catch {
-                          showAlert("Copy Failed", "Unable to copy comment content.");
+                          showErrorToast("Unable to copy comment content.");
                         }
                       }}
                     >

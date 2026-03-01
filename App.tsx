@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet, Linking, Platform } from 'react-native';
+import { Animated, TouchableOpacity, View, Text, ActivityIndicator, StyleSheet, Linking, Platform, PanResponder } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { HomeScreen } from './app/screens/HomeScreen';
 import { TrendingScreen } from './app/screens/TrendingScreen';
@@ -37,6 +37,61 @@ import { CustomAlertProvider } from './app/components/CustomAlertProvider';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
+
+// Swipeable Toast Component
+const SwipeableToast = ({ children, onHide }: { children: React.ReactNode; onHide: () => void }) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dx < 0) {
+          translateX.setValue(gestureState.dx);
+          // Fade out as user swipes
+          opacity.setValue(Math.max(0, 1 + (gestureState.dx / 100)));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -100) {
+          // Swipe threshold reached, hide toast
+          Animated.timing(translateX, {
+            toValue: -300,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(onHide);
+        } else {
+          // Snap back to position
+          Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    })
+  ).current;
+
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={{
+        transform: [{ translateX }],
+        opacity,
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+};
 
 function TabNavigator() {
   const [refreshing, setRefreshing] = useState(false);
@@ -243,88 +298,97 @@ export default function App() {
         zIndex: 999999999, 
         elevation: 999999999,
         alignItems: 'center',
-        pointerEvents: 'none'
+        pointerEvents: 'box-none' // Allow touch events to pass through to toast
       }}>
         <Toast config={{
           success: (props) => (
-            <View style={{
-              backgroundColor: COLORS.accent,
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderRadius: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              minWidth: 300,
-              maxWidth: '90%',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 999999999,
-              pointerEvents: 'auto'
-            }}>
-              <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-                {props.text1}
-              </Text>
-              <TouchableOpacity onPress={() => Toast.hide()}>
-                <Ionicons name="close" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+            <SwipeableToast onHide={() => Toast.hide()}>
+              <View style={{
+                backgroundColor: COLORS.accent,
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                minWidth: 300,
+                maxWidth: '90%',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 999999999,
+                pointerEvents: 'auto',
+                zIndex: 999999999
+              }}>
+                <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                  {props.text1}
+                </Text>
+                <TouchableOpacity onPress={() => Toast.hide()}>
+                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </SwipeableToast>
           ),
           error: (props) => (
-            <View style={{
-              backgroundColor: '#FF4B4B',
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderRadius: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              minWidth: 300,
-              maxWidth: '90%',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 999999999,
-              pointerEvents: 'auto'
-            }}>
-              <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
-              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-                {props.text1}
-              </Text>
-              <TouchableOpacity onPress={() => Toast.hide()}>
-                <Ionicons name="close" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+            <SwipeableToast onHide={() => Toast.hide()}>
+              <View style={{
+                backgroundColor: '#FF4B4B',
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                minWidth: 300,
+                maxWidth: '90%',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 999999999,
+                pointerEvents: 'auto',
+                zIndex: 999999999
+              }}>
+                <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                  {props.text1}
+                </Text>
+                <TouchableOpacity onPress={() => Toast.hide()}>
+                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </SwipeableToast>
           ),
           info: (props) => (
-            <View style={{
-              backgroundColor: '#1E222B',
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderRadius: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              minWidth: 300,
-              maxWidth: '90%',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.1)',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 999999999,
-              pointerEvents: 'auto'
-            }}>
-              <Ionicons name="information-circle" size={24} color={COLORS.accent} />
-              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
-                {props.text1}
-              </Text>
-              <TouchableOpacity onPress={() => Toast.hide()}>
-                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+            <SwipeableToast onHide={() => Toast.hide()}>
+              <View style={{
+                backgroundColor: '#1E222B',
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                minWidth: 300,
+                maxWidth: '90%',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.1)',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 999999999,
+                pointerEvents: 'auto',
+                zIndex: 999999999
+              }}>
+                <Ionicons name="information-circle" size={24} color={COLORS.accent} />
+                <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginLeft: 10, flex: 1 }}>
+                  {props.text1}
+                </Text>
+                <TouchableOpacity onPress={() => Toast.hide()}>
+                  <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            </SwipeableToast>
           ),
         }} />
       </View>

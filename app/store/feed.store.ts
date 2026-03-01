@@ -138,6 +138,34 @@ export const useFeedStore = create<FeedState>((set) => ({
               const next = reaction;
               const nextReactions = { ...post.reactions };
 
+              // If no current reaction, add the new one
+              if (!current) {
+                nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+                return { ...post, reactions: nextReactions, myReactionType: next };
+              }
+
+              // If clicking the same reaction, remove it
+              if (current === next) {
+                nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+                return { ...post, reactions: nextReactions, myReactionType: null };
+              }
+
+              // If changing from one reaction to another
+              nextReactions[current] = Math.max(0, (nextReactions[current] ?? 0) - 1);
+              nextReactions[next] = (nextReactions[next] ?? 0) + 1;
+              return { ...post, reactions: nextReactions, myReactionType: next };
+            })()
+          : post
+      );
+      
+      // Also update trending posts
+      const updatedTrendingPosts = state.trendingPosts.map((post) =>
+        post.id === postId
+          ? (() => {
+              const current = post.myReactionType ?? null;
+              const next = reaction;
+              const nextReactions = { ...post.reactions };
+
               if (!current) {
                 nextReactions[next] = (nextReactions[next] ?? 0) + 1;
                 return { ...post, reactions: nextReactions, myReactionType: next };
@@ -154,9 +182,10 @@ export const useFeedStore = create<FeedState>((set) => ({
             })()
           : post
       );
+      
       return {
         posts: updatedPosts,
-        trendingPosts: sortByTrending(updatedPosts),
+        trendingPosts: updatedTrendingPosts,
       };
     }),
   syncReactionState: (postId, summary, myReactionType) =>
@@ -246,7 +275,12 @@ export const useFeedStore = create<FeedState>((set) => ({
         isOwner: post.isOwner || false,
         myReactionType: post.myReactionType || null,
       }));
-      console.log('Processed posts for store:', posts);
+      console.log('Processed posts for store:', posts.map(p => ({
+        id: p.id,
+        title: p.title,
+        myReactionType: p.myReactionType,
+        reactions: p.reactions
+      })));
       
       const hasMore = homePosts.length === pageSize;
       

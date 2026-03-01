@@ -76,11 +76,12 @@ export const TrendingScreen: React.FC = () => {
 
   // Sync reactions when user changes (login/logout)
   useEffect(() => {
-    if (user && posts.length > 0) {
-      // Refresh trending posts to get user-specific reaction data
+    // Always refresh when user changes (login/logout)
+    if (user) {
+      // Force complete refresh to get user-specific reaction data
       loadTrending();
     }
-  }, [user?.id, loadTrending]); // Trigger when user ID changes
+  }, [user?.id]); // Only trigger when user ID changes
 
   const loadMoreSocieties = useCallback(() => {
     if (!societiesLoading && !societiesLoadingMore && societiesHasMore) {

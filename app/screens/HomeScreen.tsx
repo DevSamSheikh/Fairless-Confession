@@ -41,15 +41,6 @@ export const HomeScreen: React.FC = () => {
 
   const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
 
-// Debounce utility to prevent rapid API calls
-const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): T => {
-  let timeoutId: NodeJS.Timeout;
-  return ((...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  }) as T;
-};
-
   useEffect(() => {
     // Load real data on component mount
     loadFeed(0, false);
@@ -58,9 +49,11 @@ const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): T
 
   // Sync reactions when user changes (login/logout)
   useEffect(() => {
-    if (user && posts.length > 0) {
-      // Refresh feed to get user-specific reaction data
-      refreshFeed();
+    // Always refresh when user changes (login/logout)
+    if (user) {
+      // Force complete refresh to get user-specific reaction data
+      loadFeed(0, false);
+      loadTrending();
     }
   }, [user?.id]); // Only trigger when user ID changes
 
@@ -80,12 +73,7 @@ const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): T
     lastTap.current = now;
   };
 
-  // Debounced reaction sync to improve performance
-const debouncedSyncReaction = debounce((postId: string, summary: Record<string, number>, myReactionType: string | null) => {
-  syncReactionState(postId, summary, myReactionType);
-}, 100);
-
-const handleReact = async (postId: string, reactionType: string) => {
+  const handleReact = async (postId: string, reactionType: string) => {
     if (!isServerPostId(postId)) {
       // For local posts, just do optimistic update
       addReaction(postId, reactionType as any);
@@ -97,15 +85,24 @@ const handleReact = async (postId: string, reactionType: string) => {
     const previousReactionType = currentPost?.myReactionType || null;
     const previousReactions = currentPost?.reactions || {};
 
+    console.log('Before reaction:', {
+      postId,
+      reactionType,
+      previousReactionType,
+      previousReactions,
+      userId: user?.id
+    });
+
     // Optimistic local update
     addReaction(postId, reactionType as any);
 
     try {
       const result = await reactToPost({ postId, reactionType });
-      // Use debounced sync to reduce UI lag
-      debouncedSyncReaction(postId, result.summary ?? {}, result.currentReactionType);
+      console.log('Server response:', result);
+      // Sync with server response immediately (no debounce)
+      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
     } catch (error) {
-      // Revert to previous state on error immediately (no debounce)
+      // Revert to previous state on error immediately
       syncReactionState(postId, previousReactions, previousReactionType);
       console.error('Reaction failed:', error);
     }
