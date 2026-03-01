@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -19,46 +19,10 @@ import { Button } from "../components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
 
 import { PostCard } from "../components/PostCard";
+import { EnhancedLoadingAnimation } from "../components/EnhancedLoadingAnimation";
 import { useFeedStore } from "../store/feed.store";
+import { useSocietyStore } from "../store/society.store";
 import { isServerPostId, reactToPost } from "../api/interactions";
-
-const MOCK_SOCIETIES = [
-  {
-    id: "1",
-    name: "Midnight Society",
-    members: 1240,
-    description: "Confessions for the night owls.",
-    icon: "moon",
-  },
-  {
-    id: "2",
-    name: "College Life Society",
-    members: 8500,
-    description: "Campus secrets and exam stress.",
-    icon: "school",
-  },
-  {
-    id: "3",
-    name: "Workplace Society",
-    members: 3200,
-    description: "Office drama and boss rants.",
-    icon: "briefcase",
-  },
-  {
-    id: "4",
-    name: "Broken Hearts Society",
-    members: 5600,
-    description: "Anonymously heal together.",
-    icon: "heart-discontinuous",
-  },
-  {
-    id: "5",
-    name: "Gamer Society",
-    members: 2100,
-    description: "Lobby rants and game secrets.",
-    icon: "game-controller",
-  },
-];
 
 export const TrendingScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Discover");
@@ -67,6 +31,14 @@ export const TrendingScreen: React.FC = () => {
   const navigation = useNavigation<any>();
 
   const { posts, addReaction, syncReactionState } = useFeedStore();
+  const { 
+    societies, 
+    loading: societiesLoading, 
+    loadingMore: societiesLoadingMore, 
+    hasMore: societiesHasMore, 
+    currentPage: societiesCurrentPage,
+    loadSocieties 
+  } = useSocietyStore();
   const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const lastCenterId = useRef<string | null>(null);
@@ -94,16 +66,27 @@ export const TrendingScreen: React.FC = () => {
     }
   };
 
+  // Load societies on component mount
+  useEffect(() => {
+    loadSocieties(0, false);
+  }, [loadSocieties]);
+
+  const loadMoreSocieties = useCallback(() => {
+    if (!societiesLoading && !societiesLoadingMore && societiesHasMore) {
+      loadSocieties(societiesCurrentPage + 1, true);
+    }
+  }, [societiesLoading, societiesLoadingMore, societiesHasMore, societiesCurrentPage, loadSocieties]);
+
   // In a real app, these would come from a global user/society store
-  const [joinedSocieties] = useState(["1", "3"]); // Mock joined society IDs
-  const [userCreatedSocieties] = useState(["2"]); // Mock user-created society IDs
+  const [joinedSocieties] = useState<string[]>([]); // Mock joined society IDs
+  const [userCreatedSocieties] = useState<string[]>([]); // Mock user-created society IDs
 
   const tabs = ["Confessions", "Discover", "Joined", "Your Societies"];
 
   const renderSocietyCard = ({
     item,
   }: {
-    item: (typeof MOCK_SOCIETIES)[0];
+    item: any; // Society type from store
   }) => {
     const isJoined = joinedSocieties.includes(item.id);
     const isSaved = savedSocieties.includes(item.id);
@@ -125,7 +108,7 @@ export const TrendingScreen: React.FC = () => {
             </View>
             <View style={styles.cardTitleContainer}>
               <Text style={styles.cardName}>{item.name}</Text>
-              <Text style={styles.cardMembers}>{item.members} members</Text>
+              <Text style={styles.cardMembers}>{item.memberCount || item.members} members</Text>
             </View>
             <Button
               title={buttonTitle}
@@ -142,7 +125,7 @@ export const TrendingScreen: React.FC = () => {
     );
   };
 
-  const filteredSocieties = MOCK_SOCIETIES.filter((s) => {
+  const filteredSocieties = societies.filter((s: any) => {
     // 1. Saved Filter
     if (showSavedOnly && !savedSocieties.includes(s.id)) {
       return false;
@@ -258,6 +241,8 @@ export const TrendingScreen: React.FC = () => {
           return renderSocietyCard({ item: item as any });
         }}
         onScroll={handleScroll}
+        onEndReached={activeTab !== "Confessions" ? loadMoreSocieties : undefined}
+        onEndReachedThreshold={0.5}
         scrollEventThrottle={16}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -270,6 +255,11 @@ export const TrendingScreen: React.FC = () => {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No societies found for "{searchQuery}"</Text>
             </View>
+          ) : null
+        }
+        ListFooterComponent={
+          activeTab !== "Confessions" && societiesLoadingMore ? (
+            <EnhancedLoadingAnimation text="Loading more societies" type="bounce" size="small" />
           ) : null
         }
       />
@@ -401,5 +391,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
+  },
+  loadingMoreContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
   },
 });

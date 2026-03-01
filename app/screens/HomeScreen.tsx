@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
 import { showAlert } from "../utils/customAlert";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../components/PostCard";
+import { EnhancedLoadingAnimation } from "../components/EnhancedLoadingAnimation";
 import { useFeedStore } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
@@ -27,7 +28,7 @@ import { Alert } from "react-native";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading } = useFeedStore();
+  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading, loadingMore, hasMore, currentPage } = useFeedStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,9 +39,15 @@ export const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     // Load real data on component mount
-    loadFeed();
+    loadFeed(0, false);
     loadTrending();
   }, []); // Empty dependency array for mount-only effect
+
+  const loadMorePosts = useCallback(() => {
+    if (!loading && !loadingMore && hasMore) {
+      loadFeed(currentPage + 1, true);
+    }
+  }, [loading, loadingMore, hasMore, currentPage, loadFeed]);
 
   const handleDoubleTap = async () => {
     const now = Date.now();
@@ -175,6 +182,8 @@ export const HomeScreen: React.FC = () => {
           )}
           onScroll={onScroll}
           onMomentumScrollEnd={onMomentumScrollEnd}
+          onEndReached={activeTab === "Latest" ? loadMorePosts : undefined}
+          onEndReachedThreshold={0.5}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
@@ -183,6 +192,11 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
               </View>
+            ) : null
+          }
+          ListFooterComponent={
+            activeTab === "Latest" && loadingMore ? (
+              <EnhancedLoadingAnimation text="Loading more confessions" type="wave" size="small" />
             ) : null
           }
         />
@@ -286,5 +300,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
+  },
+  loadingMoreContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
   },
 });

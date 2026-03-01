@@ -29,15 +29,21 @@ interface FeedState {
   posts: Post[];
   trendingPosts: Post[];
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  currentPage: number;
   setPosts: (posts: Post[]) => void;
   setTrendingPosts: (posts: Post[]) => void;
   setLoading: (loading: boolean) => void;
+  setLoadingMore: (loadingMore: boolean) => void;
+  setHasMore: (hasMore: boolean) => void;
+  appendPosts: (posts: Post[]) => void;
   addReaction: (postId: string, reaction: string) => void;
   syncReactionState: (postId: string, summary: Record<string, number>, myReactionType: string | null) => void;
   deletePost: (postId: string) => void;
   updatePost: (postId: string, content: string) => void;
   refreshFeed: () => void;
-  loadFeed: () => Promise<void>;
+  loadFeed: (page?: number, append?: boolean) => Promise<void>;
   loadTrending: () => Promise<void>;
 }
 
@@ -117,6 +123,9 @@ export const useFeedStore = create<FeedState>((set) => ({
   posts: [],
   trendingPosts: [],
   loading: false,
+  loadingMore: false,
+  hasMore: true,
+  currentPage: 0,
   setPosts: (posts) => set({ posts, trendingPosts: sortByTrending(posts) }),
   setTrendingPosts: (posts) => set({ trendingPosts: posts }),
   setLoading: (loading) => set({ loading }),
@@ -178,6 +187,13 @@ export const useFeedStore = create<FeedState>((set) => ({
         trendingPosts: sortByTrending(updatedPosts),
       };
     }),
+  setLoadingMore: (loadingMore) => set({ loadingMore }),
+  setHasMore: (hasMore) => set({ hasMore }),
+  appendPosts: (newPosts) =>
+    set((state) => ({
+      posts: [...state.posts, ...newPosts],
+      currentPage: state.currentPage + 1,
+    })),
   refreshFeed: async () => {
     // Reload real data
     try {
@@ -199,11 +215,17 @@ export const useFeedStore = create<FeedState>((set) => ({
       console.error('Failed to refresh feed:', error);
     }
   },
-  loadFeed: async () => {
-    set({ loading: true });
+  loadFeed: async (page: number = 0, append: boolean = false) => {
+    const pageSize = 10; // Load in chunks of 10
+    if (append) {
+      set({ loadingMore: true });
+    } else {
+      set({ loading: true, currentPage: 0, posts: [] });
+    }
+    
     try {
-      console.log('Loading home feed...');
-      const homePosts = await getHomeFeed();
+      console.log('Loading home feed page:', page);
+      const homePosts = await getHomeFeed(pageSize, page * pageSize);
       console.log('Home posts loaded:', homePosts);
       const posts = homePosts.map((post: HomePost) => ({
         id: post.id,
@@ -218,10 +240,22 @@ export const useFeedStore = create<FeedState>((set) => ({
         myReactionType: post.myReactionType || null,
       }));
       console.log('Processed posts for store:', posts);
-      set({ posts, loading: false });
+      
+      const hasMore = homePosts.length === pageSize;
+      
+      if (append) {
+        set((state) => ({
+          posts: [...state.posts, ...posts],
+          loadingMore: false,
+          hasMore,
+          currentPage: page,
+        }));
+      } else {
+        set({ posts, loading: false, hasMore, currentPage: 0 });
+      }
     } catch (error) {
       console.error('Failed to load feed:', error);
-      set({ loading: false });
+      set({ loading: false, loadingMore: false });
     }
   },
   loadTrending: async () => {
