@@ -1,4 +1,4 @@
-import { apiFetch } from './client';
+import { apiFetchWithAuthHandling } from '../utils/authErrorHandler';
 
 export interface HomePost {
   id: string;
@@ -23,7 +23,7 @@ export interface HomePost {
 
 export async function getHomeFeed(limit: number = 20, offset: number = 0): Promise<HomePost[]> {
   try {
-    const res = await apiFetch(`/api/home?limit=${limit}&offset=${offset}`, {
+    const res = await apiFetchWithAuthHandling(`/api/home?limit=${limit}&offset=${offset}`, {
       method: 'GET',
     });
     
@@ -46,7 +46,7 @@ export async function getHomeFeed(limit: number = 20, offset: number = 0): Promi
 
 export async function getTrendingFeed(limit: number = 20, period: string = 'week'): Promise<HomePost[]> {
   try {
-    const res = await apiFetch(`/api/home/trending?limit=${limit}&period=${period}`, {
+    const res = await apiFetchWithAuthHandling(`/api/home/trending?limit=${limit}&period=${period}`, {
       method: 'GET',
     });
     

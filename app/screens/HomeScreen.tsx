@@ -27,6 +27,7 @@ import { useCenterHaptics } from "../hooks/useCenterHaptics";
 import { isServerPostId, reactToPost } from "../api/interactions";
 import { deleteMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { addAuthErrorCallback, removeAuthErrorCallback } from "../utils/authErrorHandler";
 import { Alert } from "react-native";
 
 export const HomeScreen: React.FC = () => {
@@ -38,19 +39,36 @@ export const HomeScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const flatListRef = useRef<FlatList>(null);
   const lastTap = useRef<number>(0);
+  const hasAuthError = useRef<boolean>(false);
 
   const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
 
+  // Register auth error callback
+  useEffect(() => {
+    const handleAuthError = () => {
+      console.log('Setting auth error flag in HomeScreen');
+      hasAuthError.current = true;
+    };
+
+    addAuthErrorCallback(handleAuthError);
+
+    return () => {
+      removeAuthErrorCallback(handleAuthError);
+    };
+  }, []);
+
   useEffect(() => {
     // Load real data on component mount
-    loadFeed(0, false);
-    loadTrending();
+    if (!hasAuthError.current) {
+      loadFeed(0, false);
+      loadTrending();
+    }
   }, []); // Empty dependency array for mount-only effect
 
   // Sync reactions when user changes (login/logout)
   useEffect(() => {
     // Always refresh when user changes (login/logout)
-    if (user) {
+    if (user && !hasAuthError.current) {
       // Force complete refresh to get user-specific reaction data
       loadFeed(0, false);
       loadTrending();

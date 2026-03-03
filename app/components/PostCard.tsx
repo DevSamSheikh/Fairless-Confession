@@ -36,6 +36,7 @@ import { FormattedText } from "../utils/textFormatting";
 import { FormattedTextInput } from "./FormattedTextInput";
 import { softFilterInput, sanitizeText } from "../utils/contentFilter";
 import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
+import { ReportModal } from "./ReportModal";
 
 const { width } = Dimensions.get("window");
 
@@ -112,6 +113,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [activeCommentAction, setActiveCommentAction] = useState<CommentView | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const saved = isSaved(post.id);
 
@@ -962,6 +964,22 @@ export const PostCard: React.FC<PostCardProps> = ({
                   <Ionicons name="copy-outline" size={20} color="#FFF" />
                   <Text style={styles.menuItemLabel}>Copy Content</Text>
                 </TouchableOpacity>
+
+                {/* Report option - only for non-owner posts */}
+                {!post.isOwner && (
+                  <TouchableOpacity
+                    style={styles.menuItemRow}
+                    onPress={() => {
+                      setShowHeaderMoreMenu(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    <Ionicons name="flag-outline" size={20} color="#FF6B6B" />
+                    <Text style={[styles.menuItemLabel, { color: "#FF6B6B" }]}>
+                      Report Content
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -1029,6 +1047,14 @@ export const PostCard: React.FC<PostCardProps> = ({
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+    {/* Report Modal */}
+      <ReportModal
+        visible={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        postId={post.id}
+        postTitle={post.title}
+        postContent={post.content}
+      />
     </View>
   );
 };
@@ -1295,7 +1321,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.03)",
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.03)",
   },
@@ -1416,7 +1442,7 @@ const styles = StyleSheet.create({
   },
   commentBubble: {
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 12,
     marginLeft: 42,
   },

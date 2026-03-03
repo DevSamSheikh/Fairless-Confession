@@ -297,6 +297,14 @@ export const useFeedStore = create<FeedState>((set) => ({
     } catch (error) {
       console.error('Failed to load feed:', error);
       set({ loading: false, loadingMore: false });
+      
+      // Don't retry on auth errors - they're handled by authErrorHandler
+      const errorMessage = (error as any)?.message;
+      const errorStatus = (error as any)?.status;
+      if (errorMessage?.includes('Unauthorized') || errorStatus === 401) {
+        console.log('Auth error in feed loading, stopping retries');
+        return;
+      }
     }
   },
   loadTrending: async () => {
@@ -322,6 +330,14 @@ export const useFeedStore = create<FeedState>((set) => ({
     } catch (error) {
       console.error('Failed to load trending:', error);
       set({ loading: false });
+      
+      // Don't retry on auth errors - they're handled by authErrorHandler
+      const errorMessage = (error as any)?.message;
+      const errorStatus = (error as any)?.status;
+      if (errorMessage?.includes('Unauthorized') || errorStatus === 401) {
+        console.log('Auth error in trending loading, stopping retries');
+        return;
+      }
     }
   },
 }));

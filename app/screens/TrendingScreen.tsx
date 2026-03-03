@@ -25,6 +25,7 @@ import { useFeedStore } from "../store/feed.store";
 import { useSocietyStore } from "../store/society.store";
 import { useUserStore } from "../store/user.store";
 import { isServerPostId, reactToPost } from "../api/interactions";
+import { addAuthErrorCallback, removeAuthErrorCallback } from "../utils/authErrorHandler";
 
 export const TrendingScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Discover");
@@ -45,7 +46,22 @@ export const TrendingScreen: React.FC = () => {
   const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const lastCenterId = useRef<string | null>(null);
+  const hasAuthError = useRef<boolean>(false);
   const windowHeight = Dimensions.get('window').height;
+
+  // Register auth error callback
+  useEffect(() => {
+    const handleAuthError = () => {
+      console.log('Setting auth error flag in TrendingScreen');
+      hasAuthError.current = true;
+    };
+
+    addAuthErrorCallback(handleAuthError);
+
+    return () => {
+      removeAuthErrorCallback(handleAuthError);
+    };
+  }, []);
 
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
@@ -71,13 +87,15 @@ export const TrendingScreen: React.FC = () => {
 
   // Load societies on component mount
   useEffect(() => {
-    loadSocieties(0, false);
+    if (!hasAuthError.current) {
+      loadSocieties(0, false);
+    }
   }, [loadSocieties]);
 
   // Sync reactions when user changes (login/logout)
   useEffect(() => {
     // Always refresh when user changes (login/logout)
-    if (user) {
+    if (user && !hasAuthError.current) {
       // Force complete refresh to get user-specific reaction data
       loadTrending();
     }
