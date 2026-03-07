@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { AnonymousAvatar } from '../components/AnonymousAvatar';
@@ -20,6 +20,7 @@ export const ProfileScreen: React.FC = () => {
   const { user, logout } = useUserStore();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   const displayEmail = user?.email || 'No email';
   const displayId = user?.identityId || user?.userIdCustom || '#Confess_****';
@@ -29,20 +30,26 @@ export const ProfileScreen: React.FC = () => {
     showSuccessToast('Logged out successfully');
   };
 
-  useEffect(() => {
-    const loadUserStats = async () => {
-      if (user) {
-        try {
-          const stats = await getUserStats();
-          setUserStats(stats);
-        } catch (error) {
-          console.error('Failed to load user stats:', error);
-        } finally {
-          setLoadingStats(false);
-        }
+  const loadUserStats = async () => {
+    if (user) {
+      try {
+        const stats = await getUserStats();
+        setUserStats(stats);
+      } catch (error) {
+        console.error('Failed to load user stats:', error);
+      } finally {
+        setLoadingStats(false);
       }
-    };
-    
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadUserStats();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
     loadUserStats();
   }, [user]);
 
@@ -64,7 +71,17 @@ export const ProfileScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent]}
+          />
+        }
+      >
         {loadingStats && !user ? (
           <ProfileSkeleton />
         ) : (

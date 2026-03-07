@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ScrollView, Image, StatusBar, TextInput, ImageBackground, Modal, SafeAreaView, ActivityIndicator, Alert, Pressable, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { PostCard } from '../components/PostCard';
+import { Tabs } from '../components/ui/Tabs';
 import { createPost, ContentBlockedError } from '../api/posts';
+import { getSocietyConfessions, type SocietyPost } from '../api/societies';
 import { scanPostContent, softFilterInput } from '../utils/contentFilter';
 import { showSuccessToast } from '../utils/toast';
 import { showAlert } from '../utils/customAlert';
 import { useUserStore } from '../store/user.store';
+import { getJoinedSocieties, getUserSocieties, joinSociety } from '../api/societies';
 
 interface SocietyConfession {
   id: string;
@@ -41,9 +44,20 @@ const SOCIETY_CONFESSIONS: SocietyConfession[] = [
 export const SocietyDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const society = route.params?.society || { name: 'Society', icon: 'people', members: 0 };
+  const society = route.params?.society || { 
+    id: 'default-society', 
+    name: 'Society', 
+    icon: 'people', 
+    members: 0,
+    description: '',
+    icon_name: 'people'
+  };
+  
+  // Debug log to check society data
+  console.log('[SocietyDetailScreen] Society data:', society);
   
   const [isJoined, setIsJoined] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningTimer, setWarningTimer] = useState(6);
@@ -51,7 +65,8 @@ export const SocietyDetailScreen: React.FC = () => {
   const [title, setTitle] = useState('');
   const [showPostBox, setShowPostBox] = useState(false);
   const [activeTab, setActiveTab] = useState("Latest");
-  const [societyConfessions, setSocietyConfessions] = useState(SOCIETY_CONFESSIONS);
+  const [societyConfessions, setSocietyConfessions] = useState<any[]>([]);
+  const [loadingConfessions, setLoadingConfessions] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [posting, setPosting] = useState(false);
   const [moderation, setModeration] = useState<{
@@ -59,7 +74,85 @@ export const SocietyDetailScreen: React.FC = () => {
     sanitizedTitle: string;
     sanitizedContent: string;
   } | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const userStore = useUserStore();
+
+  // Check if user is already joined or is owner immediately
+  useEffect(() => {
+    const checkSocietyAccess = async () => {
+      setCheckingAccess(true);
+      if (!userStore.isAuthenticated) {
+        setCheckingAccess(false);
+        return;
+      }
+      
+      try {
+        const [joinedSocieties, userSocieties] = await Promise.all([
+          getJoinedSocieties(),
+          getUserSocieties()
+        ]);
+        
+        const isUserJoined = joinedSocieties.some(s => s.id === society.id);
+        const isUserOwner = userSocieties.some(s => s.id === society.id);
+        
+        setIsJoined(isUserJoined);
+        setIsOwner(isUserOwner);
+        
+        // Never show warning for joined users or owners
+        if (isUserJoined || isUserOwner) {
+          setShowWarning(false);
+        }
+      } catch (error) {
+        console.error('Failed to check society access:', error);
+      } finally {
+        setCheckingAccess(false);
+      }
+    };
+    
+    checkSocietyAccess();
+  }, [society.id, userStore.isAuthenticated]);
+
+  // Load society confessions when user joins
+  useEffect(() => {
+    if (isJoined && society.id) {
+      loadSocietyConfessions();
+    }
+  }, [isJoined, society.id]);
+
+  const loadSocietyConfessions = async () => {
+    if (!society.id) return;
+    
+    setLoadingConfessions(true);
+    try {
+      const posts = await getSocietyConfessions();
+      // Filter posts for this specific society and transform
+      const transformedPosts = posts
+        .filter((post: SocietyPost) => post.society_id === society.id)
+        .map((post: SocietyPost) => ({
+          id: post.id,
+          content: post.content,
+          category: 'Secrets', // Default category for society posts
+          societyName: post.society?.name || society.name,
+          societyId: post.society?.id || society.id,
+          reactions: post.reaction_counts || {},
+          commentCount: 0, // Comment count not available in SocietyPost
+          createdAt: new Date(post.created_at),
+          isOwner: post.user_id === userStore.userId,
+          myReactionType: null, // Reaction type not available in SocietyPost
+          user: post.user
+        }));
+      setSocietyConfessions(transformedPosts);
+    } catch (error) {
+      console.error('Failed to load society confessions:', error);
+    } finally {
+      setLoadingConfessions(false);
+    }
+  };
 
   useEffect(() => {
     let interval: any;
@@ -71,15 +164,112 @@ export const SocietyDetailScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [showWarning, warningTimer]);
 
-  const handleJoin = () => {
-    setShowWarning(true);
-    setWarningTimer(6);
+  const handleJoin = async () => {
+    if (!userStore.isAuthenticated) {
+      showAlert('Authentication Required', 'Please login to join societies');
+      return;
+    }
+    
+    setJoining(true);
+    try {
+      await joinSociety(society.id);
+      setIsJoined(true);
+      showSuccessToast(`Successfully joined ${society.name}!`);
+    } catch (error: any) {
+      console.error('Failed to join society:', error);
+      showAlert('Error', error?.message || 'Failed to join society. Please try again.');
+    } finally {
+      setJoining(false);
+    }
   };
 
   const confirmJoin = () => {
     setShowWarning(false);
     setIsJoined(true);
     // Add logic to save joined society in store if needed
+  };
+
+  // Menu handlers
+  const handlePin = () => {
+    setIsPinned(!isPinned);
+    showSuccessToast(isPinned ? 'Society unpinned' : 'Society pinned to home');
+    setShowMenu(false);
+  };
+
+  const handleMute = () => {
+    setIsMuted(!isMuted);
+    showSuccessToast(isMuted ? 'Society unmuted' : 'Society muted');
+    setShowMenu(false);
+  };
+
+  const handleShare = () => {
+    // Share functionality
+    showSuccessToast('Society link copied to clipboard');
+    setShowMenu(false);
+  };
+
+  const handleLeave = () => {
+    if (isOwner) {
+      showAlert('Cannot Leave', 'As the owner, you cannot leave your own society. You must transfer ownership or delete the society first.');
+      return;
+    }
+    
+    showAlert(
+      'Leave Society',
+      `Are you sure you want to leave ${society.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Leave', 
+          style: 'destructive',
+          onPress: () => {
+            setIsJoined(false);
+            showSuccessToast(`Left ${society.name}`);
+            navigation.goBack();
+          }
+        }
+      ]
+    );
+    setShowMenu(false);
+  };
+
+  const handleReport = () => {
+    Alert.alert(
+      'Report Society',
+      'Why are you reporting this society?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Inappropriate Content', onPress: () => { showSuccessToast('Society reported'); setShowMenu(false); } },
+        { text: 'Spam', onPress: () => { showSuccessToast('Society reported'); setShowMenu(false); } },
+        { text: 'Harassment', onPress: () => { showSuccessToast('Society reported'); setShowMenu(false); } },
+        { text: 'Other', onPress: () => { showSuccessToast('Society reported'); setShowMenu(false); } },
+      ]
+    );
+  };
+
+  // Refresh handler for pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Refresh society data and confessions
+      const [joinedSocieties, userSocieties] = await Promise.all([
+        getJoinedSocieties(),
+        getUserSocieties()
+      ]);
+      
+      const isUserJoined = joinedSocieties.some(s => s.id === society.id);
+      const isUserOwner = userSocieties.some(s => s.id === society.id);
+      
+      setIsJoined(isUserJoined);
+      setIsOwner(isUserOwner);
+      
+      // Here you would typically fetch fresh society confessions
+      showSuccessToast('Society refreshed');
+    } catch (error) {
+      console.error('Failed to refresh society:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleReact = (postId: string, reactionType: string) => {
@@ -143,7 +333,8 @@ export const SocietyDetailScreen: React.FC = () => {
     // For now, we just proceed as normal but show the unlocked content
   }
 
-  if (showWarning) {
+  // Only show warning if user is not joined and not owner AND they clicked join
+  if (showWarning && !isJoined && !isOwner) {
     return (
       <View style={styles.warningContainer}>
         <StatusBar barStyle="light-content" />
@@ -186,22 +377,37 @@ export const SocietyDetailScreen: React.FC = () => {
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle} numberOfLines={1}>{society.name}</Text>
-          {isJoined && (
-            <View style={styles.memberBadge}>
-              <Text style={styles.memberBadgeText}>Member</Text>
+          {isOwner && (
+            <View style={styles.ownerBadge}>
+              <Text style={styles.ownerBadgeText}>Owner</Text>
             </View>
           )}
         </View>
-        <TouchableOpacity style={styles.saveButton} onPress={() => setIsSaved(!isSaved)}>
-          <Ionicons 
-            name={isSaved ? "bookmark" : "bookmark-outline"} 
-            size={24} 
-            color={isSaved ? COLORS.accent : "#FFFFFF"} 
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.saveButton} onPress={() => setIsSaved(!isSaved)}>
+            <Ionicons 
+              name={isSaved ? "bookmark" : "bookmark-outline"} 
+              size={24} 
+              color={isSaved ? COLORS.accent : "#FFFFFF"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(!showMenu)}>
+            <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent]}
+          />
+        }
+      >
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Image 
@@ -218,8 +424,12 @@ export const SocietyDetailScreen: React.FC = () => {
             
             <View style={styles.heroButtons}>
               {!isJoined ? (
-                <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin}>
-                  <Text style={styles.heroButtonText}>Join Society</Text>
+                <TouchableOpacity style={styles.primaryHeroButton} onPress={handleJoin} disabled={joining}>
+                  {joining ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.heroButtonText}>Join Society</Text>
+                  )}
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={styles.primaryHeroButton} onPress={() => setShowPostBox(!showPostBox)}>
@@ -234,23 +444,21 @@ export const SocietyDetailScreen: React.FC = () => {
         </View>
 
         {isJoined && (
-          <View style={styles.societyTabs}>
-            <TouchableOpacity 
-              style={[styles.societyTab, activeTab === "Latest" && styles.activeSocietyTab]}
-              onPress={() => setActiveTab("Latest")}
-            >
-              <Text style={[styles.societyTabText, activeTab === "Latest" && styles.activeSocietyTabText]}>Latest</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.societyTab, activeTab === "Trending" && styles.activeSocietyTab]}
-              onPress={() => setActiveTab("Trending")}
-            >
-              <Text style={[styles.societyTabText, activeTab === "Trending" && styles.activeSocietyTabText]}>Trending</Text>
-            </TouchableOpacity>
+          <View style={styles.societyTabsContainer}>
+            <Tabs
+              tabs={["Latest", "Trending"]}
+              activeTab={activeTab}
+              onTabPress={setActiveTab}
+            />
           </View>
         )}
 
-        {isJoined ? (
+        {checkingAccess ? (
+          <View style={styles.lockedContainer}>
+            <ActivityIndicator size="large" color={COLORS.accent} />
+            <Text style={styles.lockedText}>Checking society access...</Text>
+          </View>
+        ) : isJoined ? (
           <View style={styles.unlockedContent}>
             {/* Confess Section */}
             {showPostBox && (
@@ -308,17 +516,47 @@ export const SocietyDetailScreen: React.FC = () => {
                     // Content is clean - post directly without popup
                     setPosting(true);
                     try {
+                      // Ensure we have a valid society ID before posting
+                      if (!society?.id) {
+                        throw new Error('Society ID is required for posting');
+                      }
+                      
                       await createPost({
                         title: trimmedTitle || undefined,
                         content: trimmedContent,
                         category: 'Secrets',
                         visibility: 'society',
-                        societyId: society?.id ?? null,
+                        societyId: society.id,
                       });
                       setConfession('');
                       setTitle('');
                       setShowPostBox(false);
                       showSuccessToast('Confession posted to society!');
+                      
+                      // Add the new post to society confessions
+                      const newPost = {
+                        id: `temp-${Date.now()}`, // Temporary ID, will be updated on refresh
+                        content: trimmedContent,
+                        category: 'Secrets',
+                        societyName: society.name,
+                        societyId: society.id,
+                        reactions: {},
+                        commentCount: 0,
+                        createdAt: new Date(),
+                        isOwner: true,
+                        myReactionType: null,
+                        user: {
+                          identity_id: userStore.user?.identityId || `#Confess_${Math.random().toString(36).substr(2, 4)}`,
+                          avatar_seed: userStore.user?.avatarSeed || '',
+                          user_id_custom: userStore.user?.userIdCustom || '',
+                        }
+                      };
+                      setSocietyConfessions(prev => [newPost, ...prev]);
+                      
+                      // Refresh after a short delay to get the real post data
+                      setTimeout(() => {
+                        loadSocietyConfessions();
+                      }, 2000);
                     } catch (e: any) {
                       setPosting(false);
                       console.error('[SocietyDetailScreen] Post error:', e);
@@ -421,18 +659,48 @@ export const SocietyDetailScreen: React.FC = () => {
 
                     setPosting(true);
                     try {
+                      // Ensure we have a valid society ID before posting
+                      if (!society?.id) {
+                        throw new Error('Society ID is required for posting');
+                      }
+                      
                       await createPost({
                         title: moderation.sanitizedTitle || undefined,
                         content: moderation.sanitizedContent,
                         category: 'Secrets',
                         visibility: 'society',
-                        societyId: society?.id ?? null,
+                        societyId: society.id,
                       });
                       setConfession('');
                       setTitle('');
                       setShowPostBox(false);
                       setModeration(null);
                       showSuccessToast('Confession posted to society!');
+                      
+                      // Add the new post to society confessions
+                      const newPost = {
+                        id: `temp-${Date.now()}`, // Temporary ID, will be updated on refresh
+                        content: moderation.sanitizedContent,
+                        category: 'Secrets',
+                        societyName: society.name,
+                        societyId: society.id,
+                        reactions: {},
+                        commentCount: 0,
+                        createdAt: new Date(),
+                        isOwner: true,
+                        myReactionType: null,
+                        user: {
+                          identity_id: userStore.user?.identityId || `#Confess_${Math.random().toString(36).substr(2, 4)}`,
+                          avatar_seed: userStore.user?.avatarSeed || '',
+                          user_id_custom: userStore.user?.userIdCustom || '',
+                        }
+                      };
+                      setSocietyConfessions(prev => [newPost, ...prev]);
+                      
+                      // Refresh after a short delay to get the real post data
+                      setTimeout(() => {
+                        loadSocietyConfessions();
+                      }, 2000);
                     } catch (err: any) {
                       showAlert('Error', err?.message ?? 'Failed to post');
                     } finally {
@@ -447,6 +715,84 @@ export const SocietyDetailScreen: React.FC = () => {
           </View>
         </Modal>
       )}
+
+      {/* Menu Modal - Using existing PostCard centered menu UI */}
+      <Modal
+        visible={showMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity activeOpacity={1}>
+              <View style={styles.positionedMenu}>
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={handlePin}
+                >
+                  <Ionicons 
+                    name={isPinned ? "pin" : "pin-outline"} 
+                    size={20} 
+                    color={COLORS.accent} 
+                  />
+                  <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                    {isPinned ? 'Unpin from Home' : 'Pin to Home'}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={handleMute}
+                >
+                  <Ionicons 
+                    name={isMuted ? "notifications-off" : "notifications"} 
+                    size={20} 
+                    color={COLORS.accent} 
+                  />
+                  <Text style={[styles.menuItemLabel, { color: COLORS.accent }]}>
+                    {isMuted ? 'Unmute Society' : 'Mute Society'}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={handleShare}
+                >
+                  <Ionicons name="share-outline" size={20} color="#FFF" />
+                  <Text style={styles.menuItemLabel}>Share Society</Text>
+                </TouchableOpacity>
+                
+                {isJoined && !isOwner && (
+                  <TouchableOpacity
+                    style={styles.menuItemRow}
+                    onPress={handleLeave}
+                  >
+                    <Ionicons name="exit-outline" size={20} color="#FF4444" />
+                    <Text style={[styles.menuItemLabel, { color: "#FF4444" }]}>
+                      Leave Society
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity
+                  style={styles.menuItemRow}
+                  onPress={handleReport}
+                >
+                  <Ionicons name="flag-outline" size={20} color="#FF4444" />
+                  <Text style={[styles.menuItemLabel, { color: "#FF4444" }]}>
+                    Report Society
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -526,7 +872,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  memberBadge: {
+  ownerBadge: {
     backgroundColor: 'rgba(74, 222, 128, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -534,7 +880,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.success,
   },
-  memberBadgeText: {
+  ownerBadgeText: {
     color: COLORS.success,
     fontSize: 10,
     fontWeight: '700',
@@ -707,31 +1053,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
   },
-  societyTabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-    gap: 15,
-  },
-  societyTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  activeSocietyTab: {
-    backgroundColor: 'rgba(107, 92, 231, 0.1)',
-    borderWidth: 1,
-    borderColor: COLORS.accent,
-  },
-  societyTabText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  activeSocietyTabText: {
-    color: COLORS.accent,
+  // Tabs container for filled tabs
+  societyTabsContainer: {
+    paddingHorizontal: 0,
+    paddingVertical: 10,
+    backgroundColor: COLORS.background,
   },
   guidelinesContainer: {
     flex: 1,
@@ -855,5 +1181,67 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Header styles
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  menuButton: {
+    padding: 8,
+  },
+  // Menu modal styles - matching PostCard centered menu
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  centeredMenu: {
+    backgroundColor: "#1E222B",
+    borderRadius: 24,
+    padding: 10,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  menuItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    gap: 16,
+  },
+  menuItemLabel: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Poppins_500Medium",
+  },
+  // Positioned menu styles - near 3dot button
+  menuContainer: {
+    flex: 1,
+    backgroundColor: "transparent",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 100, // Position below header
+    paddingRight: 20, // Align with right side
+  },
+  positionedMenu: {
+    backgroundColor: "#1E222B",
+    borderRadius: 24,
+    padding: 10,
+    width: "70%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
   },
 });

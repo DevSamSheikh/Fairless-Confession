@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { AnonymousAvatar } from "./AnonymousAvatar";
 import { Post } from "../store/feed.store";
 import { COLORS } from "../utils/constants";
@@ -95,6 +96,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   pinned,
   onTogglePin,
 }) => {
+  const navigation = useNavigation();
   const { userId } = useUserStore();
   const { save, remove, isSaved } = useSavedSecretsStore();
   const { triggerFeedback } = useInteractionFeedback();
@@ -116,6 +118,22 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [showReportModal, setShowReportModal] = useState(false);
 
   const saved = isSaved(post.id);
+
+  // Handle society navigation
+  const handleSocietyPress = () => {
+    if (post.societyName && post.societyId) {
+      // Create a minimal society object for navigation
+      const society = {
+        id: post.societyId,
+        name: post.societyName,
+        icon_name: 'people',
+        member_count: 0,
+        description: '',
+        icon: 'people'
+      };
+      (navigation as any).navigate('SocietyDetail', { society });
+    }
+  };
 
   useEffect(() => {
     console.log('PostCard reaction state:', {
@@ -401,9 +419,14 @@ export const PostCard: React.FC<PostCardProps> = ({
               <View style={styles.metaRow}>
                 <Text style={styles.time}>{formatTime(post.createdAt)}</Text>
                 <View style={styles.dot} />
-                <Text style={styles.category}>
-                  {post.category || "General"}
-                </Text>
+                <TouchableOpacity onPress={handleSocietyPress} disabled={!post.societyName}>
+                  <Text style={[
+                    styles.category,
+                    post.societyName && styles.clickableSocietyName
+                  ]}>
+                    {post.societyName || post.category || "General"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -699,9 +722,14 @@ export const PostCard: React.FC<PostCardProps> = ({
                             {formatTime(post.createdAt)}
                           </Text>
                           <View style={styles.dot} />
-                          <Text style={styles.categoryDetail}>
-                            {post.category || "General"}
-                          </Text>
+                          <TouchableOpacity onPress={handleSocietyPress} disabled={!post.societyName}>
+                            <Text style={[
+                              styles.categoryDetail,
+                              post.societyName && styles.clickableSocietyName
+                            ]}>
+                              {post.societyName || post.category || "General"}
+                            </Text>
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </View>
@@ -1261,6 +1289,10 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
     fontSize: 13,
     fontFamily: "Poppins_600SemiBold",
+  },
+  clickableSocietyName: {
+    textDecorationLine: 'underline',
+    opacity: 0.8,
   },
   categoryDetail: {
     color: COLORS.accent,

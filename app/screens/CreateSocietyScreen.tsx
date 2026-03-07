@@ -9,10 +9,14 @@ import {
   SafeAreaView,
   StatusBar,
   KeyboardAvoidingView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
+import { createSociety } from '../api/societies';
+import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 const ICONS = ['people', 'school', 'heart', 'briefcase', 'moon', 'star', 'flash', 'planet'];
 
@@ -22,14 +26,41 @@ export const CreateSocietyScreen: React.FC = () => {
   const [subtitle, setSubtitle] = useState('');
   const [intro, setIntro] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('people');
+  const [loading, setLoading] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
 
-  const handleCreate = () => {
-    if (name.length > 25) return alert('Name too long');
-    if (subtitle.length > 30) return alert('Subtitle too long');
-    if (intro.length < 100 || intro.length > 200) return alert('Intro must be between 100 and 200 characters');
+  const handleCreate = async () => {
+    if (name.length > 25) return showErrorToast('Name too long (max 25 characters)');
+    if (subtitle.length > 30) return showErrorToast('Subtitle too long (max 30 characters)');
+    if (intro.length < 100 || intro.length > 200) {
+      return showErrorToast('Intro must be between 100 and 200 characters');
+    }
     
-    alert('Society created successfully!');
-    navigation.goBack();
+    setLoading(true);
+    try {
+      const societyData = {
+        name: name.trim(),
+        description: intro.trim(),
+        isPrivate,
+        iconName: selectedIcon,
+      };
+      
+      const newSociety = await createSociety(societyData);
+      showSuccessToast('Society created successfully!');
+      
+      // Navigate to the newly created society
+      (navigation as any).navigate('SocietyDetail', { society: newSociety });
+    } catch (error: any) {
+      console.error('Failed to create society:', error);
+      const errorMessage = error?.message || 'Failed to create society. Please try again.';
+      if (errorMessage.includes('already exists')) {
+        showErrorToast('A society with this name already exists');
+      } else {
+        showErrorToast(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,15 +146,34 @@ export const CreateSocietyScreen: React.FC = () => {
             </Text>
           </View>
 
+          <View style={styles.section}>
+            <View style={styles.privacyHeader}>
+              <Text style={styles.label}>Privacy Settings</Text>
+              <TouchableOpacity 
+                style={[styles.toggle, isPrivate && styles.toggleActive]}
+                onPress={() => setIsPrivate(!isPrivate)}
+              >
+                <View style={[styles.toggleCircle, isPrivate && styles.toggleCircleActive]} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.privacyDescription}>
+              {isPrivate ? '🔒 Private society - Only invited members can join' : '🌍 Public society - Anyone can discover and join'}
+            </Text>
+          </View>
+
           <TouchableOpacity 
             style={[
               styles.createButton,
-              (!name || !subtitle || intro.length < 100 || intro.length > 200) && styles.disabledButton
+              (!name || !subtitle || intro.length < 100 || intro.length > 200 || loading) && styles.disabledButton
             ]} 
             onPress={handleCreate}
-            disabled={!name || !subtitle || intro.length < 100 || intro.length > 200}
+            disabled={!name || !subtitle || intro.length < 100 || intro.length > 200 || loading}
           >
-            <Text style={styles.createButtonText}>Launch Society</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.createButtonText}>Launch Society</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -217,5 +267,40 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
+  },
+  privacyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  toggle: {
+    width: 48,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#1E222B',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleActive: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.accent,
+  },
+  toggleCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#8E9196',
+  },
+  toggleCircleActive: {
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'flex-end',
+  },
+  privacyDescription: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
   },
 });

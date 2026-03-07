@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,80 +6,176 @@ import {
   FlatList,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
+  Modal,
 } from "react-native";
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../../components/PostCard";
 import { COLORS } from "../../utils/constants";
+import { showSuccessToast, showErrorToast } from "../../utils/toast";
+import { useUserStore } from "../../store/user.store";
 import { useFeedStore } from "../../store/feed.store";
-import { useNavigation } from "@react-navigation/native";
 import { SearchBar } from "../../components/SearchBar";
 import { isServerPostId, reactToPost } from "../../api/interactions";
-
-interface Society {
-  id: string;
-  name: string;
-  members: string;
-  description: string;
-  icon: string;
-}
-
-const ALL_SOCIETIES: Society[] = [
-  {
-    id: "1",
-    name: "Midnight Society",
-    members: "1240 members",
-    description: "Confessions for the night owls.",
-    icon: "moon",
-  },
-  {
-    id: "2",
-    name: "College Life Society",
-    members: "8600 members",
-    description: "Campus secrets and exam stress.",
-    icon: "school",
-  },
-  {
-    id: "3",
-    name: "Workplace Society",
-    members: "3200 members",
-    description: "Office drama and boss rants.",
-    icon: "briefcase",
-  },
-  {
-    id: "4",
-    name: "Broken Hearts Society",
-    members: "5600 members",
-    description: "Anonymously heal together.",
-    icon: "help",
-  },
-  {
-    id: "5",
-    name: "Gamer Society",
-    members: "2100 members",
-    description: "Rage quits and lobby secrets.",
-    icon: "game-controller",
-  },
-];
+import { 
+  getSocieties, 
+  getJoinedSocieties, 
+  getUserSocieties, 
+  discoverSocieties,
+  joinSociety,
+  leaveSociety,
+  getSocietyConfessions,
+  type Society 
+} from "../../api/societies";
 
 export const SocietiesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute();
   const { posts, addReaction, syncReactionState } = useFeedStore();
-  const joinedSocieties = ["Midnight Society"]; 
+  const userStore = useUserStore();
+  
+  const [activeTab, setActiveTab] = useState("Joined");
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // API data states
+  const [allSocieties, setAllSocieties] = useState<Society[]>([]);
+  const [joinedSocieties, setJoinedSocieties] = useState<Society[]>([]);
+  const [userSocieties, setUserSocieties] = useState<Society[]>([]);
+  const [discoverSocietiesList, setDiscoverSocietiesList] = useState<Society[]>([]);
+  const [societyPosts, setSocietyPosts] = useState<any[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [showJoinWarning, setShowJoinWarning] = useState(false);
+  const [pendingJoinSociety, setPendingJoinSociety] = useState<Society | null>(null);
+  const [joiningSociety, setJoiningSociety] = useState<string | null>(null);
+  const [joinWarningTimer, setJoinWarningTimer] = useState(6);
+  const [showCreateSociety, setShowCreateSociety] = useState(false);
 
-  const [activeTab, setActiveTab] = React.useState("Confessions");
-  const [showSavedOnly, setShowSavedOnly] = React.useState(false);
-  const [isSearchVisible, setIsSearchVisible] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
+  // Load data based on active tab
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
 
-  const societiesPosts = posts.filter(p => p.societyName && joinedSocieties.includes(p.societyName));
+  // Warning timer effect
+  useEffect(() => {
+    let interval: any;
+    if (showJoinWarning && joinWarningTimer > 0) {
+      interval = setInterval(() => {
+        setJoinWarningTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showJoinWarning, joinWarningTimer]);
 
-  const filteredPosts = searchQuery 
-    ? societiesPosts.filter(p => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
-    : societiesPosts;
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      switch (activeTab) {
+        case "Confessions":
+          const posts = await getSocietyConfessions();
+          // Transform SocietyPost data to match Post interface for PostCard
+          const transformedPosts = posts.map((post: any) => ({
+            id: post.id,
+            title: post.title || undefined,
+            content: post.content,
+            category: post.category || 'Secrets',
+            societyName: post.society?.name || 'Unknown Society',
+            societyId: post.society?.id || post.society_id, // Add societyId for navigation
+            reactions: post.reaction_counts || {},
+            commentCount: post.comment_count || 0,
+            createdAt: new Date(post.created_at),
+            isOwner: post.user_id === userStore.userId,
+            myReactionType: post.my_reaction_type || null, // Use actual reaction type from backend
+            user: {
+              identity_id: post.user?.identity_id || `#Confess_${Math.random().toString(36).substr(2, 4)}`,
+              avatar_seed: post.user?.avatar_seed || '',
+              user_id_custom: post.user?.user_id_custom || '',
+            }
+          }));
+          setSocietyPosts(transformedPosts);
+          break;
+        case "Discover":
+          const discovered = await discoverSocieties(searchQuery);
+          setDiscoverSocietiesList(discovered);
+          break;
+        case "Joined":
+          const joined = await getJoinedSocieties();
+          setJoinedSocieties(joined);
+          break;
+        case "You":
+          const user = await getUserSocieties();
+          setUserSocieties(user);
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to load ${activeTab}:`, error);
+      showErrorToast(`Failed to load ${activeTab.toLowerCase()}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredSocieties = searchQuery
-    ? ALL_SOCIETIES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    : ALL_SOCIETIES;
+  // Refresh when search query changes for discover tab
+  useEffect(() => {
+    if (activeTab === "Discover") {
+      loadData();
+    }
+  }, [searchQuery]);
+
+  // Listen for focus events with refresh parameter from bottom navbar
+  useFocusEffect(
+    React.useCallback(() => {
+      if ((route.params as any)?.refresh) {
+        loadData();
+      }
+    }, [route.params])
+  );
+
+  const handleJoinSociety = (society: Society) => {
+    setPendingJoinSociety(society);
+    setShowJoinWarning(true);
+    setJoinWarningTimer(6);
+  };
+
+  const confirmJoinSociety = async () => {
+    if (!pendingJoinSociety) return;
+    
+    setJoiningSociety(pendingJoinSociety.id);
+    try {
+      await joinSociety(pendingJoinSociety.id);
+      showSuccessToast('Successfully joined society!');
+      loadData(); // Refresh the current tab
+    } catch (error: any) {
+      console.error('Failed to join society:', error);
+      const errorMessage = error?.message || 'Failed to join society';
+      if (errorMessage.includes('already a member')) {
+        showErrorToast('You are already a member of this society');
+      } else {
+        showErrorToast(errorMessage);
+      }
+    } finally {
+      setJoiningSociety(null);
+      setShowJoinWarning(false);
+      setPendingJoinSociety(null);
+      setJoinWarningTimer(6);
+    }
+  };
+
+  const handleLeaveSociety = async (societyId: string) => {
+    try {
+      await leaveSociety(societyId);
+      showSuccessToast('Successfully left society!');
+      loadData(); // Refresh the current tab
+    } catch (error: any) {
+      console.error('Failed to leave society:', error);
+      showErrorToast(error?.message || 'Failed to leave society');
+    }
+  };
 
   const handleReact = async (postId: string, reactionType: string) => {
     addReaction(postId, reactionType);
@@ -96,26 +192,77 @@ export const SocietiesScreen: React.FC = () => {
     }
   };
 
-  const renderSocietyItem = ({ item }: { item: Society }) => (
-    <View style={styles.societyCard}>
-      <View style={styles.societyInfo}>
-        <View style={styles.societyIconContainer}>
-          <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+  const renderSocietyItem = ({ item }: { item: Society }) => {
+    const isJoined = joinedSocieties.some(s => s.id === item.id);
+    const isOwner = userSocieties.some(s => s.id === item.id);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.societyCard}
+        onPress={() => (navigation as any).navigate('SocietyDetail', { society: item })}
+        disabled={joiningSociety === item.id}
+      >
+        <View style={styles.societyInfo}>
+          <View style={styles.societyIconContainer}>
+            <Ionicons name={item.icon_name || 'people' as any} size={24} color={COLORS.accent} />
+          </View>
+          <View style={styles.societyTextContent}>
+            <Text style={styles.societyName}>{item.name}</Text>
+            <Text style={styles.societyMembers}>{item.member_count || 0} members</Text>
+          </View>
+          {isOwner ? (
+            <View style={styles.ownerBadge}>
+              <Text style={styles.ownerText}>Owner</Text>
+            </View>
+          ) : isJoined ? (
+            <TouchableOpacity 
+              style={[styles.joinButton, styles.visitButton]}
+              onPress={(e) => {
+                e.stopPropagation();
+                (navigation as any).navigate('SocietyDetail', { society: item });
+              }}
+            >
+              <Text style={styles.visitButtonText}>Visit</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={styles.joinButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleJoinSociety(item);
+              }}
+              disabled={joiningSociety === item.id}
+            >
+              {joiningSociety === item.id ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.joinButtonText}>Join</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.societyTextContent}>
-          <Text style={styles.societyName}>{item.name}</Text>
-          <Text style={styles.societyMembers}>{item.members}</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.joinButton}
-          onPress={() => navigation.navigate('SocietyDetail', { society: item })}
-        >
-          <Text style={styles.joinButtonText}>Join</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.societyDescription}>{item.description}</Text>
-    </View>
-  );
+        <Text style={styles.societyDescription}>{item.description}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  // Get current data based on active tab
+  const getCurrentData = () => {
+    switch (activeTab) {
+      case "Confessions":
+        return societyPosts;
+      case "Discover":
+        return discoverSocietiesList;
+      case "Joined":
+        return joinedSocieties;
+      case "You":
+        return userSocieties;
+      default:
+        return [];
+    }
+  };
+
+  const currentData = getCurrentData();
 
   return (
     <View style={styles.container}>
@@ -173,7 +320,7 @@ export const SocietiesScreen: React.FC = () => {
 
       {activeTab === "Confessions" ? (
         <FlatList
-          data={filteredPosts}
+          data={currentData}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <PostCard
@@ -194,10 +341,12 @@ export const SocietiesScreen: React.FC = () => {
               </Text>
             </View>
           )}
+          refreshing={loading}
+          onRefresh={loadData}
         />
       ) : (
         <FlatList
-          data={filteredSocieties}
+          data={currentData}
           keyExtractor={(item) => item.id}
           renderItem={renderSocietyItem}
           contentContainerStyle={styles.list}
@@ -213,7 +362,68 @@ export const SocietiesScreen: React.FC = () => {
               </Text>
             </View>
           )}
+          refreshing={loading}
+          onRefresh={loadData}
         />
+      )}
+      
+      {/* Join Warning Modal */}
+      {showJoinWarning && pendingJoinSociety && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showJoinWarning}
+          onRequestClose={() => setShowJoinWarning(false)}
+        >
+          <View style={styles.warningOverlay}>
+            <View style={styles.warningCard}>
+              <View style={styles.warningHeader}>
+                <Ionicons name="warning" size={40} color={COLORS.accent} />
+                <Text style={styles.warningTitle}>Join {pendingJoinSociety.name}?</Text>
+              </View>
+              
+              <Text style={styles.warningMessage}>
+                You're about to join "{pendingJoinSociety.name}". This is a community where people share their thoughts anonymously. Please respect the community guidelines and be mindful of others.
+              </Text>
+              
+              <View style={styles.warningTimerContainer}>
+                <Text style={styles.warningTimerText}>
+                  Joining in {joinWarningTimer}...
+                </Text>
+              </View>
+              
+              <View style={styles.warningButtons}>
+                <TouchableOpacity
+                  style={[styles.warningButton, styles.cancelWarningButton]}
+                  onPress={() => {
+                    setShowJoinWarning(false);
+                    setPendingJoinSociety(null);
+                    setJoinWarningTimer(6);
+                  }}
+                >
+                  <Text style={styles.cancelWarningButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[
+                    styles.warningButton, 
+                    styles.confirmWarningButton,
+                    joinWarningTimer > 0 && styles.disabledButton
+                  ]}
+                  onPress={confirmJoinSociety}
+                  disabled={joinWarningTimer > 0}
+                >
+                  <Text style={[
+                    styles.confirmWarningButtonText,
+                    joinWarningTimer > 0 && styles.disabledButtonText
+                  ]}>
+                    {joinWarningTimer > 0 ? `Wait ${joinWarningTimer}s` : 'Join Now'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
     </View>
   );
@@ -330,6 +540,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Poppins_600SemiBold",
   },
+  ownerBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  ownerText: {
+    color: '#000',
+    fontSize: 11,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  leaveButton: {
+    backgroundColor: '#FF4B4B',
+  },
+  leaveButtonText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  visitButton: {
+    backgroundColor: '#8B5CF6', // Purple color for visit button
+  },
+  visitButtonText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontFamily: "Poppins_600SemiBold",
+  },
   societyDescription: {
     color: COLORS.textSecondary,
     fontSize: 13,
@@ -346,5 +583,99 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 20,
     fontFamily: 'Poppins_400Regular',
+  },
+  // Warning modal styles
+  warningOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  warningCard: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 20,
+    padding: 30,
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  warningHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  warningTitle: {
+    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 10,
+    fontFamily: 'Poppins_700Bold',
+  },
+  warningMessage: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 25,
+    fontFamily: 'Poppins_400Regular',
+  },
+  warningTimerContainer: {
+    backgroundColor: 'rgba(107, 92, 231, 0.1)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+  },
+  warningTimerText: {
+    color: COLORS.accent,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  warningButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 15,
+  },
+  warningButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelWarningButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cancelWarningButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  confirmWarningButton: {
+    backgroundColor: COLORS.accent,
+  },
+  confirmWarningButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  disabledButton: {
+    backgroundColor: COLORS.border,
+    opacity: 0.6,
+  },
+  disabledButtonText: {
+    color: COLORS.textSecondary,
   },
 });

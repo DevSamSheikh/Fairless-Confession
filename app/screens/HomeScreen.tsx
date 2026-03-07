@@ -1,18 +1,19 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
-  StyleSheet,
   Text,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
+  StyleSheet,
   FlatList,
-  Dimensions,
-  Platform,
+  TouchableOpacity,
+  StatusBar,
+  RefreshControl,
+  SafeAreaView,
+  Image,
+  Alert,
 } from "react-native";
-import { showAlert } from "../utils/customAlert";
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { SearchBar } from "../components/SearchBar";
 import { PostCard } from "../components/PostCard";
 import { EnhancedLoadingAnimation } from "../components/EnhancedLoadingAnimation";
 import { SkeletonList } from "../components/skeletons/SkeletonList";
@@ -21,22 +22,22 @@ import { useFeedStore } from "../store/feed.store";
 import { useUserStore } from "../store/user.store";
 import { COLORS } from "../utils/constants";
 import { Tabs } from "../components/ui/Tabs";
-import { useNavigation } from "@react-navigation/native";
-import { SearchBar } from "../components/SearchBar";
 import { useCenterHaptics } from "../hooks/useCenterHaptics";
 import { isServerPostId, reactToPost } from "../api/interactions";
 import { deleteMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { showAlert } from "../utils/customAlert";
 import { addAuthErrorCallback, removeAuthErrorCallback } from "../utils/authErrorHandler";
-import { Alert } from "react-native";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute();
   const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading, loadingMore, hasMore, currentPage } = useFeedStore();
   const { user } = useUserStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notificationCount, setNotificationCount] = useState(3); // Mock notification count
   const flatListRef = useRef<FlatList>(null);
   const lastTap = useRef<number>(0);
   const hasAuthError = useRef<boolean>(false);
@@ -74,6 +75,15 @@ export const HomeScreen: React.FC = () => {
       loadTrending();
     }
   }, [user?.id]); // Only trigger when user ID changes
+
+  // Listen for focus events with refresh parameter from bottom navbar
+  useFocusEffect(
+    React.useCallback(() => {
+      if ((route.params as any)?.refresh) {
+        refreshFeed();
+      }
+    }, [route.params, refreshFeed])
+  );
 
   const loadMorePosts = useCallback(() => {
     if (!loading && !loadingMore && hasMore) {
@@ -187,7 +197,13 @@ export const HomeScreen: React.FC = () => {
                   style={styles.iconButton}
                   onPress={() => navigation.navigate("Interactions")}
                 >
-                  <View style={styles.notificationBadge} />
+                  {notificationCount > 0 && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationBadgeText}>
+                        {notificationCount > 99 ? "99+" : notificationCount.toString()}
+                      </Text>
+                    </View>
+                  )}
                   <Ionicons
                     name="notifications-outline"
                     size={22}
@@ -242,6 +258,8 @@ export const HomeScreen: React.FC = () => {
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
+          refreshing={loading}
+          onRefresh={refreshFeed}
           ListEmptyComponent={
             loading ? null : searchQuery ? (
               <View style={styles.emptyContainer}>
@@ -327,15 +345,24 @@ const styles = StyleSheet.create({
   },
   notificationBadge: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 8,
+    right: 8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: "#FF4B4B",
     zIndex: 1,
     borderWidth: 1.5,
     borderColor: "#1E222B",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontFamily: "Poppins_600SemiBold",
+    textAlign: "center",
   },
   tabsContainer: {
     paddingHorizontal: 16,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState,  } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
+  RefreshControl,
 } from "react-native";
+import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../utils/constants";
 
@@ -52,6 +54,27 @@ const dummyActivities: Activity[] = [
 ];
 
 export const InteractionsScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simulate fetching new interactions
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
+  // Listen for focus events with refresh parameter from bottom navbar
+  useFocusEffect(
+    React.useCallback(() => {
+      const route = useRoute();
+      if ((route.params as any)?.refresh) {
+        onRefresh();
+      }
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -86,6 +109,14 @@ export const InteractionsScreen: React.FC = () => {
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent]}
+          />
+        }
       />
     </SafeAreaView>
   );

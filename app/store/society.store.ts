@@ -1,33 +1,46 @@
 import { create } from 'zustand';
-import { apiFetch } from '../api/client';
+import { getSocieties, getJoinedSocieties, getUserSocieties, discoverSocieties, joinSociety as joinSocietyApi, leaveSociety as leaveSocietyApi } from '../api/societies';
 
 export interface Society {
   id: string;
   name: string;
   description: string;
-  icon: string;
-  memberCount: number;
+  creator_id: string;
+  is_private: boolean;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+  icon?: string;
   isJoined?: boolean;
   isOwner?: boolean;
-  createdAt: string;
-  hookText?: string;
-  rules?: string[];
 }
 
 interface SocietyState {
-  societies: Society[];
+  allSocieties: Society[];
+  joinedSocieties: Society[];
+  userSocieties: Society[];
+  discoverSocieties: Society[];
   loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  currentPage: number;
-  setSocieties: (societies: Society[]) => void;
+  loadingJoined: boolean;
+  loadingUser: boolean;
+  loadingDiscover: boolean;
+  error: string | null;
+  setAllSocieties: (societies: Society[]) => void;
+  setJoinedSocieties: (societies: Society[]) => void;
+  setUserSocieties: (societies: Society[]) => void;
+  setDiscoverSocieties: (societies: Society[]) => void;
   setLoading: (loading: boolean) => void;
-  setLoadingMore: (loadingMore: boolean) => void;
-  setHasMore: (hasMore: boolean) => void;
-  appendSocieties: (societies: Society[]) => void;
-  loadSocieties: (page?: number, append?: boolean) => Promise<void>;
+  setLoadingJoined: (loading: boolean) => void;
+  setLoadingUser: (loading: boolean) => void;
+  setLoadingDiscover: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  loadAllSocieties: () => Promise<void>;
+  loadJoinedSocieties: () => Promise<void>;
+  loadUserSocieties: () => Promise<void>;
+  loadDiscoverSocieties: (query?: string) => Promise<void>;
   joinSociety: (societyId: string) => Promise<void>;
   leaveSociety: (societyId: string) => Promise<void>;
+  refreshAll: () => Promise<void>;
 }
 
 export const useSocietyStore = create<SocietyState>((set, get) => ({

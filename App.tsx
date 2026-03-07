@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -32,11 +32,56 @@ import { EmailVerificationGuard } from './app/components/EmailVerificationGuard'
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { useUserStore } from './app/store/user.store';
+import { useFeedStore } from './app/store/feed.store';
 import { CustomAlertProvider } from './app/components/CustomAlertProvider';
+
+// Refresh context for global refresh functionality
+const RefreshContext = createContext<{
+  triggerRefresh: (screen: string) => void;
+  refreshTrigger: number;
+}>({
+  triggerRefresh: () => {},
+  refreshTrigger: 0,
+});
+
+const useRefreshContext = () => useContext(RefreshContext);
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
+
+// TabIcon component moved outside to avoid hook call issues
+const TabIcon = ({ focused, color, size, iconName, badgeCount }: any) => (
+  <View style={{ position: 'relative' }}>
+    <Ionicons name={iconName} size={size} color={color} />
+    {badgeCount > 0 && (
+      <View style={{
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: '#FF4B4B',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 1.5,
+        borderColor: COLORS.background,
+      }}>
+        <Text style={{
+          color: '#FFFFFF',
+          fontSize: 10,
+          fontFamily: 'Poppins_600SemiBold',
+          textAlign: 'center',
+          lineHeight: 12,
+        }}>
+          {badgeCount > 99 ? '99+' : badgeCount.toString()}
+        </Text>
+      </View>
+    )}
+  </View>
+);
 
 // Swipeable Toast Component
 const SwipeableToast = ({ children, onHide }: { children: React.ReactNode; onHide: () => void }) => {
@@ -96,13 +141,23 @@ const SwipeableToast = ({ children, onHide }: { children: React.ReactNode; onHid
 function TabNavigator() {
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const [interactionCount, setInteractionCount] = useState(3); // Mock interaction count
 
-  const handleTabPress = (e: any, route: string) => {
-    setRefreshing(true);
-    Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ]).start(() => setRefreshing(false));
+  const handleTabPress = async (e: any, route: string) => {
+    // Prevent default tab press behavior when already focused
+    e.preventDefault();
+    
+    // Don't show the purple pill animation - let the screen handle its own refresh
+    // Navigate to the same route with a refresh parameter to trigger focus
+    if (navigationRef.isReady()) {
+      const state = navigationRef.getState();
+      const currentRoute = state?.routes[state?.index];
+      
+      if (currentRoute?.name === route) {
+        // Navigate to the same route to trigger focus listener with refresh
+        navigationRef.navigate(route as any, { refresh: Date.now() });
+      }
+    }
   };
 
   return (
@@ -111,6 +166,7 @@ function TabNavigator() {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap;
+            let badgeCount = 0;
 
             switch (route.name) {
               case 'Home':
@@ -124,6 +180,7 @@ function TabNavigator() {
                 break;
               case 'Interactions':
                 iconName = focused ? 'heart-half' : 'heart-half-outline';
+                badgeCount = interactionCount;
                 break;
               case 'Profile':
                 iconName = focused ? 'person' : 'person-outline';
@@ -132,7 +189,7 @@ function TabNavigator() {
                 iconName = 'home';
             }
 
-            return <Ionicons name={iconName} size={size} color={color} />;
+            return <TabIcon focused={focused} color={color} size={size} iconName={iconName} badgeCount={badgeCount} />;
           },
           tabBarActiveTintColor: COLORS.accent,
           tabBarInactiveTintColor: COLORS.textSecondary,

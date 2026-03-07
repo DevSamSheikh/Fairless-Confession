@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Modal, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '../utils/customAlert';
 import { CATEGORIES, Category, COLORS, RATE_LIMITS } from '../utils/constants';
 import { useUserStore } from '../store/user.store';
 import { createPost, ContentBlockedError } from '../api/posts';
+import { getJoinedSocieties, type Society } from '../api/societies';
 import { scanPostContent, softFilterInput } from '../utils/contentFilter';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useInteractionFeedback } from '../hooks/useInteractionFeedback';
@@ -12,6 +14,9 @@ export const PostScreen: React.FC = () => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
+  const [joinedSocieties, setJoinedSocieties] = useState<Society[]>([]);
+  const [showSocietyModal, setShowSocietyModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [moderation, setModeration] = useState<{
     message: string;
@@ -20,6 +25,20 @@ export const PostScreen: React.FC = () => {
   } | null>(null);
   const userStore = useUserStore();
   const { triggerFeedback } = useInteractionFeedback();
+
+  // Load joined societies on component mount
+  useEffect(() => {
+    loadJoinedSocieties();
+  }, []);
+
+  const loadJoinedSocieties = async () => {
+    try {
+      const societies = await getJoinedSocieties();
+      setJoinedSocieties(societies);
+    } catch (error) {
+      console.error('Failed to load joined societies:', error);
+    }
+  };
 
   const postsToday = userStore?.postsToday ?? 0;
   const incrementPosts = userStore?.incrementPosts ?? (() => {});
@@ -110,14 +129,19 @@ export const PostScreen: React.FC = () => {
         title: title.trim() || undefined,
         content: content.trim(),
         category: selectedCategory,
+        societyId: selectedSociety?.id || null,
       });
       triggerFeedback('post');
       showSuccessToast('Confession posted successfully!');
       setTitle('');
       setContent('');
       setSelectedCategory(null);
+      setSelectedSociety(null);
       incrementPosts();
-      showSuccessToast('Your confession has been posted anonymously!');
+      showSuccessToast(selectedSociety 
+        ? `Your confession has been posted to ${selectedSociety.name}!` 
+        : 'Your confession has been posted anonymously!'
+      );
     } catch (e: any) {
       if (e instanceof ContentBlockedError) {
         // Backend still found something – fall back to popup flow
@@ -138,8 +162,24 @@ export const PostScreen: React.FC = () => {
     }
   };
 
+  // Refresh joined societies
+  const refreshJoinedSocieties = async () => {
+    await loadJoinedSocieties();
+  };
+
   return (
-    <ScrollView style={styles.container} stickyHeaderIndices={[0]}>
+    <ScrollView 
+      style={styles.container} 
+      stickyHeaderIndices={[0]}
+      refreshControl={
+        <RefreshControl
+          refreshing={false}
+          onRefresh={refreshJoinedSocieties}
+          tintColor={COLORS.accent}
+          colors={[COLORS.accent]}
+        />
+      }
+    >
       <View style={styles.headerContainer}>
         <Text style={styles.header}>New Confession</Text>
         <Text style={styles.subtitle}>Share your secret anonymously</Text>
@@ -186,6 +226,28 @@ export const PostScreen: React.FC = () => {
         ))}
       </View>
 
+      {/* Society Selection */}
+      <Text style={styles.sectionTitle}>Post to Society (Optional)</Text>
+      <TouchableOpacity 
+        style={styles.societySelector}
+        onPress={() => setShowSocietyModal(true)}
+      >
+        <View style={styles.societySelectorContent}>
+          <Ionicons 
+            name={selectedSociety ? 'people' : 'people-outline'} 
+            size={20} 
+            color={selectedSociety ? COLORS.accent : COLORS.textSecondary} 
+          />
+          <Text style={[
+            styles.societySelectorText,
+            selectedSociety && styles.societySelectorTextSelected
+          ]}>
+            {selectedSociety ? selectedSociety.name : 'Choose a society (optional)'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+      </TouchableOpacity>
+
       <Text style={styles.limitText}>
         {remainingPosts} posts remaining today
       </Text>
@@ -198,9 +260,75 @@ export const PostScreen: React.FC = () => {
         {submitting ? (
           <ActivityIndicator color={COLORS.text} />
         ) : (
-          <Text style={styles.submitText}>Post Anonymously</Text>
+          <Text style={styles.submitText}>
+            {selectedSociety ? `Post to ${selectedSociety.name}` : 'Post Anonymously'}
+          </Text>
         )}
       </Pressable>
+
+      {/* Society Selection Modal */}
+      <Modal
+        transparent
+        animationType="slide"
+        visible={showSocietyModal}
+        onRequestClose={() => setShowSocietyModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose a Society</Text>
+              <TouchableOpacity onPress={() => setShowSocietyModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.societyOption}
+              onPress={() => {
+                setSelectedSociety(null);
+                setShowSocietyModal(false);
+              }}
+            >
+              <Ionicons name="globe" size={20} color={COLORS.textSecondary} />
+              <Text style={styles.societyOptionText}>Post Anonymously</Text>
+            </TouchableOpacity>
+
+            {joinedSocieties.map((society) => (
+              <TouchableOpacity 
+                key={society.id}
+                style={[
+                  styles.societyOption,
+                  selectedSociety?.id === society.id && styles.selectedSocietyOption
+                ]}
+                onPress={() => {
+                  setSelectedSociety(society);
+                  setShowSocietyModal(false);
+                }}
+              >
+                <Ionicons 
+                  name={society.icon_name || 'people' as any} 
+                  size={20} 
+                  color={selectedSociety?.id === society.id ? COLORS.accent : COLORS.textSecondary} 
+                />
+                <View style={styles.societyOptionInfo}>
+                  <Text style={[
+                    styles.societyOptionText,
+                    selectedSociety?.id === society.id && styles.selectedSocietyOptionText
+                  ]}>
+                    {society.name}
+                  </Text>
+                  <Text style={styles.societyOptionMembers}>
+                    {society.member_count || 0} members
+                  </Text>
+                </View>
+                {selectedSociety?.id === society.id && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.accent} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
 
       {moderation && (
         <Modal
@@ -475,5 +603,89 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Society Selection Styles
+  societySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E222B',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 16,
+  },
+  societySelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  societySelectorText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    marginLeft: 12,
+    flex: 1,
+  },
+  societySelectorTextSelected: {
+    color: COLORS.accent,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  societyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#1E222B',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  selectedSocietyOption: {
+    backgroundColor: 'rgba(107, 92, 231, 0.1)',
+    borderColor: COLORS.accent,
+  },
+  societyOptionInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  societyOptionText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  selectedSocietyOptionText: {
+    color: COLORS.accent,
+  },
+  societyOptionMembers: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
   },
 });
