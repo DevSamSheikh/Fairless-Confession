@@ -313,6 +313,34 @@ router.post("/react", authMiddleware, async (req: AuthRequest, res) => {
       );
     }
 
+    // Create notification for post author (if not reacting to own post)
+    step = "create_notification";
+    const { data: postAuthor } = await supabase
+      .from("posts")
+      .select("user_id")
+      .eq("id", postId)
+      .maybeSingle();
+
+    if (postAuthor && postAuthor.user_id !== req.userId) {
+      const actorData = await supabase
+        .from("users")
+        .select("identity_id")
+        .eq("id", req.userId)
+        .maybeSingle();
+
+      const actorName = actorData.data?.identity_id || "Someone";
+      const message = `${actorName} ${getReactionMessage(reactionType)} your confession`;
+
+      await createNotification(
+        postAuthor.user_id,
+        "reaction",
+        message,
+        req.userId,
+        postId,
+        undefined,
+      );
+    }
+
     res.json({
       success: true,
       currentReactionType,
@@ -426,6 +454,34 @@ router.post("/comment", authMiddleware, async (req: AuthRequest, res) => {
         user: null,
       };
       comments = [created];
+    }
+
+    // Create notification for post author (if not commenting on own post)
+    step = "create_notification";
+    const { data: postAuthor } = await supabase
+      .from("posts")
+      .select("user_id")
+      .eq("id", postId)
+      .maybeSingle();
+
+    if (postAuthor && postAuthor.user_id !== req.userId) {
+      const actorData = await supabase
+        .from("users")
+        .select("identity_id")
+        .eq("id", req.userId)
+        .maybeSingle();
+
+      const actorName = actorData.data?.identity_id || "Someone";
+      const message = `${actorName} commented on your confession`;
+
+      await createNotification(
+        postAuthor.user_id,
+        "comment",
+        message,
+        req.userId,
+        postId,
+        undefined,
+      );
     }
 
     res.status(201).json({
@@ -725,41 +781,205 @@ router.get("/my-activities", authMiddleware, async (req: AuthRequest, res) => {
 
     const userId = req.userId;
 
-    // Fetch all types of activities
-    const [reactions, comments, societyJoins, newMembers] = await Promise.all([
-      // Reactions on user's posts
-      fetchReactionsOnUserPosts(userId),
-      // Comments on user's posts
-      fetchCommentsOnUserPosts(userId),
-      // Society joins
-      fetchSocietyJoins(userId),
-      // New members in user's societies
-      fetchNewMembersInUserSocieties(userId),
-    ]);
+    // Try to fetch from user_notifications table first
+    let { data: notifications, error: notificationsError } = await supabase
+      .from("user_notifications")
+      .select(
+        `
+        id,
+        type,
+        message,
+        post_id,
+        society_id,
+        actor_user_id,
+        is_read,
+        created_at,
+        actor_user:users!inner(identity_id, avatar_seed, user_id_custom)
+      `,
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    // Transform all activities into unified format
-    const allActivities = [
-      ...transformReactions(reactions),
-      ...transformComments(comments),
-      ...transformSocietyJoins(societyJoins),
-      ...transformNewMembers(newMembers),
-    ];
+    // If user_notifications table doesn't exist, fall back to old method
+    if (
+      notificationsError &&
+      (notificationsError.message?.includes("does not exist") ||
+        notificationsError.message?.includes("relation") ||
+        notificationsError.code === "PGRST116")
+    ) {
+      console.log(
+        "user_notifications table not found, falling back to old method",
+      );
 
-    // Sort by creation time (most recent first)
-    allActivities.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      // Fallback to old activity fetching method
+      const [reactions, comments, societyJoins, newMembers] = await Promise.all(
+        [
+          fetchReactionsOnUserPosts(userId),
+          fetchCommentsOnUserPosts(userId),
+          fetchSocietyJoins(userId),
+          fetchNewMembersInUserSocieties(userId),
+        ],
+      );
+
+      // Transform all activities into unified format
+      const allActivities = [
+        ...transformReactions(reactions),
+        ...transformComments(comments),
+        ...transformSocietyJoins(societyJoins),
+        ...transformNewMembers(newMembers),
+      ];
+
+      // Sort by creation time (most recent first)
+      allActivities.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      return res.json({
+        activities: allActivities,
+        total: allActivities.length,
+      });
+    }
+
+    if (notificationsError) throw notificationsError;
+
+    // Transform notifications into unified format
+    const transformedNotifications = (notifications || []).map(
+      (notification) => {
+        const actorData = Array.isArray(notification.actor_user)
+          ? notification.actor_user[0]
+          : notification.actor_user;
+
+        const iconConfig = getNotificationIcon(notification.type);
+
+        return {
+          id: `notification_${notification.id}`,
+          type: notification.type,
+          message: notification.message,
+          time: formatTimeAgo(notification.created_at),
+          postId: notification.post_id,
+          societyId: notification.society_id,
+          icon: iconConfig.icon,
+          iconColor: iconConfig.color,
+          user: actorData,
+          createdAt: notification.created_at,
+          isRead: notification.is_read,
+          actorUserId: notification.actor_user_id,
+        };
+      },
     );
 
     res.json({
-      activities: allActivities,
-      total: allActivities.length,
+      activities: transformedNotifications,
+      total: transformedNotifications.length,
     });
   } catch (error) {
-    console.error("Error fetching activities:", error);
-    res.status(500).json({ error: "Failed to fetch activities" });
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ error: "Failed to fetch notifications" });
   }
 });
+
+// POST /api/interactions/mark-read
+router.post("/mark-read", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { notificationIds } = req.body;
+    const userId = req.user!.id;
+
+    if (!notificationIds || !Array.isArray(notificationIds)) {
+      return res.status(400).json({ error: "Notification IDs are required" });
+    }
+
+    // Extract real IDs from notification IDs (remove prefix)
+    const realIds = notificationIds.map((id) => {
+      const parts = id.split("_");
+      return parts.length === 2 ? parts[1] : id;
+    });
+
+    // Mark notifications as read
+    const { error } = await supabase
+      .from("user_notifications")
+      .update({ is_read: true })
+      .in("id", realIds)
+      .eq("user_id", userId);
+
+    if (error) {
+      // If table doesn't exist, just return success (frontend will handle gracefully)
+      if (
+        error.message?.includes("does not exist") ||
+        error.message?.includes("relation") ||
+        error.code === "PGRST116"
+      ) {
+        console.log(
+          "user_notifications table doesn't exist, marking as read successful",
+        );
+        return res.status(200).json({ success: true });
+      }
+
+      console.error("Error marking notifications as read:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to mark notifications as read" });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error in mark-read endpoint:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Helper function to get reaction message
+function getReactionMessage(reactionType: string): string {
+  const messages: Record<string, string> = {
+    Like: "reacted to",
+    Love: "loved",
+    Funny: "found funny",
+    Supportive: "supports",
+    Thought: "thought about",
+    Anger: "was angered by",
+    Unbelievable: "found unbelievable",
+  };
+  return messages[reactionType] || "reacted to";
+}
+
+// Helper function to create notification
+async function createNotification(
+  userId: string,
+  type: string,
+  message: string,
+  actorUserId: string,
+  postId?: string,
+  societyId?: string,
+) {
+  try {
+    await supabase.from("user_notifications").insert({
+      user_id: userId,
+      type,
+      message,
+      actor_user_id: actorUserId,
+      post_id: postId || null,
+      society_id: societyId || null,
+      is_read: false,
+    });
+  } catch (error) {
+    console.error("Error creating notification:", error);
+  }
+}
+
+// Helper function to get notification icon and color
+function getNotificationIcon(type: string): { icon: string; color: string } {
+  const iconMap: Record<string, { icon: string; color: string }> = {
+    reaction: { icon: "heart", color: "#6B5CE7" },
+    comment: { icon: "chatbubble", color: "#FF4B4B" },
+    society_join: { icon: "people", color: "#9B59B6" },
+    new_member: { icon: "person-add", color: "#3498DB" },
+    post_mention: { icon: "chatbubble", color: "#4A90E2" },
+    password_change: { icon: "lock-closed", color: "#FFD93D" },
+    follow: { icon: "person-add", color: "#6BCF7F" },
+  };
+  return iconMap[type] || { icon: "notifications", color: "#6B5CE7" };
+}
 
 // Helper functions for fetching different activity types
 async function fetchReactionsOnUserPosts(userId: string) {
@@ -1121,12 +1341,74 @@ router.delete(
         return res.status(400).json({ error: "Activity ID is required" });
       }
 
-      // Delete the activity from the database
-      const { error } = await supabase
-        .from("user_activities")
-        .delete()
-        .eq("id", activityId)
-        .eq("user_id", userId);
+      // Parse activity ID to determine type and real ID
+      const activityIdStr = Array.isArray(activityId)
+        ? activityId[0]
+        : activityId;
+      const [activityType, realId] = activityIdStr.split("_", 2);
+
+      let error = null;
+
+      if (activityType === "notification") {
+        // Delete from user_notifications table (this removes notification, not actual content)
+        const { error: notificationError } = await supabase
+          .from("user_notifications")
+          .delete()
+          .eq("id", realId)
+          .eq("user_id", userId);
+
+        if (notificationError) {
+          // If table doesn't exist, just return success (frontend will handle gracefully)
+          if (
+            notificationError.message?.includes("does not exist") ||
+            notificationError.message?.includes("relation") ||
+            notificationError.code === "PGRST116"
+          ) {
+            console.log(
+              "user_notifications table doesn't exist, deletion successful",
+            );
+            return res.status(200).json({ success: true });
+          }
+
+          error = notificationError;
+        }
+      } else {
+        // Fallback for old activity types
+        switch (activityType) {
+          case "reaction":
+            const { error: reactionError } = await supabase
+              .from("reactions")
+              .delete()
+              .eq("id", realId)
+              .eq("user_id", userId);
+            error = reactionError;
+            break;
+
+          case "comment":
+            const { error: commentError } = await supabase
+              .from("comments")
+              .delete()
+              .eq("id", realId)
+              .eq("user_id", userId);
+            error = commentError;
+            break;
+
+          case "society_join":
+          case "new_member":
+            console.log(
+              `Skipping deletion of system activity: ${activityType}`,
+            );
+            break;
+
+          default:
+            const { error: fallbackError } = await supabase
+              .from("user_activities")
+              .delete()
+              .eq("id", activityId)
+              .eq("user_id", userId);
+            error = fallbackError;
+        }
+      }
 
       if (error) {
         console.error("Error deleting activity:", error);

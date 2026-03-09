@@ -234,6 +234,26 @@ export interface UserActivitiesResponse {
   total: number;
 }
 
+export async function markNotificationsAsRead(
+  notificationIds: string[],
+): Promise<void> {
+  try {
+    const response = await requestInteractions("/mark-read", {
+      method: "POST",
+      body: JSON.stringify({ notificationIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to mark notifications as read: ${response.statusText}`,
+      );
+    }
+  } catch (error) {
+    console.error("Error marking notifications as read:", error);
+    throw error;
+  }
+}
+
 export async function deleteActivity(activityId: string): Promise<void> {
   try {
     const response = await requestInteractions(`/activities/${activityId}`, {

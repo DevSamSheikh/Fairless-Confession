@@ -24,6 +24,7 @@ import { COLORS } from "../utils/constants";
 import {
   fetchUserActivities,
   deleteActivity,
+  markNotificationsAsRead,
   UserActivity,
 } from "../api/interactions";
 import { useInteractionCount } from "../hooks/useInteractionCount";
@@ -39,12 +40,7 @@ type RootStackParamList = {
 
 type InteractionsNavigationProp = NavigationProp<RootStackParamList>;
 
-type FilterType =
-  | "All"
-  | "Announcements"
-  | "Reacts"
-  | "Comments"
-  | "Societies";
+type FilterType = "All" | "Announcements" | "Reacts" | "Comments" | "Societies";
 
 export const InteractionsScreen: React.FC = () => {
   const navigation = useNavigation<InteractionsNavigationProp>();
@@ -117,7 +113,10 @@ export const InteractionsScreen: React.FC = () => {
     switch (activeFilter) {
       case "Announcements":
         filtered = activities.filter(
-          (activity) => activity.postId && activity.type !== "comment" && activity.type !== "reaction",
+          (activity) =>
+            activity.postId &&
+            activity.type !== "comment" &&
+            activity.type !== "reaction",
         );
         break;
       case "Societies":
@@ -312,10 +311,7 @@ export const InteractionsScreen: React.FC = () => {
 
             <View style={styles.activityContent}>
               <Text
-                style={[
-                  styles.activityText,
-                  !item.isRead && styles.unreadText,
-                ]}
+                style={[styles.activityText, !item.isRead && styles.unreadText]}
               >
                 {message}
               </Text>
@@ -326,12 +322,16 @@ export const InteractionsScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
         </Animated.View>
-        
+
         {showDelete && (
-          <View style={[
-            styles.deleteBackground,
-            isSwipeLeft ? styles.deleteBackgroundRight : styles.deleteBackgroundLeft
-          ]}>
+          <View
+            style={[
+              styles.deleteBackground,
+              isSwipeLeft
+                ? styles.deleteBackgroundRight
+                : styles.deleteBackgroundLeft,
+            ]}
+          >
             <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
               <Ionicons name="trash" size={16} color="#FFFFFF" />
             </TouchableOpacity>
@@ -342,18 +342,27 @@ export const InteractionsScreen: React.FC = () => {
   };
 
   const renderActivityItem = ({ item }: { item: UserActivity }) => {
-    const handlePress = () => {
+    const handlePress = async () => {
       // Mark as read
-      const updatedActivities = activities.map((activity) =>
-        activity.id === item.id ? { ...activity, isRead: true } : activity,
-      );
-      setActivities(updatedActivities);
+      if (!item.isRead) {
+        try {
+          await markNotificationsAsRead([item.id]);
+          // Update local state
+          const updatedActivities = activities.map((activity) =>
+            activity.id === item.id ? { ...activity, isRead: true } : activity,
+          );
+          setActivities(updatedActivities);
 
-      // Refresh global count
-      refreshCount().catch((err) => {
-        console.error("Failed to refresh count:", err);
-      });
+          // Refresh global count
+          refreshCount().catch((err) => {
+            console.error("Failed to refresh count:", err);
+          });
+        } catch (err) {
+          console.error("Failed to mark notification as read:", err);
+        }
+      }
 
+      // Navigate to the target
       if (item.postId) {
         handleViewPost(item.postId);
       } else if (item.societyId) {
@@ -363,6 +372,7 @@ export const InteractionsScreen: React.FC = () => {
 
     const handleDelete = async () => {
       try {
+        // Delete notification (this removes from notification list, not actual content)
         await deleteActivity(item.id);
         const updatedActivities = activities.filter(
           (activity) => activity.id !== item.id,
@@ -376,15 +386,15 @@ export const InteractionsScreen: React.FC = () => {
 
         Toast.show({
           type: "success",
-          text1: "Deleted",
-          text2: "Interaction removed",
+          text1: "Removed",
+          text2: "Notification removed from list",
         });
       } catch (err: any) {
         console.error("Failed to delete activity:", err);
         Toast.show({
           type: "error",
           text1: "Error",
-          text2: "Failed to delete interaction",
+          text2: "Failed to remove notification",
         });
       }
     };
