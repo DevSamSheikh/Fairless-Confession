@@ -13,7 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../utils/constants";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { PostCard } from "../components/PostCard";
+import { ShareModal } from "../components/ShareModal";
 import { useFeedStore } from "../store/feed.store";
+import type { PostShareData } from "../hooks/useSharePost";
 
 interface PostViewScreenProps {
   route: {
@@ -30,6 +32,7 @@ export const PostViewScreen: React.FC<PostViewScreenProps> = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [post, setPost] = useState<any>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -124,6 +127,16 @@ export const PostViewScreen: React.FC<PostViewScreenProps> = ({ route }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Confession</Text>
         <View style={styles.placeholder} />
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={() => setShowShareModal(true)}
+        >
+          <Ionicons
+            name="share-social"
+            size={20}
+            color={COLORS.textSecondary}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -135,6 +148,18 @@ export const PostViewScreen: React.FC<PostViewScreenProps> = ({ route }) => {
           onTogglePin={() => {}}
         />
       </ScrollView>
+
+      {/* Share Modal */}
+      {post && (
+        <ShareModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          post={{
+            title: post.title || "",
+            body: post.content || "",
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -167,6 +192,14 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingContainer: {
     flex: 1,

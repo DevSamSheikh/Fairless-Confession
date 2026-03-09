@@ -1,6 +1,13 @@
-import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View, ViewStyle } from 'react-native';
-import { COLORS } from '../../utils/constants';
+import React from "react";
+import {
+  ScrollView,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
+import { COLORS } from "../../utils/constants";
 
 interface TabsProps {
   tabs: string[];
@@ -9,17 +16,31 @@ interface TabsProps {
   style?: ViewStyle;
 }
 
-export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabPress, style }) => {
+export const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  activeTab,
+  onTabPress,
+  style,
+}) => {
   return (
     <View style={[styles.container, style]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => onTabPress(tab)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
               {tab}
             </Text>
           </TouchableOpacity>
@@ -35,25 +56,26 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    gap: 8,
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginRight: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   activeTab: {
     backgroundColor: COLORS.accent,
   },
   tabText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
+    color: "#8B8D94",
+    fontSize: 13,
+    fontWeight: "500",
+    fontFamily: "Poppins_500Medium",
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });

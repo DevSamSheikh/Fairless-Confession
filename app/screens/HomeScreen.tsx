@@ -11,7 +11,11 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { SearchBar } from "../components/SearchBar";
 import { PostCard } from "../components/PostCard";
@@ -27,12 +31,28 @@ import { isServerPostId, reactToPost } from "../api/interactions";
 import { deleteMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
 import { showAlert } from "../utils/customAlert";
-import { addAuthErrorCallback, removeAuthErrorCallback } from "../utils/authErrorHandler";
+import {
+  addAuthErrorCallback,
+  removeAuthErrorCallback,
+} from "../utils/authErrorHandler";
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute();
-  const { posts, trendingPosts, addReaction, syncReactionState, refreshFeed, deletePost, loadFeed, loadTrending, loading, loadingMore, hasMore, currentPage } = useFeedStore();
+  const {
+    posts,
+    trendingPosts,
+    addReaction,
+    syncReactionState,
+    refreshFeed,
+    deletePost,
+    loadFeed,
+    loadTrending,
+    loading,
+    loadingMore,
+    hasMore,
+    currentPage,
+  } = useFeedStore();
   const { user } = useUserStore();
   const [activeTab, setActiveTab] = useState("Latest");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
@@ -47,7 +67,7 @@ export const HomeScreen: React.FC = () => {
   // Register auth error callback
   useEffect(() => {
     const handleAuthError = () => {
-      console.log('Setting auth error flag in HomeScreen');
+      console.log("Setting auth error flag in HomeScreen");
       hasAuthError.current = true;
     };
 
@@ -82,7 +102,7 @@ export const HomeScreen: React.FC = () => {
       if ((route.params as any)?.refresh) {
         refreshFeed();
       }
-    }, [route.params, refreshFeed])
+    }, [route.params, refreshFeed]),
   );
 
   const loadMorePosts = useCallback(() => {
@@ -109,16 +129,16 @@ export const HomeScreen: React.FC = () => {
     }
 
     // Get current state before optimistic update
-    const currentPost = posts.find(p => p.id === postId);
+    const currentPost = posts.find((p) => p.id === postId);
     const previousReactionType = currentPost?.myReactionType || null;
     const previousReactions = currentPost?.reactions || {};
 
-    console.log('Before reaction:', {
+    console.log("Before reaction:", {
       postId,
       reactionType,
       previousReactionType,
       previousReactions,
-      userId: user?.id
+      userId: user?.id,
     });
 
     // Optimistic local update
@@ -126,13 +146,17 @@ export const HomeScreen: React.FC = () => {
 
     try {
       const result = await reactToPost({ postId, reactionType });
-      console.log('Server response:', result);
+      console.log("Server response:", result);
       // Sync with server response immediately (no debounce)
-      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+      syncReactionState(
+        postId,
+        result.summary ?? {},
+        result.currentReactionType,
+      );
     } catch (error) {
       // Revert to previous state on error immediately
       syncReactionState(postId, previousReactions, previousReactionType);
-      console.error('Reaction failed:', error);
+      console.error("Reaction failed:", error);
     }
   };
 
@@ -155,14 +179,16 @@ export const HomeScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const displayPosts = activeTab === "Latest" ? posts : trendingPosts;
 
-  const filteredPosts = searchQuery 
-    ? displayPosts.filter(p => p.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredPosts = searchQuery
+    ? displayPosts.filter((p) =>
+        p.content.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
     : displayPosts;
 
   return (
@@ -187,20 +213,22 @@ export const HomeScreen: React.FC = () => {
               </View>
 
               <View style={styles.headerIcons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.iconButton}
                   onPress={() => setIsSearchVisible(true)}
                 >
                   <Ionicons name="search" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.iconButton}
                   onPress={() => navigation.navigate("Interactions")}
                 >
                   {notificationCount > 0 && (
                     <View style={styles.notificationBadge}>
                       <Text style={styles.notificationBadgeText}>
-                        {notificationCount > 99 ? "99+" : notificationCount.toString()}
+                        {notificationCount > 99
+                          ? "99+"
+                          : notificationCount.toString()}
                       </Text>
                     </View>
                   )}
@@ -213,7 +241,7 @@ export const HomeScreen: React.FC = () => {
               </View>
             </>
           ) : (
-            <SearchBar 
+            <SearchBar
               isVisible={isSearchVisible}
               onClose={() => setIsSearchVisible(false)}
               query={searchQuery}
@@ -232,19 +260,33 @@ export const HomeScreen: React.FC = () => {
 
         <FlatList
           ref={flatListRef}
-          data={loading && filteredPosts.length === 0 ? Array(3).fill(null) : filteredPosts}
+          data={
+            loading && filteredPosts.length === 0
+              ? Array(3).fill(null)
+              : filteredPosts
+          }
           keyExtractor={(item, index) => item?.id || `skeleton-${index}`}
           renderItem={({ item, index }) => {
             if (loading && filteredPosts.length === 0) {
               return <PostCardSkeleton />;
             }
             return (
-              <View onLayout={(e) => onLayoutItem(`post-${index}`, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}>
+              <View
+                onLayout={(e) =>
+                  onLayoutItem(
+                    `post-${index}`,
+                    e.nativeEvent.layout.y,
+                    e.nativeEvent.layout.height,
+                  )
+                }
+              >
                 <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
                   <PostCard
                     post={item}
                     rank={activeTab === "Trending" ? index + 1 : undefined}
-                    onReact={(reactionType) => handleReact(item.id, reactionType)}
+                    onReact={(reactionType) =>
+                      handleReact(item.id, reactionType)
+                    }
                     onDeleteConfession={handleDelete}
                   />
                 </TouchableOpacity>
@@ -263,13 +305,19 @@ export const HomeScreen: React.FC = () => {
           ListEmptyComponent={
             loading ? null : searchQuery ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No confessions found for "{searchQuery}"</Text>
+                <Text style={styles.emptyText}>
+                  No confessions found for "{searchQuery}"
+                </Text>
               </View>
             ) : null
           }
           ListFooterComponent={
             activeTab === "Latest" && loadingMore ? (
-              <EnhancedLoadingAnimation text="Loading more confessions" type="wave" size="small" />
+              <EnhancedLoadingAnimation
+                text="Loading more confessions"
+                type="wave"
+                size="small"
+              />
             ) : null
           }
         />
@@ -365,8 +413,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   tabsContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
     backgroundColor: COLORS.background,
   },
   list: {
@@ -375,21 +423,21 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    textAlign: 'center',
+    fontFamily: "Poppins_400Regular",
+    textAlign: "center",
   },
   loadingMoreContainer: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loadingMoreText: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
 });

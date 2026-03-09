@@ -4,9 +4,9 @@
 // Primary Colors
 export const COLORS = {
   // Background Colors
-  background: "#0F1115", // Main app background - minimal, clean, dark
-  cardBackground: "#1A1D23", // Card backgrounds - slightly lighter than app background
-  modalBackground: "#1A1D23", // Modal backgrounds
+  background: "rgb(15, 17, 21)", // Main app background - minimal, clean, dark
+  cardBackground: "rgb(26, 29, 35)", // Card backgrounds - slightly lighter than app background
+  modalBackground: "rgb(26, 29, 35)", // Modal backgrounds
   overlay: "rgba(15, 17, 21, 0.8)", // Overlay for modals
 
   // Text Colors

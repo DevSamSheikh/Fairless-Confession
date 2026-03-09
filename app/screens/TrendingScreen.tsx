@@ -25,7 +25,10 @@ import { useFeedStore } from "../store/feed.store";
 import { useSocietyStore } from "../store/society.store";
 import { useUserStore } from "../store/user.store";
 import { isServerPostId, reactToPost } from "../api/interactions";
-import { addAuthErrorCallback, removeAuthErrorCallback } from "../utils/authErrorHandler";
+import {
+  addAuthErrorCallback,
+  removeAuthErrorCallback,
+} from "../utils/authErrorHandler";
 
 export const TrendingScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Discover");
@@ -33,26 +36,27 @@ export const TrendingScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation<any>();
 
-  const { posts, addReaction, syncReactionState, loadTrending } = useFeedStore();
+  const { posts, addReaction, syncReactionState, loadTrending } =
+    useFeedStore();
   const { user } = useUserStore();
-  const { 
-    societies, 
-    loading: societiesLoading, 
-    loadingMore: societiesLoadingMore, 
-    hasMore: societiesHasMore, 
+  const {
+    societies,
+    loading: societiesLoading,
+    loadingMore: societiesLoadingMore,
+    hasMore: societiesHasMore,
     currentPage: societiesCurrentPage,
-    loadSocieties 
+    loadSocieties,
   } = useSocietyStore();
   const [savedSocieties, setSavedSocieties] = useState<string[]>([]);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const lastCenterId = useRef<string | null>(null);
   const hasAuthError = useRef<boolean>(false);
-  const windowHeight = Dimensions.get('window').height;
+  const windowHeight = Dimensions.get("window").height;
 
   // Register auth error callback
   useEffect(() => {
     const handleAuthError = () => {
-      console.log('Setting auth error flag in TrendingScreen');
+      console.log("Setting auth error flag in TrendingScreen");
       hasAuthError.current = true;
     };
 
@@ -66,14 +70,14 @@ export const TrendingScreen: React.FC = () => {
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const centerY = offsetY + windowHeight / 2;
-    
+
     // Approximate item height
     const itemHeight = activeTab === "Confessions" ? 280 : 180;
     const data = activeTab === "Confessions" ? joinedPosts : filteredSocieties;
     // Use a smaller threshold for absolute center
     const threshold = 15;
-    const distanceToCenter = Math.abs((centerY % itemHeight) - (itemHeight / 2));
-    
+    const distanceToCenter = Math.abs((centerY % itemHeight) - itemHeight / 2);
+
     const index = Math.floor(centerY / itemHeight);
 
     if (index >= 0 && index < data.length && distanceToCenter < threshold) {
@@ -105,7 +109,13 @@ export const TrendingScreen: React.FC = () => {
     if (!societiesLoading && !societiesLoadingMore && societiesHasMore) {
       loadSocieties(societiesCurrentPage + 1, true);
     }
-  }, [societiesLoading, societiesLoadingMore, societiesHasMore, societiesCurrentPage, loadSocieties]);
+  }, [
+    societiesLoading,
+    societiesLoadingMore,
+    societiesHasMore,
+    societiesCurrentPage,
+    loadSocieties,
+  ]);
 
   // In a real app, these would come from a global user/society store
   const [joinedSocieties] = useState<string[]>([]); // Mock joined society IDs
@@ -120,7 +130,7 @@ export const TrendingScreen: React.FC = () => {
   }) => {
     const isJoined = joinedSocieties.includes(item.id);
     const isSaved = savedSocieties.includes(item.id);
-    
+
     // Determine button title based on tab
     let buttonTitle = "Join";
     if (activeTab === "Joined" || activeTab === "Your Societies" || isJoined) {
@@ -130,15 +140,23 @@ export const TrendingScreen: React.FC = () => {
     return (
       <Card style={styles.card} variant="outline">
         <TouchableOpacity
-          onPress={() => navigation.navigate("SocietyDetail", { society: item })}
+          onPress={() =>
+            navigation.navigate("SocietyDetail", { society: item })
+          }
         >
           <View style={styles.cardHeader}>
             <View style={styles.iconContainer}>
-              <Ionicons name={item.icon as any} size={24} color={COLORS.accent} />
+              <Ionicons
+                name={item.icon as any}
+                size={24}
+                color={COLORS.accent}
+              />
             </View>
             <View style={styles.cardTitleContainer}>
               <Text style={styles.cardName}>{item.name}</Text>
-              <Text style={styles.cardMembers}>{item.memberCount || item.members} members</Text>
+              <Text style={styles.cardMembers}>
+                {item.memberCount || item.members} members
+              </Text>
             </View>
             <Button
               title={buttonTitle}
@@ -162,7 +180,10 @@ export const TrendingScreen: React.FC = () => {
     }
 
     // 2. Apply Search Filter
-    if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !s.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
 
@@ -190,7 +211,7 @@ export const TrendingScreen: React.FC = () => {
     }
 
     // Get current state before optimistic update
-    const currentPost = posts.find(p => p.id === postId);
+    const currentPost = posts.find((p) => p.id === postId);
     const previousReactionType = currentPost?.myReactionType || null;
     const previousReactions = currentPost?.reactions || {};
 
@@ -200,25 +221,29 @@ export const TrendingScreen: React.FC = () => {
     try {
       const result = await reactToPost({ postId, reactionType });
       // Sync with server response immediately
-      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+      syncReactionState(
+        postId,
+        result.summary ?? {},
+        result.currentReactionType,
+      );
     } catch (error) {
       // Revert to previous state on error
       syncReactionState(postId, previousReactions, previousReactionType);
-      console.error('Reaction failed:', error);
+      console.error("Reaction failed:", error);
     }
   };
 
-  const joinedPosts = posts.filter(p => {
+  const joinedPosts = posts.filter((p) => {
     // This is mock logic since posts don't have societyId yet
     // In a real app: return joinedSocieties.includes(p.societyId)
     // For now, let's just show some posts in the Confessions tab
-    return true; 
+    return true;
   });
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.headerContainer}>
         {!isSearchVisible ? (
           <>
@@ -227,23 +252,33 @@ export const TrendingScreen: React.FC = () => {
               <Text style={styles.exploreText}>Explore,</Text>
             </View>
             <View style={styles.headerRight}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.iconButton}
-                onPress={() => navigation.navigate('CreateSociety')}
+                onPress={() => navigation.navigate("CreateSociety")}
               >
                 <Ionicons name="add" size={24} color="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.iconButton}
                 onPress={() => setIsSearchVisible(true)}
               >
                 <Ionicons name="search" size={22} color="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.iconButton, showSavedOnly && { borderColor: COLORS.accent, backgroundColor: 'rgba(107, 92, 231, 0.1)' }]}
+              <TouchableOpacity
+                style={[
+                  styles.iconButton,
+                  showSavedOnly && {
+                    borderColor: COLORS.accent,
+                    backgroundColor: "rgba(107, 92, 231, 0.1)",
+                  },
+                ]}
                 onPress={() => setShowSavedOnly(!showSavedOnly)}
               >
-                <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={22} color={showSavedOnly ? COLORS.accent : "#FFFFFF"} />
+                <Ionicons
+                  name={showSavedOnly ? "bookmark" : "bookmark-outline"}
+                  size={22}
+                  color={showSavedOnly ? COLORS.accent : "#FFFFFF"}
+                />
               </TouchableOpacity>
             </View>
           </>
@@ -275,41 +310,62 @@ export const TrendingScreen: React.FC = () => {
 
       <FlatList
         data={
-          societiesLoading && activeTab !== "Confessions" && filteredSocieties.length === 0 
-            ? Array(3).fill(null) 
-            : activeTab === "Confessions" 
-              ? (joinedPosts as any[]) 
+          societiesLoading &&
+          activeTab !== "Confessions" &&
+          filteredSocieties.length === 0
+            ? Array(3).fill(null)
+            : activeTab === "Confessions"
+              ? (joinedPosts as any[])
               : (filteredSocieties as any[])
         }
         keyExtractor={(item, index) => item?.id || `skeleton-${index}`}
         renderItem={({ item }) => {
-          if (societiesLoading && activeTab !== "Confessions" && filteredSocieties.length === 0) {
+          if (
+            societiesLoading &&
+            activeTab !== "Confessions" &&
+            filteredSocieties.length === 0
+          ) {
             return <SocietyCardSkeleton />;
           }
           if (activeTab === "Confessions") {
-            return <PostCard post={item as any} onReact={(reactionType) => handleReact((item as any).id, reactionType)} />;
+            return (
+              <PostCard
+                post={item as any}
+                onReact={(reactionType) =>
+                  handleReact((item as any).id, reactionType)
+                }
+              />
+            );
           }
           return renderSocietyCard({ item: item as any });
         }}
         onScroll={handleScroll}
-        onEndReached={activeTab !== "Confessions" ? loadMoreSocieties : undefined}
+        onEndReached={
+          activeTab !== "Confessions" ? loadMoreSocieties : undefined
+        }
         onEndReachedThreshold={0.5}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContainer,
-          activeTab === "Confessions" && { paddingHorizontal: 0 }
+          activeTab === "Confessions" && { paddingHorizontal: 0 },
         ]}
         ListEmptyComponent={
           societiesLoading ? null : searchQuery ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No societies found for "{searchQuery}"</Text>
+              <Text style={styles.emptyText}>
+                No societies found for "{searchQuery}"
+              </Text>
             </View>
           ) : null
         }
         ListFooterComponent={
           activeTab !== "Confessions" && societiesLoadingMore ? (
-            <EnhancedLoadingAnimation text="Loading more societies" type="bounce" size="small" />
+            <EnhancedLoadingAnimation
+              text="Loading more societies"
+              type="bounce"
+              size="small"
+            />
           ) : null
         }
       />
@@ -323,9 +379,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 15,
@@ -336,27 +392,27 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.text,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
   },
   exploreText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
     marginTop: -4,
   },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: "#1E222B",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 8,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
@@ -380,8 +436,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   tabsWrapper: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.05)",
   },
@@ -396,7 +452,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: "rgba(255,255,255,0.05)",
   },
   cardHeader: {
     flexDirection: "row",
@@ -434,21 +490,21 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    textAlign: 'center',
+    fontFamily: "Poppins_400Regular",
+    textAlign: "center",
   },
   loadingMoreContainer: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loadingMoreText: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
 });

@@ -54,6 +54,9 @@ export const InteractionsScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const { count: unreadCount, refreshCount } = useInteractionCount();
   const [error, setError] = useState<string | null>(null);
+  const [currentlySwipedId, setCurrentlySwipedId] = useState<string | null>(
+    null,
+  );
 
   const filters: FilterType[] = [
     "All",
@@ -248,12 +251,38 @@ export const InteractionsScreen: React.FC = () => {
     const [showDelete, setShowDelete] = useState(false);
     const [isSwipeLeft, setIsSwipeLeft] = useState(false);
 
+    // Reset position if this item is not the currently swiped one
+    useEffect(() => {
+      if (currentlySwipedId && currentlySwipedId !== item.id) {
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+        setShowDelete(false);
+        setIsSwipeLeft(false);
+      }
+    }, [currentlySwipedId, item.id]);
+
     const panResponder = useRef(
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) => {
+          // Only allow swiping if no other item is currently swiped
+          if (currentlySwipedId && currentlySwipedId !== item.id) {
+            return false;
+          }
           return Math.abs(gestureState.dx) > 10;
         },
         onPanResponderMove: (_, gestureState) => {
+          // Only allow movement if this is the currently swiped item
+          if (currentlySwipedId && currentlySwipedId !== item.id) {
+            return;
+          }
+
+          // Set this as the currently swiped item
+          if (Math.abs(gestureState.dx) > 10) {
+            setCurrentlySwipedId(item.id);
+          }
+
           // Limit swipe to 120px (button width + gap)
           const limitedX = Math.max(-120, Math.min(120, gestureState.dx));
           translateX.setValue(limitedX);
@@ -272,6 +301,7 @@ export const InteractionsScreen: React.FC = () => {
             }).start();
             setTimeout(() => {
               onDelete();
+              setCurrentlySwipedId(null); // Reset after delete
             }, 200);
           } else {
             // Snap back to original position
@@ -280,6 +310,8 @@ export const InteractionsScreen: React.FC = () => {
               useNativeDriver: true,
             }).start();
             setShowDelete(false);
+            setIsSwipeLeft(false);
+            setCurrentlySwipedId(null); // Reset when snapping back
           }
         },
       }),
@@ -567,6 +599,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
+    zIndex: 20,
   },
   unreadCard: {
     backgroundColor: "rgba(255, 255, 255, 0.06)",
@@ -609,7 +642,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 30,
     borderRadius: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    zIndex: 100,
   },
   separator: {
     height: 1,

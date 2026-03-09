@@ -9,7 +9,11 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
-import { useNavigation, useFocusEffect, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../../components/PostCard";
 import { COLORS } from "../../utils/constants";
@@ -18,15 +22,15 @@ import { useUserStore } from "../../store/user.store";
 import { useFeedStore } from "../../store/feed.store";
 import { SearchBar } from "../../components/SearchBar";
 import { isServerPostId, reactToPost } from "../../api/interactions";
-import { 
-  getSocieties, 
-  getJoinedSocieties, 
-  getUserSocieties, 
+import {
+  getSocieties,
+  getJoinedSocieties,
+  getUserSocieties,
   discoverSocieties,
   joinSociety,
   leaveSociety,
   getSocietyConfessions,
-  type Society 
+  type Society,
 } from "../../api/societies";
 
 export const SocietiesScreen: React.FC = () => {
@@ -34,24 +38,28 @@ export const SocietiesScreen: React.FC = () => {
   const route = useRoute();
   const { posts, addReaction, syncReactionState } = useFeedStore();
   const userStore = useUserStore();
-  
+
   const [activeTab, setActiveTab] = useState("Joined");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // API data states
   const [allSocieties, setAllSocieties] = useState<Society[]>([]);
   const [joinedSocieties, setJoinedSocieties] = useState<Society[]>([]);
   const [userSocieties, setUserSocieties] = useState<Society[]>([]);
-  const [discoverSocietiesList, setDiscoverSocietiesList] = useState<Society[]>([]);
+  const [discoverSocietiesList, setDiscoverSocietiesList] = useState<Society[]>(
+    [],
+  );
   const [societyPosts, setSocietyPosts] = useState<any[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [showJoinWarning, setShowJoinWarning] = useState(false);
-  const [pendingJoinSociety, setPendingJoinSociety] = useState<Society | null>(null);
+  const [pendingJoinSociety, setPendingJoinSociety] = useState<Society | null>(
+    null,
+  );
   const [joiningSociety, setJoiningSociety] = useState<string | null>(null);
   const [joinWarningTimer, setJoinWarningTimer] = useState(6);
   const [showCreateSociety, setShowCreateSociety] = useState(false);
@@ -83,8 +91,8 @@ export const SocietiesScreen: React.FC = () => {
             id: post.id,
             title: post.title || undefined,
             content: post.content,
-            category: post.category || 'Secrets',
-            societyName: post.society?.name || 'Unknown Society',
+            category: post.category || "Secrets",
+            societyName: post.society?.name || "Unknown Society",
             societyId: post.society?.id || post.society_id, // Add societyId for navigation
             reactions: post.reaction_counts || {},
             commentCount: post.comment_count || 0,
@@ -92,10 +100,12 @@ export const SocietiesScreen: React.FC = () => {
             isOwner: post.user_id === userStore.userId,
             myReactionType: post.my_reaction_type || null, // Use actual reaction type from backend
             user: {
-              identity_id: post.user?.identity_id || `#Confess_${Math.random().toString(36).substr(2, 4)}`,
-              avatar_seed: post.user?.avatar_seed || '',
-              user_id_custom: post.user?.user_id_custom || '',
-            }
+              identity_id:
+                post.user?.identity_id ||
+                `#Confess_${Math.random().toString(36).substr(2, 4)}`,
+              avatar_seed: post.user?.avatar_seed || "",
+              user_id_custom: post.user?.user_id_custom || "",
+            },
           }));
           setSocietyPosts(transformedPosts);
           break;
@@ -133,7 +143,7 @@ export const SocietiesScreen: React.FC = () => {
       if ((route.params as any)?.refresh) {
         loadData();
       }
-    }, [route.params])
+    }, [route.params]),
   );
 
   const handleJoinSociety = (society: Society) => {
@@ -144,17 +154,17 @@ export const SocietiesScreen: React.FC = () => {
 
   const confirmJoinSociety = async () => {
     if (!pendingJoinSociety) return;
-    
+
     setJoiningSociety(pendingJoinSociety.id);
     try {
       await joinSociety(pendingJoinSociety.id);
-      showSuccessToast('Successfully joined society!');
+      showSuccessToast("Successfully joined society!");
       loadData(); // Refresh the current tab
     } catch (error: any) {
-      console.error('Failed to join society:', error);
-      const errorMessage = error?.message || 'Failed to join society';
-      if (errorMessage.includes('already a member')) {
-        showErrorToast('You are already a member of this society');
+      console.error("Failed to join society:", error);
+      const errorMessage = error?.message || "Failed to join society";
+      if (errorMessage.includes("already a member")) {
+        showErrorToast("You are already a member of this society");
       } else {
         showErrorToast(errorMessage);
       }
@@ -169,11 +179,11 @@ export const SocietiesScreen: React.FC = () => {
   const handleLeaveSociety = async (societyId: string) => {
     try {
       await leaveSociety(societyId);
-      showSuccessToast('Successfully left society!');
+      showSuccessToast("Successfully left society!");
       loadData(); // Refresh the current tab
     } catch (error: any) {
-      console.error('Failed to leave society:', error);
-      showErrorToast(error?.message || 'Failed to leave society');
+      console.error("Failed to leave society:", error);
+      showErrorToast(error?.message || "Failed to leave society");
     }
   };
 
@@ -186,46 +196,60 @@ export const SocietiesScreen: React.FC = () => {
 
     try {
       const result = await reactToPost({ postId, reactionType });
-      syncReactionState(postId, result.summary ?? {}, result.currentReactionType);
+      syncReactionState(
+        postId,
+        result.summary ?? {},
+        result.currentReactionType,
+      );
     } catch {
       // ignore; local optimistic state remains
     }
   };
 
   const renderSocietyItem = ({ item }: { item: Society }) => {
-    const isJoined = joinedSocieties.some(s => s.id === item.id);
-    const isOwner = userSocieties.some(s => s.id === item.id);
-    
+    const isJoined = joinedSocieties.some((s) => s.id === item.id);
+    const isOwner = userSocieties.some((s) => s.id === item.id);
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.societyCard}
-        onPress={() => (navigation as any).navigate('SocietyDetail', { society: item })}
+        onPress={() =>
+          (navigation as any).navigate("SocietyDetail", { society: item })
+        }
         disabled={joiningSociety === item.id}
       >
         <View style={styles.societyInfo}>
           <View style={styles.societyIconContainer}>
-            <Ionicons name={item.icon_name || 'people' as any} size={24} color={COLORS.accent} />
+            <Ionicons
+              name={item.icon_name || ("people" as any)}
+              size={24}
+              color={COLORS.accent}
+            />
           </View>
           <View style={styles.societyTextContent}>
             <Text style={styles.societyName}>{item.name}</Text>
-            <Text style={styles.societyMembers}>{item.member_count || 0} members</Text>
+            <Text style={styles.societyMembers}>
+              {item.member_count || 0} members
+            </Text>
           </View>
           {isOwner ? (
             <View style={styles.ownerBadge}>
               <Text style={styles.ownerText}>Owner</Text>
             </View>
           ) : isJoined ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.joinButton, styles.visitButton]}
               onPress={(e) => {
                 e.stopPropagation();
-                (navigation as any).navigate('SocietyDetail', { society: item });
+                (navigation as any).navigate("SocietyDetail", {
+                  society: item,
+                });
               }}
             >
               <Text style={styles.visitButtonText}>Visit</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.joinButton}
               onPress={(e) => {
                 e.stopPropagation();
@@ -275,28 +299,35 @@ export const SocietiesScreen: React.FC = () => {
               <Text style={styles.subHeader}>Explore,</Text>
             </View>
             <View style={styles.headerIcons}>
-              <TouchableOpacity 
-                style={styles.headerIconButton} 
-                onPress={() => navigation.navigate('CreateSociety')}
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => navigation.navigate("CreateSociety")}
               >
                 <Ionicons name="add" size={24} color="#FFF" />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerIconButton} 
+              <TouchableOpacity
+                style={styles.headerIconButton}
                 onPress={() => setIsSearchVisible(true)}
               >
                 <Ionicons name="search" size={20} color="#FFF" />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.headerIconButton, showSavedOnly && { backgroundColor: COLORS.accent }]} 
+              <TouchableOpacity
+                style={[
+                  styles.headerIconButton,
+                  showSavedOnly && { backgroundColor: COLORS.accent },
+                ]}
                 onPress={() => setShowSavedOnly(!showSavedOnly)}
               >
-                <Ionicons name={showSavedOnly ? "bookmark" : "bookmark-outline"} size={20} color="#FFF" />
+                <Ionicons
+                  name={showSavedOnly ? "bookmark" : "bookmark-outline"}
+                  size={20}
+                  color="#FFF"
+                />
               </TouchableOpacity>
             </View>
           </>
         ) : (
-          <SearchBar 
+          <SearchBar
             isVisible={isSearchVisible}
             onClose={() => setIsSearchVisible(false)}
             query={searchQuery}
@@ -313,7 +344,14 @@ export const SocietiesScreen: React.FC = () => {
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -331,13 +369,11 @@ export const SocietiesScreen: React.FC = () => {
           contentContainerStyle={styles.list}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Ionicons
-                name="people-outline"
-                size={60}
-                color={COLORS.border}
-              />
+              <Ionicons name="people-outline" size={60} color={COLORS.border} />
               <Text style={styles.emptyText}>
-                {searchQuery ? "No matches found" : "Join societies to see confessions"}
+                {searchQuery
+                  ? "No matches found"
+                  : "Join societies to see confessions"}
               </Text>
             </View>
           )}
@@ -352,13 +388,11 @@ export const SocietiesScreen: React.FC = () => {
           contentContainerStyle={styles.list}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Ionicons
-                name="planet-outline"
-                size={60}
-                color={COLORS.border}
-              />
+              <Ionicons name="planet-outline" size={60} color={COLORS.border} />
               <Text style={styles.emptyText}>
-                {searchQuery ? "No societies found" : `No ${activeTab.toLowerCase()} content yet`}
+                {searchQuery
+                  ? "No societies found"
+                  : `No ${activeTab.toLowerCase()} content yet`}
               </Text>
             </View>
           )}
@@ -366,7 +400,7 @@ export const SocietiesScreen: React.FC = () => {
           onRefresh={loadData}
         />
       )}
-      
+
       {/* Join Warning Modal */}
       {showJoinWarning && pendingJoinSociety && (
         <Modal
@@ -379,19 +413,23 @@ export const SocietiesScreen: React.FC = () => {
             <View style={styles.warningCard}>
               <View style={styles.warningHeader}>
                 <Ionicons name="warning" size={40} color={COLORS.accent} />
-                <Text style={styles.warningTitle}>Join {pendingJoinSociety.name}?</Text>
+                <Text style={styles.warningTitle}>
+                  Join {pendingJoinSociety.name}?
+                </Text>
               </View>
-              
+
               <Text style={styles.warningMessage}>
-                You're about to join "{pendingJoinSociety.name}". This is a community where people share their thoughts anonymously. Please respect the community guidelines and be mindful of others.
+                You're about to join "{pendingJoinSociety.name}". This is a
+                community where people share their thoughts anonymously. Please
+                respect the community guidelines and be mindful of others.
               </Text>
-              
+
               <View style={styles.warningTimerContainer}>
                 <Text style={styles.warningTimerText}>
                   Joining in {joinWarningTimer}...
                 </Text>
               </View>
-              
+
               <View style={styles.warningButtons}>
                 <TouchableOpacity
                   style={[styles.warningButton, styles.cancelWarningButton]}
@@ -403,21 +441,25 @@ export const SocietiesScreen: React.FC = () => {
                 >
                   <Text style={styles.cancelWarningButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[
-                    styles.warningButton, 
+                    styles.warningButton,
                     styles.confirmWarningButton,
-                    joinWarningTimer > 0 && styles.disabledButton
+                    joinWarningTimer > 0 && styles.disabledButton,
                   ]}
                   onPress={confirmJoinSociety}
                   disabled={joinWarningTimer > 0}
                 >
-                  <Text style={[
-                    styles.confirmWarningButtonText,
-                    joinWarningTimer > 0 && styles.disabledButtonText
-                  ]}>
-                    {joinWarningTimer > 0 ? `Wait ${joinWarningTimer}s` : 'Join Now'}
+                  <Text
+                    style={[
+                      styles.confirmWarningButtonText,
+                      joinWarningTimer > 0 && styles.disabledButtonText,
+                    ]}
+                  >
+                    {joinWarningTimer > 0
+                      ? `Wait ${joinWarningTimer}s`
+                      : "Join Now"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -435,9 +477,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
@@ -446,49 +488,50 @@ const styles = StyleSheet.create({
   header: {
     color: COLORS.text,
     fontSize: 28,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
   },
   subHeader: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
   headerIcons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   headerIconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1E222B',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#1E222B",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: "rgba(255,255,255,0.05)",
   },
   tabsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 10,
+    paddingBottom: 12,
+    gap: 8,
   },
   tab: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#1E222B',
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   activeTab: {
     backgroundColor: COLORS.accent,
   },
   tabText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold',
+    color: "#8B8D94",
+    fontSize: 13,
+    fontFamily: "Poppins_500Medium",
+    fontWeight: "500",
   },
   activeTabText: {
-    color: '#FFF',
+    color: "#FFFFFF",
   },
   list: {
     paddingHorizontal: 16,
@@ -503,8 +546,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.05)",
   },
   societyInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   societyIconContainer: {
@@ -512,8 +555,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     backgroundColor: "rgba(107, 92, 231, 0.1)",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   societyTextContent: {
@@ -541,18 +584,18 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
   },
   ownerBadge: {
-    backgroundColor: '#FFD700',
+    backgroundColor: "#FFD700",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   ownerText: {
-    color: '#000',
+    color: "#000",
     fontSize: 11,
     fontFamily: "Poppins_600SemiBold",
   },
   leaveButton: {
-    backgroundColor: '#FF4B4B',
+    backgroundColor: "#FF4B4B",
   },
   leaveButtonText: {
     color: "#FFF",
@@ -560,7 +603,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
   },
   visitButton: {
-    backgroundColor: '#8B5CF6', // Purple color for visit button
+    backgroundColor: "#8B5CF6", // Purple color for visit button
   },
   visitButtonText: {
     color: "#FFF",
@@ -575,58 +618,58 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     marginTop: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 16,
     marginTop: 20,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
   // Warning modal styles
   warningOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   warningCard: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 20,
     padding: 30,
-    width: '100%',
+    width: "100%",
     maxWidth: 380,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
   },
   warningHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   warningTitle: {
     color: COLORS.text,
     fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginTop: 10,
-    fontFamily: 'Poppins_700Bold',
+    fontFamily: "Poppins_700Bold",
   },
   warningMessage: {
     color: COLORS.textSecondary,
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
     marginBottom: 25,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: "Poppins_400Regular",
   },
   warningTimerContainer: {
-    backgroundColor: 'rgba(107, 92, 231, 0.1)',
+    backgroundColor: "rgba(107, 92, 231, 0.1)",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
@@ -637,39 +680,39 @@ const styles = StyleSheet.create({
   warningTimerText: {
     color: COLORS.accent,
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: "600",
+    fontFamily: "Poppins_600SemiBold",
   },
   warningButtons: {
-    flexDirection: 'row',
-    width: '100%',
+    flexDirection: "row",
+    width: "100%",
     gap: 15,
   },
   warningButton: {
     flex: 1,
     paddingVertical: 15,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cancelWarningButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   cancelWarningButtonText: {
     color: COLORS.textSecondary,
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: "600",
+    fontFamily: "Poppins_600SemiBold",
   },
   confirmWarningButton: {
     backgroundColor: COLORS.accent,
   },
   confirmWarningButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: "600",
+    fontFamily: "Poppins_600SemiBold",
   },
   disabledButton: {
     backgroundColor: COLORS.border,

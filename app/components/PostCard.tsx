@@ -38,6 +38,7 @@ import { FormattedTextInput } from "./FormattedTextInput";
 import { softFilterInput, sanitizeText } from "../utils/contentFilter";
 import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 import { ReportModal } from "./ReportModal";
+import { useSharePost, type PostShareData } from "../hooks/useSharePost";
 
 const { width } = Dimensions.get("window");
 
@@ -53,6 +54,7 @@ interface PostCardProps {
   onDeleteConfession?: (post: Post) => void;
   pinned?: boolean;
   onTogglePin?: (post: Post, nextPinned: boolean) => void;
+  currentSocietyName?: string; // Add this to hide badge in society detail screen
 }
 
 const REACTIONS = [
@@ -65,13 +67,13 @@ const REACTIONS = [
 ];
 
 const SHARE_OPTIONS = [
-  { name: "Instagram", icon: "logo-instagram", color: "#E1306C" },
   { name: "Facebook", icon: "logo-facebook", color: "#4267B2" },
+  { name: "Instagram", icon: "logo-instagram", color: "#E1306C" },
   { name: "WhatsApp", icon: "logo-whatsapp", color: "#25D366" },
   { name: "Twitter", icon: "logo-twitter", color: "#1DA1F2" },
-  { name: "Messenger", icon: "chatbubble-ellipses", color: "#0084FF" },
-  { name: "Snapchat", icon: "chatbox", color: "#FFFC00" },
-  { name: "Copy Link", icon: "link", color: "#6B5CE7" },
+  { name: "Messenger", icon: "chatbubble-ellipses-outline", color: "#0084FF" },
+  { name: "Snapchat", icon: "chatbubble-outline", color: "#FFFC00" },
+  { name: "Copy Link", icon: "link-outline", color: "#6B5CE7" },
 ];
 
 const formatTime = (dateInput: Date | string): string => {
@@ -95,11 +97,13 @@ export const PostCard: React.FC<PostCardProps> = ({
   onDeleteConfession,
   pinned,
   onTogglePin,
+  currentSocietyName,
 }) => {
   const navigation = useNavigation();
   const { userId } = useUserStore();
   const { save, remove, isSaved } = useSavedSecretsStore();
   const { triggerFeedback } = useInteractionFeedback();
+  const { sharePost } = useSharePost();
   const [showReactions, setShowReactions] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -378,17 +382,41 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   const handleShareAction = async (platform: string, content: string) => {
-    try {
-      if (platform === "Copy Link") {
-        await Clipboard.setStringAsync(content);
-        showSuccessToast("Content copied to clipboard.");
-      } else {
-        // For other platforms, you could implement deep links or sharing functionality
-        console.log(`Sharing to ${platform}:`, content);
-        showSuccessToast(`Sharing to ${platform}...`);
-      }
-    } catch (error) {
-      showErrorToast("Failed to share content.");
+    const postShareData: PostShareData = {
+      title: post.title || "",
+      body: content,
+    };
+
+    switch (platform) {
+      case "Facebook":
+        await sharePost(postShareData, "facebook");
+        break;
+      case "Instagram":
+        await sharePost(postShareData, "instagram");
+        break;
+      case "WhatsApp":
+        await sharePost(postShareData, "whatsapp");
+        break;
+      case "Twitter":
+        await sharePost(postShareData, "generic"); // Use generic for Twitter
+        break;
+      case "Messenger":
+        await sharePost(postShareData, "generic"); // Use generic for Messenger
+        break;
+      case "Snapchat":
+        await sharePost(postShareData, "generic"); // Use generic for Snapchat
+        break;
+      case "Copy Link":
+        try {
+          await Clipboard.setStringAsync(content);
+          showSuccessToast("Content copied to clipboard.");
+        } catch {
+          showErrorToast("Failed to copy content.");
+        }
+        break;
+      default:
+        await sharePost(postShareData, "generic");
+        break;
     }
   };
 
@@ -461,14 +489,18 @@ export const PostCard: React.FC<PostCardProps> = ({
                   onPress={handleSocietyPress}
                   disabled={!post.societyName}
                 >
-                  <Text
-                    style={[
-                      styles.category,
-                      post.societyName && styles.clickableSocietyName,
-                    ]}
-                  >
-                    {post.societyName || post.category || "General"}
-                  </Text>
+                  {post.societyName &&
+                  post.societyName !== currentSocietyName ? (
+                    <View style={styles.societyBadge}>
+                      <Text style={styles.societyBadgeText}>
+                        {post.societyName}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.category}>
+                      {post.category || "General"}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -588,56 +620,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Share Menu Bottom Drawer */}
-      <Modal visible={showShareMenu} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setShowShareMenu(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.bottomDrawer}>
-                <View style={styles.drawerIndicator} />
-                <Text style={styles.drawerTitle}>Share Confession</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.shareScrollContent}
-                >
-                  {SHARE_OPTIONS.map((item) => (
-                    <TouchableOpacity
-                      key={item.name}
-                      style={styles.shareIconItem}
-                      onPress={async () => {
-                        setShowShareMenu(false);
-                        await handleShareAction(item.name, post.content);
-                      }}
-                    >
-                      <View
-                        style={[
-                          styles.shareCircle,
-                          { backgroundColor: item.color },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={28}
-                          color="#FFF"
-                        />
-                      </View>
-                      <Text style={styles.shareIconLabel}>{item.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <TouchableOpacity
-                  style={styles.closeDrawerButton}
-                  onPress={() => setShowShareMenu(false)}
-                >
-                  <Text style={styles.closeDrawerText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
       {/* More Menu Centered Modal */}
       <Modal visible={showMoreMenu} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
@@ -684,12 +666,15 @@ export const PostCard: React.FC<PostCardProps> = ({
                           }}
                         >
                           <Ionicons
-                            name="trash-outline"
+                            name="trash"
                             size={20}
-                            color="#FF4B4B"
+                            color={COLORS.accent}
                           />
                           <Text
-                            style={[styles.menuItemLabel, { color: "#FF4B4B" }]}
+                            style={[
+                              styles.menuItemLabel,
+                              { color: COLORS.accent },
+                            ]}
                           >
                             Delete Confession
                           </Text>
@@ -704,7 +689,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                           }}
                         >
                           <Ionicons
-                            name={pinned ? "pin" : "pin-outline"}
+                            name={pinned ? "push" : "pin"}
                             size={20}
                             color={COLORS.accent}
                           />
@@ -714,7 +699,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                               { color: COLORS.accent },
                             ]}
                           >
-                            {pinned ? "Unpin from top" : "Pin to top"}
+                            {pinned ? "Unpin Confession" : "Pin Confession"}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -755,6 +740,56 @@ export const PostCard: React.FC<PostCardProps> = ({
                 >
                   <Ionicons name="copy-outline" size={20} color="#FFF" />
                   <Text style={styles.menuItemLabel}>Copy Content</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Share Menu Bottom Drawer */}
+      <Modal visible={showShareMenu} transparent animationType="slide">
+        <TouchableWithoutFeedback onPress={() => setShowShareMenu(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.bottomDrawer}>
+                <View style={styles.drawerIndicator} />
+                <Text style={styles.drawerTitle}>Share Confession</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.shareScrollContent}
+                >
+                  {SHARE_OPTIONS.map((item) => (
+                    <TouchableOpacity
+                      key={item.name}
+                      style={styles.shareIconItem}
+                      onPress={async () => {
+                        setShowShareMenu(false);
+                        await handleShareAction(item.name, post.content);
+                      }}
+                    >
+                      <View
+                        style={[
+                          styles.shareCircle,
+                          { backgroundColor: item.color },
+                        ]}
+                      >
+                        <Ionicons
+                          name={item.icon as any}
+                          size={28}
+                          color="#FFF"
+                        />
+                      </View>
+                      <Text style={styles.shareIconLabel}>{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity
+                  style={styles.closeDrawerButton}
+                  onPress={() => setShowShareMenu(false)}
+                >
+                  <Text style={styles.closeDrawerText}>Close</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
@@ -808,14 +843,18 @@ export const PostCard: React.FC<PostCardProps> = ({
                           onPress={handleSocietyPress}
                           disabled={!post.societyName}
                         >
-                          <Text
-                            style={[
-                              styles.categoryDetail,
-                              post.societyName && styles.clickableSocietyName,
-                            ]}
-                          >
-                            {post.societyName || post.category || "General"}
-                          </Text>
+                          {post.societyName &&
+                          post.societyName !== currentSocietyName ? (
+                            <View style={styles.societyBadge}>
+                              <Text style={styles.societyBadgeText}>
+                                {post.societyName}
+                              </Text>
+                            </View>
+                          ) : (
+                            <Text style={styles.categoryDetail}>
+                              {post.category || "General"}
+                            </Text>
+                          )}
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1273,72 +1312,61 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   bottomDrawer: {
     backgroundColor: "#1E222B",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    paddingBottom: 40,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
   },
   drawerIndicator: {
     width: 40,
-    height: 5,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 2.5,
+    height: 4,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
     alignSelf: "center",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   drawerTitle: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Poppins_600SemiBold",
-    marginBottom: 24,
+    fontWeight: "600",
     textAlign: "center",
   },
   shareScrollContent: {
-    paddingRight: 20,
-    paddingBottom: 10,
+    gap: 16,
   },
   shareIconItem: {
     alignItems: "center",
-    marginRight: 20,
-    width: 75,
+    minWidth: 80,
   },
   shareCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    marginBottom: 8,
   },
   shareIconLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontFamily: "Poppins_400Regular",
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+    fontWeight: "600",
+    marginTop: 4,
     textAlign: "center",
   },
   closeDrawerButton: {
-    marginTop: 24,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
+    marginTop: 20,
+    alignSelf: "center",
   },
   closeDrawerText: {
-    color: "#FFFFFF",
+    color: COLORS.textSecondary,
     fontSize: 16,
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: "Poppins_400Regular",
   },
   centeredMenu: {
     backgroundColor: "#1E222B",
@@ -1437,17 +1465,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   youBadge: {
-    backgroundColor: "#6BCF7F",
+    backgroundColor: "rgba(74, 222, 128, 0.2)",
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.success,
   },
   youBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontFamily: "Poppins_600SemiBold",
-    fontWeight: "600",
+    color: COLORS.success,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   anonymous: {
     color: "#FFFFFF",
@@ -1476,6 +1505,20 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
     fontSize: 13,
     fontFamily: "Poppins_600SemiBold",
+  },
+  societyBadge: {
+    backgroundColor: "rgba(74, 222, 128, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+  },
+  societyBadgeText: {
+    color: COLORS.success,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   clickableSocietyName: {
     textDecorationLine: "underline",
@@ -1803,24 +1846,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 59, 48, 0.2)",
     color: "#FF3B30",
     fontWeight: "600",
-  },
-  userNameRowDuplicate: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  youBadgeDuplicate: {
-    backgroundColor: "rgba(74, 222, 128, 0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.success,
-  },
-  youBadgeTextDuplicate: {
-    color: COLORS.success,
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
   },
 });

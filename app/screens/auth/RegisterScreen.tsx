@@ -1,44 +1,67 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useUserStore } from '../../store/user.store';
-import { showSuccessToast } from '../../utils/toast';
-import { showAlert } from '../../utils/customAlert';
-import { register } from '../../api/auth';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useUserStore } from "../../store/user.store";
+import { showSuccessToast } from "../../utils/toast";
+import { showAlert } from "../../utils/customAlert";
+import { register } from "../../api/auth";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
-export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const RegisterScreen: React.FC<{ navigation: any }> = ({
+  navigation,
+}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const setAuth = useUserStore((s) => s.setAuth);
 
   const handleRegister = async () => {
     if (!agreed) {
-      showAlert('Agreement Required', 'You must agree to the Privacy Policy and App Safety to sign up.');
+      showAlert(
+        "Agreement Required",
+        "You must agree to the Privacy Policy and App Safety to sign up.",
+      );
       return;
     }
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      showAlert('Missing Information', 'Please enter email and password.');
+      showAlert("Missing Information", "Please enter email and password.");
       return;
     }
     if (password.length < 6) {
-      showAlert('Password Too Short', 'Password must be at least 6 characters long.');
+      showAlert(
+        "Password Too Short",
+        "Password must be at least 6 characters long.",
+      );
       return;
     }
     setLoading(true);
     try {
-      const data = await register(trimmedEmail, password, fullName.trim(), agreed);
+      const data = await register(
+        trimmedEmail,
+        password,
+        fullName.trim(),
+        agreed,
+      );
       setAuth(data.token || null, data.user);
-      showSuccessToast('Account created successfully!');
+      showSuccessToast("Account created successfully!");
     } catch (e: any) {
-      const errorMessage = e?.message || 'Registration failed.';
-      showAlert('Registration Failed', errorMessage);
+      const errorMessage = e?.message || "Registration failed.";
+      showAlert("Registration Failed", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -46,17 +69,28 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
         <View style={styles.backButtonCircle}>
           <Ionicons name="chevron-back" size={20} color="#6B7280" />
         </View>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Create your{"\n"}Account</Text>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+          <Ionicons
+            name="person-outline"
+            size={20}
+            color="#6B7280"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Full Name"
@@ -67,7 +101,12 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+          <Ionicons
+            name="mail-outline"
+            size={20}
+            color="#6B7280"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter Your Email"
@@ -80,7 +119,12 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+          <Ionicons
+            name="lock-closed-outline"
+            size={20}
+            color="#6B7280"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -90,34 +134,62 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
+            <Ionicons
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#6B7280"
+            />
           </TouchableOpacity>
         </View>
 
         <View style={styles.agreementContainer}>
-          <TouchableOpacity style={styles.checkbox} onPress={() => setAgreed(!agreed)}>
-            <Ionicons name={agreed ? 'checkbox' : 'square-outline'} size={24} color={agreed ? '#6B5CE7' : '#6B7280'} />
+          <TouchableOpacity
+            style={styles.checkbox}
+            onPress={() => setAgreed(!agreed)}
+          >
+            <Ionicons
+              name={agreed ? "checkbox" : "square-outline"}
+              size={24}
+              color={agreed ? "#6B5CE7" : "#6B7280"}
+            />
           </TouchableOpacity>
           <Text style={styles.agreementText}>
-            I agree to the{' '}
-            <Text style={styles.linkText} onPress={() => navigation.navigate('PrivacyPolicy')}>Privacy Policy</Text>
-            {' '}and{' '}
-            <Text style={styles.linkText} onPress={() => navigation.navigate('AppSafety')}>App Safety</Text>
-            {' '}of ConfessBox
+            I agree to the{" "}
+            <Text
+              style={styles.linkText}
+              onPress={() => navigation.navigate("PrivacyPolicy")}
+            >
+              Privacy Policy
+            </Text>{" "}
+            and{" "}
+            <Text
+              style={styles.linkText}
+              onPress={() => navigation.navigate("AppSafety")}
+            >
+              App Safety
+            </Text>{" "}
+            of ConfessBox
           </Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.registerButton, (!agreed || loading) && styles.disabledButton]}
+          style={[
+            styles.registerButton,
+            (!agreed || loading) && styles.disabledButton,
+          ]}
           onPress={handleRegister}
           disabled={!agreed || loading}
         >
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.registerButtonText}>Register</Text>}
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.registerButtonText}>Register</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already Have An Account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
             <Text style={styles.signinText}>Sign In</Text>
           </TouchableOpacity>
         </View>
@@ -128,11 +200,19 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
         <Text style={styles.socialTitle}>Continue With Accounts</Text>
         <View style={styles.socialRow}>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
-            <Text style={[styles.socialText, { color: '#E57373' }]}>GOOGLE</Text>
+          <TouchableOpacity
+            style={[styles.socialButton, { backgroundColor: "#3A1D1D" }]}
+          >
+            <Text style={[styles.socialText, { color: "#E57373" }]}>
+              GOOGLE
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
-            <Text style={[styles.socialText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
+          <TouchableOpacity
+            style={[styles.socialButton, { backgroundColor: "#1D2A3A" }]}
+          >
+            <Text style={[styles.socialText, { color: "#64B5F6" }]}>
+              PHONE NUMBER
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -141,41 +221,105 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: "#0F1115" },
   backButton: { padding: 24, paddingTop: 40 },
   backButtonCircle: {
-    width: 44, height: 44, borderRadius: 12, backgroundColor: '#1A1D23',
-    justifyContent: 'center', alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#1A1D23",
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollContent: { paddingHorizontal: 30, paddingBottom: 40 },
   title: {
-    color: '#FFFFFF', fontSize: 40, fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 24, lineHeight: 50,
+    color: "#FFFFFF",
+    fontSize: 40,
+    fontFamily: "Poppins_600SemiBold",
+    marginBottom: 24,
+    lineHeight: 50,
   },
-    inputContainer: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D23',
-    borderRadius: 16, paddingHorizontal: 16, height: 60, marginBottom: 16,
-    borderWidth: 1, borderColor: '#2A2E37',
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1D23",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 60,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#2A2E37",
   },
   inputIcon: { marginRight: 12 },
-  input: { flex: 1, color: '#FFFFFF', fontSize: 16, fontFamily: 'Poppins_400Regular' },
-  agreementContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10, paddingHorizontal: 4 },
+  input: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Poppins_400Regular",
+  },
+  agreementContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+    paddingHorizontal: 4,
+  },
   checkbox: { marginRight: 10 },
-  agreementText: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular', flex: 1 },
-  linkText: { color: '#FFFFFF', textDecorationLine: 'underline' },
+  agreementText: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    flex: 1,
+  },
+  linkText: { color: "#FFFFFF", textDecorationLine: "underline" },
   registerButton: {
-    backgroundColor: '#1A1D23', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center',
-    marginTop: 24, marginBottom: 30, borderWidth: 1, borderColor: '#2A2E37',
+    backgroundColor: "#1A1D23",
+    height: 60,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: "#2A2E37",
   },
   disabledButton: { opacity: 0.5 },
-  registerButtonText: { color: '#FFFFFF', fontSize: 18, fontFamily: 'Poppins_600SemiBold' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 40 },
-  footerText: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular' },
-  signinText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  dividerContainer: { width: '100%', height: 1, backgroundColor: '#2A2E37', marginBottom: 40 },
+  registerButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  footer: { flexDirection: "row", justifyContent: "center", marginBottom: 40 },
+  footerText: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+  },
+  signinText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  dividerContainer: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "#2A2E37",
+    marginBottom: 40,
+  },
   divider: { flex: 1 },
-  socialTitle: { color: '#6B7280', fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 30 },
-  socialRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  socialButton: { width: (width - 76) / 2, height: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  socialText: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },
+  socialTitle: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  socialRow: { flexDirection: "row", justifyContent: "space-between" },
+  socialButton: {
+    width: (width - 76) / 2,
+    height: 60,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  socialText: { fontFamily: "Poppins_600SemiBold", fontSize: 14 },
 });
