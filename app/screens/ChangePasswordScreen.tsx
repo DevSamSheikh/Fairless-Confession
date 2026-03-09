@@ -92,7 +92,25 @@ export const ChangePasswordScreen: React.FC = () => {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to change password");
+        // Handle specific error messages
+        let errorMessage = "Failed to change password";
+
+        if (data?.error) {
+          if (data.error.toLowerCase().includes("current password")) {
+            errorMessage = "Current password is incorrect";
+          } else if (data.error.toLowerCase().includes("new password")) {
+            errorMessage = "New password is not valid";
+          } else if (data.error.toLowerCase().includes("same")) {
+            errorMessage =
+              "New password must be different from current password";
+          } else if (data.error.toLowerCase().includes("weak")) {
+            errorMessage = "Password is too weak";
+          } else {
+            errorMessage = data.error;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       Toast.show({
@@ -107,6 +125,8 @@ export const ChangePasswordScreen: React.FC = () => {
       }, 1500);
     } catch (error: any) {
       console.error("Password change error:", error);
+
+      // Show specific error messages in toast
       Toast.show({
         type: "error",
         text1: "Password Change Failed",

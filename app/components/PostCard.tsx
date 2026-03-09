@@ -126,10 +126,10 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   // Handle society navigation
   const handleSocietyPress = () => {
-    if (post.societyName && post.societyId) {
+    if (post.societyName) {
       // Create a minimal society object for navigation
       const society = {
-        id: post.societyId,
+        id: post.societyName, // Use societyName as id since societyId doesn't exist
         name: post.societyName,
         icon_name: "people",
         member_count: 0,
@@ -377,6 +377,21 @@ export const PostCard: React.FC<PostCardProps> = ({
     setShowReactions(true);
   };
 
+  const handleShareAction = async (platform: string, content: string) => {
+    try {
+      if (platform === "Copy Link") {
+        await Clipboard.setStringAsync(content);
+        showSuccessToast("Content copied to clipboard.");
+      } else {
+        // For other platforms, you could implement deep links or sharing functionality
+        console.log(`Sharing to ${platform}:`, content);
+        showSuccessToast(`Sharing to ${platform}...`);
+      }
+    } catch (error) {
+      showErrorToast("Failed to share content.");
+    }
+  };
+
   const selectedReactionEmoji = REACTIONS.find(
     (r) => r.type === selectedReactionType,
   )?.emoji;
@@ -590,9 +605,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <TouchableOpacity
                       key={item.name}
                       style={styles.shareIconItem}
-                      onPress={() => {
+                      onPress={async () => {
                         setShowShareMenu(false);
-                        alert(`${item.name} functionality integrated!`);
+                        await handleShareAction(item.name, post.content);
                       }}
                     >
                       <View
@@ -1789,12 +1804,12 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
     fontWeight: "600",
   },
-  userNameRow: {
+  userNameRowDuplicate: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  youBadge: {
+  youBadgeDuplicate: {
     backgroundColor: "rgba(74, 222, 128, 0.2)",
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -1802,7 +1817,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.success,
   },
-  youBadgeText: {
+  youBadgeTextDuplicate: {
     color: COLORS.success,
     fontSize: 10,
     fontWeight: "700",
