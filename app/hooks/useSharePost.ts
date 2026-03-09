@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Share, Platform } from "react-native";
+import { Share, Platform, Linking } from "react-native";
 import { showAlert } from "../utils/customAlert";
 
 export interface PostShareData {
@@ -15,11 +15,26 @@ export const useSharePost = () => {
 
   const shareToFacebook = async (data: PostShareData) => {
     try {
-      await Share.share({
-        message: `${data.title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
-        url: undefined, // Facebook doesn't support URL with message
-        title: data.title,
-      });
+      // Don't pass title if it's empty or "EMPTY"
+      const title =
+        data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
+          ? data.title
+          : "Confession";
+      const content = data.body;
+      const message = `${title}\n\n${content}\n\n🔗 Check out our app: ${APP_LINK}`;
+
+      // Try Facebook app URL scheme first
+      const facebookAppUrl = `fb://sharer?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}`;
+      console.log("Facebook app URL:", facebookAppUrl);
+
+      try {
+        await Linking.openURL(facebookAppUrl);
+      } catch (appError) {
+        // If Facebook app is not installed, fall back to web URL
+        console.log("Facebook app not installed, using web URL");
+        const facebookWebUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}`;
+        await Linking.openURL(facebookWebUrl);
+      }
     } catch (error) {
       console.error("Facebook share error:", error);
       showAlert("Share Error", "Failed to share to Facebook");
@@ -28,10 +43,14 @@ export const useSharePost = () => {
 
   const shareToInstagram = async (data: PostShareData) => {
     try {
+      // Don't pass title if it's empty or "EMPTY"
+      const title =
+        data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
+          ? data.title
+          : "Confession";
       await Share.share({
-        message: `${data.title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
-        url: undefined, // Instagram doesn't support URL
-        title: data.title,
+        message: `${title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
+        title: title,
       });
     } catch (error) {
       console.error("Instagram share error:", error);
@@ -41,11 +60,14 @@ export const useSharePost = () => {
 
   const shareToWhatsApp = async (data: PostShareData) => {
     try {
-      await Share.share({
-        message: `${data.title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
-        url: `whatsapp://send?text=${encodeURIComponent(`${data.title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`)}`, // WhatsApp deep link
-        title: data.title,
-      });
+      // Don't pass title if it's empty or "EMPTY"
+      const title =
+        data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
+          ? data.title
+          : "Confession";
+      const message = `${title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      await Linking.openURL(whatsappUrl);
     } catch (error) {
       console.error("WhatsApp share error:", error);
       showAlert("Share Error", "Failed to share to WhatsApp");

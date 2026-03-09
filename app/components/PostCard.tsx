@@ -408,10 +408,11 @@ export const PostCard: React.FC<PostCardProps> = ({
         break;
       case "Copy Link":
         try {
-          await Clipboard.setStringAsync(content);
-          showSuccessToast("Content copied to clipboard.");
+          const postLink = `https://yourapp.com/post/${post.id}`;
+          await Clipboard.setStringAsync(postLink);
+          showSuccessToast("Post link copied to clipboard.");
         } catch {
-          showErrorToast("Failed to copy content.");
+          showErrorToast("Failed to copy post link.");
         }
         break;
       default:
@@ -1313,6 +1314,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   bottomDrawer: {
     backgroundColor: "#1E222B",
@@ -1335,6 +1337,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
     fontWeight: "600",
     textAlign: "center",
+    marginBottom: 24,
   },
   shareScrollContent: {
     gap: 16,
@@ -1360,8 +1363,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   closeDrawerButton: {
-    marginTop: 20,
+    marginTop: 30,
     alignSelf: "center",
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    width: "100%",
+    alignItems: "center",
   },
   closeDrawerText: {
     color: COLORS.textSecondary,
