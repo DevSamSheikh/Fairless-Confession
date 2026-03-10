@@ -1,23 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, TouchableOpacity, ActivityIndicator, Modal, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { showAlert } from '../utils/customAlert';
-import { CATEGORIES, Category, COLORS, RATE_LIMITS } from '../utils/constants';
-import { useUserStore } from '../store/user.store';
-import { createPost, ContentBlockedError } from '../api/posts';
-import { getJoinedSocieties, type Society } from '../api/societies';
-import { scanPostContent, softFilterInput } from '../utils/contentFilter';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
-import { useInteractionFeedback } from '../hooks/useInteractionFeedback';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Modal,
+  RefreshControl,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { showAlert } from "../utils/customAlert";
+import { CATEGORIES, Category, COLORS, RATE_LIMITS } from "../utils/constants";
+import { useUserStore } from "../store/user.store";
+import { createPost, ContentBlockedError } from "../api/posts";
+import { getJoinedSocieties, type Society } from "../api/societies";
+import { scanPostContent, softFilterInput } from "../utils/contentFilter";
+import { showSuccessToast, showErrorToast } from "../utils/toast";
+import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
+import { getUserRateLimit } from "../api/rateLimit";
 
 export const PostScreen: React.FC = () => {
-  const [content, setContent] = useState('');
-  const [title, setTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
   const [selectedSociety, setSelectedSociety] = useState<Society | null>(null);
   const [joinedSocieties, setJoinedSocieties] = useState<Society[]>([]);
   const [showSocietyModal, setShowSocietyModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingRateLimit, setLoadingRateLimit] = useState(false);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [moderation, setModeration] = useState<{
     message: string;
     sanitizedTitle: string;
@@ -26,46 +42,78 @@ export const PostScreen: React.FC = () => {
   const userStore = useUserStore();
   const { triggerFeedback } = useInteractionFeedback();
 
-  // Load joined societies on component mount
+  // Load joined societies and rate limit on component mount
   useEffect(() => {
     loadJoinedSocieties();
+    loadRateLimit();
   }, []);
+
+  // Refresh rate limit when user becomes authenticated
+  useEffect(() => {
+    if (userStore.isAuthenticated && userStore.isHydrated) {
+      loadRateLimit();
+    }
+  }, [userStore.isAuthenticated, userStore.isHydrated]);
 
   const loadJoinedSocieties = async () => {
     try {
       const societies = await getJoinedSocieties();
       setJoinedSocieties(societies);
     } catch (error) {
-      console.error('Failed to load joined societies:', error);
+      console.error("Failed to load joined societies:", error);
     }
   };
 
-  const postsToday = userStore?.postsToday ?? 0;
-  const incrementPosts = userStore?.incrementPosts ?? (() => {});
+  const loadRateLimit = async () => {
+    if (!userStore.isAuthenticated || !userStore.isHydrated) {
+      return;
+    }
 
-  const limits = RATE_LIMITS || { POSTS_PER_DAY: 10 };
-  const canPost = postsToday < limits.POSTS_PER_DAY;
-  const remainingPosts = limits.POSTS_PER_DAY - postsToday;
+    setLoadingRateLimit(true);
+    setRateLimitError(null);
+
+    try {
+      await userStore.fetchRateLimit();
+    } catch (error: any) {
+      console.error("Failed to load rate limit:", error);
+      // Only show error if it's not a 404 (endpoint not implemented)
+      if (!error.message || !error.message.includes("404")) {
+        setRateLimitError(error.message || "Failed to check posting limit");
+      }
+    } finally {
+      setLoadingRateLimit(false);
+    }
+  };
+
+  // Use backend rate limit data, fallback to frontend for safety
+  const canPost = userStore.canPost();
+  const remainingPosts = userStore.getRemainingPosts();
+  const postsToday =
+    userStore.rateLimit?.postsToday ?? userStore.postsToday ?? 0;
+  const postsLimit = userStore.rateLimit?.postsLimit ?? 10;
 
   const renderHighlighted = (original: string, sanitized: string) => {
     if (!original) return original;
     const nodes: React.ReactNode[] = [];
-    let buf = '';
+    let buf = "";
     let inBad = false;
     const len = Math.min(original.length, sanitized.length);
 
     for (let i = 0; i < len; i++) {
       const o = original[i];
       const s = sanitized[i];
-      const isBad = s === '*' && o !== '*';
+      const isBad = s === "*" && o !== "*";
       if (isBad !== inBad) {
         if (buf) {
           nodes.push(
-            <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+            <Text
+              key={nodes.length}
+              style={inBad ? styles.highlightedBadText : undefined}
+            >
               {buf}
-            </Text>
+            </Text>,
           );
-          buf = '';
+          buf = "";
         }
         inBad = isBad;
       }
@@ -78,9 +126,12 @@ export const PostScreen: React.FC = () => {
 
     if (buf) {
       nodes.push(
-        <Text key={nodes.length} style={inBad ? styles.highlightedBadText : undefined}>
+        <Text
+          key={nodes.length}
+          style={inBad ? styles.highlightedBadText : undefined}
+        >
           {buf}
-        </Text>
+        </Text>,
       );
     }
 
@@ -89,26 +140,34 @@ export const PostScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      showAlert('Error', 'Please write your confession');
+      showAlert("Error", "Please write your confession");
       return;
     }
     if (!selectedCategory) {
-      showAlert('Error', 'Please select a category');
+      showAlert("Error", "Please select a category");
       return;
     }
+
+    // Double-check rate limit with backend before proceeding
     if (!canPost) {
-      showAlert('Limit Reached', 'You have reached your daily posting limit');
+      showAlert(
+        "Limit Reached",
+        `You have reached your daily posting limit of ${postsLimit} posts. Try again tomorrow.`,
+      );
       return;
     }
 
     // Check authentication before proceeding
     const currentState = useUserStore.getState();
     if (!currentState.isHydrated) {
-      showAlert('Loading', 'Please wait while we verify your session...');
+      showAlert("Loading", "Please wait while we verify your session...");
       return;
     }
     if (!currentState.token || !currentState.isAuthenticated) {
-      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+      showAlert(
+        "Authentication Required",
+        "You must be signed in to post. Please log in and try again.",
+      );
       return;
     }
 
@@ -116,7 +175,7 @@ export const PostScreen: React.FC = () => {
     const scan = scanPostContent(title, content);
     if (scan.hasIssues) {
       setModeration({
-        message: 'Your post contains restricted words. What do you want to do?',
+        message: "Your post contains restricted words. What do you want to do?",
         sanitizedTitle: scan.sanitizedTitle,
         sanitizedContent: scan.sanitizedContent,
       });
@@ -126,21 +185,26 @@ export const PostScreen: React.FC = () => {
     setSubmitting(true);
     try {
       await createPost({
-        title: title.trim() || undefined,
+        title: title.trim() || null, // Send null for empty titles, not empty string
         content: content.trim(),
         category: selectedCategory,
         societyId: selectedSociety?.id || null,
       });
-      triggerFeedback('post');
-      showSuccessToast('Confession posted successfully!');
-      setTitle('');
-      setContent('');
+      triggerFeedback("post");
+      showSuccessToast("Confession posted successfully!");
+      setTitle("");
+      setContent("");
       setSelectedCategory(null);
       setSelectedSociety(null);
-      incrementPosts();
-      showSuccessToast(selectedSociety 
-        ? `Your confession has been posted to ${selectedSociety.name}!` 
-        : 'Your confession has been posted anonymously!'
+
+      // Increment posts and refresh rate limit from backend
+      userStore.incrementPosts();
+      await loadRateLimit(); // Refresh to get updated count
+
+      showSuccessToast(
+        selectedSociety
+          ? `Your confession has been posted to ${selectedSociety.name}!`
+          : "Your confession has been posted anonymously!",
       );
     } catch (e: any) {
       if (e instanceof ContentBlockedError) {
@@ -149,14 +213,27 @@ export const PostScreen: React.FC = () => {
         setModeration({
           message:
             e.message ||
-            'Your post contains words or sensitive details that are not allowed. You can edit the red parts or post a filtered version.',
+            "Your post contains words or sensitive details that are not allowed. You can edit the red parts or post a filtered version.",
           sanitizedTitle: e.sanitizedTitle,
           sanitizedContent: e.sanitizedContent,
         });
         return;
       }
-      const msg = e?.message ?? 'Failed to post';
-      showAlert('Error', msg.includes('reach server') ? 'Cannot reach server. Check your connection and backend URL.' : msg);
+
+      // Handle rate limit errors from backend
+      if (e.message && e.message.includes("rate limit")) {
+        await loadRateLimit(); // Refresh to show updated limit
+        showAlert("Limit Reached", e.message);
+        return;
+      }
+
+      const msg = e?.message ?? "Failed to post";
+      showAlert(
+        "Error",
+        msg.includes("reach server")
+          ? "Cannot reach server. Check your connection and backend URL."
+          : msg,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -168,8 +245,8 @@ export const PostScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView 
-      style={styles.container} 
+    <ScrollView
+      style={styles.container}
       stickyHeaderIndices={[0]}
       refreshControl={
         <RefreshControl
@@ -214,57 +291,91 @@ export const PostScreen: React.FC = () => {
             key={category}
             style={[
               styles.categoryChip,
-              selectedCategory === category && styles.selectedChip
+              selectedCategory === category && styles.selectedChip,
             ]}
             onPress={() => setSelectedCategory(category)}
           >
-            <Text style={[
-              styles.categoryText,
-              selectedCategory === category && styles.selectedCategoryText
-            ]}>{category}</Text>
+            <Text
+              style={[
+                styles.categoryText,
+                selectedCategory === category && styles.selectedCategoryText,
+              ]}
+            >
+              {category}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Society Selection */}
       <Text style={styles.sectionTitle}>Post to Society (Optional)</Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.societySelector}
         onPress={() => setShowSocietyModal(true)}
       >
         <View style={styles.societySelectorContent}>
-          <Ionicons 
-            name={selectedSociety ? 'people' : 'people-outline'} 
-            size={20} 
-            color={selectedSociety ? COLORS.accent : COLORS.textSecondary} 
+          <Ionicons
+            name={selectedSociety ? "people" : "people-outline"}
+            size={20}
+            color={selectedSociety ? COLORS.accent : COLORS.textSecondary}
           />
-          <Text style={[
-            styles.societySelectorText,
-            selectedSociety && styles.societySelectorTextSelected
-          ]}>
-            {selectedSociety ? selectedSociety.name : 'Choose a society (optional)'}
+          <Text
+            style={[
+              styles.societySelectorText,
+              selectedSociety && styles.societySelectorTextSelected,
+            ]}
+          >
+            {selectedSociety
+              ? selectedSociety.name
+              : "Choose a society (optional)"}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={COLORS.textSecondary}
+        />
       </TouchableOpacity>
 
-      <Text style={styles.limitText}>
-        {remainingPosts} posts remaining today
-      </Text>
+      {/* Rate Limit Display */}
+      <View style={styles.rateLimitContainer}>
+        <Text style={styles.rateLimitText}>
+          {loadingRateLimit
+            ? "Checking posting limit..."
+            : rateLimitError
+              ? "Unable to check limit"
+              : `${remainingPosts} posts remaining for today`}
+        </Text>
 
-      <Pressable
-        style={[styles.submitButton, (!canPost || submitting) && styles.disabledButton]}
-        onPress={handleSubmit}
-        disabled={!canPost || submitting}
-      >
-        {submitting ? (
-          <ActivityIndicator color={COLORS.text} />
-        ) : (
-          <Text style={styles.submitText}>
-            {selectedSociety ? `Post to ${selectedSociety.name}` : 'Post Anonymously'}
+        {userStore.rateLimit && (
+          <Text style={styles.rateLimitSubtext}>
+            {postsToday}/{postsLimit} posts used today
           </Text>
         )}
-      </Pressable>
+
+        {rateLimitError && (
+          <Text style={styles.rateLimitErrorText}>{rateLimitError}</Text>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            (!canPost || submitting) && styles.disabledButton,
+          ]}
+          onPress={handleSubmit}
+          disabled={!canPost || submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color={COLORS.text} />
+          ) : (
+            <Text style={styles.submitText}>
+              {selectedSociety
+                ? `Post to ${selectedSociety.name}`
+                : "Post Anonymously"}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Society Selection Modal */}
       <Modal
@@ -281,8 +392,8 @@ export const PostScreen: React.FC = () => {
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.societyOption}
               onPress={() => {
                 setSelectedSociety(null);
@@ -294,27 +405,35 @@ export const PostScreen: React.FC = () => {
             </TouchableOpacity>
 
             {joinedSocieties.map((society) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={society.id}
                 style={[
                   styles.societyOption,
-                  selectedSociety?.id === society.id && styles.selectedSocietyOption
+                  selectedSociety?.id === society.id &&
+                    styles.selectedSocietyOption,
                 ]}
                 onPress={() => {
                   setSelectedSociety(society);
                   setShowSocietyModal(false);
                 }}
               >
-                <Ionicons 
-                  name={society.icon_name || 'people' as any} 
-                  size={20} 
-                  color={selectedSociety?.id === society.id ? COLORS.accent : COLORS.textSecondary} 
+                <Ionicons
+                  name={society.icon_name || ("people" as any)}
+                  size={20}
+                  color={
+                    selectedSociety?.id === society.id
+                      ? COLORS.accent
+                      : COLORS.textSecondary
+                  }
                 />
                 <View style={styles.societyOptionInfo}>
-                  <Text style={[
-                    styles.societyOptionText,
-                    selectedSociety?.id === society.id && styles.selectedSocietyOptionText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.societyOptionText,
+                      selectedSociety?.id === society.id &&
+                        styles.selectedSocietyOptionText,
+                    ]}
+                  >
                     {society.name}
                   </Text>
                   <Text style={styles.societyOptionMembers}>
@@ -343,7 +462,8 @@ export const PostScreen: React.FC = () => {
               <Text style={styles.moderationMessage}>{moderation.message}</Text>
 
               <Text style={styles.moderationPreviewLabel}>
-                Problematic parts are highlighted in <Text style={styles.highlightedBadText}>red</Text>:
+                Problematic parts are highlighted in{" "}
+                <Text style={styles.highlightedBadText}>red</Text>:
               </Text>
 
               <ScrollView style={styles.moderationPreview}>
@@ -364,47 +484,65 @@ export const PostScreen: React.FC = () => {
 
               <View style={styles.moderationButtonRow}>
                 <Pressable
-                  style={[styles.moderationButton, styles.moderationSecondaryButton]}
+                  style={[
+                    styles.moderationButton,
+                    styles.moderationSecondaryButton,
+                  ]}
                   onPress={() => setModeration(null)}
                 >
-                  <Text style={styles.moderationButtonTextSecondary}>Edit Content</Text>
+                  <Text style={styles.moderationButtonTextSecondary}>
+                    Edit Content
+                  </Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.moderationButton, styles.moderationPrimaryButton]}
+                  style={[
+                    styles.moderationButton,
+                    styles.moderationPrimaryButton,
+                  ]}
                   onPress={async () => {
                     if (!selectedCategory) {
                       setModeration(null);
-                      showAlert('Error', 'Please select a category');
+                      showAlert("Error", "Please select a category");
                       return;
                     }
-                    
+
                     // Check authentication before proceeding
                     const currentState = useUserStore.getState();
                     if (!currentState.isHydrated) {
-                      showAlert('Loading', 'Please wait while we verify your session...');
+                      showAlert(
+                        "Loading",
+                        "Please wait while we verify your session...",
+                      );
                       return;
                     }
                     if (!currentState.token || !currentState.isAuthenticated) {
                       setModeration(null);
-                      showAlert('Authentication Required', 'You must be signed in to post. Please log in and try again.');
+                      showAlert(
+                        "Authentication Required",
+                        "You must be signed in to post. Please log in and try again.",
+                      );
                       return;
                     }
-                    
+
                     setSubmitting(true);
                     try {
                       await createPost({
-                        title: moderation.sanitizedTitle || undefined,
+                        title: moderation.sanitizedTitle || null, // Send null for empty titles
                         content: moderation.sanitizedContent,
                         category: selectedCategory,
                       });
-                      showSuccessToast('Confession posted successfully!');
-                      setTitle('');
-                      setContent('');
+                      showSuccessToast("Confession posted successfully!");
+                      setTitle("");
+                      setContent("");
                       setSelectedCategory(null);
                       setModeration(null);
-                      showSuccessToast('Your confession has been posted anonymously!');
+                      showSuccessToast(
+                        "Your confession has been posted anonymously!",
+                      );
                     } catch (postErr: any) {
-                      showErrorToast(postErr?.message || 'Failed to post confession');
+                      showErrorToast(
+                        postErr?.message || "Failed to post confession",
+                      );
                     } finally {
                       setSubmitting(false);
                     }
@@ -435,7 +573,7 @@ const styles = StyleSheet.create({
   header: {
     color: COLORS.text,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   subtitle: {
     color: COLORS.textSecondary,
@@ -453,7 +591,7 @@ const styles = StyleSheet.create({
   titleInput: {
     color: COLORS.text,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
     padding: 0,
   },
@@ -461,32 +599,53 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 16,
     minHeight: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     padding: 0,
   },
   charCount: {
     color: COLORS.textSecondary,
     fontSize: 12,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: 8,
   },
   sectionTitle: {
     color: COLORS.text,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 24,
     marginBottom: 12,
   },
   categories: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   limitText: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 24,
+  },
+  rateLimitContainer: {
+    marginTop: 14,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  rateLimitText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    flex: 1,
+  },
+  rateLimitSubtext: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  rateLimitErrorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    marginTop: 4,
   },
   categoryChip: {
     paddingHorizontal: 16,
@@ -506,17 +665,18 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   submitButton: {
     backgroundColor: COLORS.accent,
     borderRadius: 30, // More rounded for theme consistency
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
     marginBottom: 100,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
+    width: "100%",
   },
   disabledButton: {
     opacity: 0.5,
@@ -524,17 +684,17 @@ const styles = StyleSheet.create({
   submitText: {
     color: COLORS.text,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   moderationOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   moderationCard: {
-    width: '90%',
-    maxHeight: '80%',
+    width: "90%",
+    maxHeight: "80%",
     backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
     padding: 20,
@@ -544,7 +704,7 @@ const styles = StyleSheet.create({
   moderationTitle: {
     color: COLORS.text,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   moderationMessage: {
@@ -572,12 +732,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   highlightedBadText: {
-    color: '#ff4b4b',
-    fontWeight: '600',
+    color: "#ff4b4b",
+    fontWeight: "600",
   },
   moderationButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 12,
     marginTop: 8,
   },
@@ -587,7 +747,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   moderationSecondaryButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -597,28 +757,28 @@ const styles = StyleSheet.create({
   moderationButtonText: {
     color: COLORS.text,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   moderationButtonTextSecondary: {
     color: COLORS.textSecondary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Society Selection Styles
   societySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1E222B',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1E222B",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
     marginBottom: 16,
   },
   societySelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   societySelectorText: {
@@ -633,42 +793,42 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: COLORS.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: '70%',
+    maxHeight: "70%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: "rgba(255,255,255,0.1)",
   },
   modalTitle: {
     color: COLORS.text,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   societyOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: '#1E222B',
+    backgroundColor: "#1E222B",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   selectedSocietyOption: {
-    backgroundColor: 'rgba(107, 92, 231, 0.1)',
+    backgroundColor: "rgba(107, 92, 231, 0.1)",
     borderColor: COLORS.accent,
   },
   societyOptionInfo: {
@@ -678,7 +838,7 @@ const styles = StyleSheet.create({
   societyOptionText: {
     color: COLORS.text,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedSocietyOptionText: {
     color: COLORS.accent,

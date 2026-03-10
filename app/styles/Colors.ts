@@ -63,7 +63,7 @@ export const COLORS = {
   },
 
   // Input Colors
-  inputBackground: "#1A1D23", // Input field background
+  inputBackground: "rgb(26, 29, 35)", // Input field background
   inputBorder: "rgba(255, 255, 255, 0.1)", // Default input border
   inputBorderError: "#F87171", // Error input border
   inputBorderFocus: "#6B5CE7", // Focused input border
@@ -133,7 +133,7 @@ export const COLORS = {
 
   // Modal Colors
   modal: {
-    background: "#1A1D23",
+    background: "#1a1d23",
     overlay: "rgba(15, 17, 21, 0.8)",
     border: "#2A2E37",
     title: "#FFFFFF",

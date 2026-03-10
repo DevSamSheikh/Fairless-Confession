@@ -11,7 +11,7 @@ export const useSharePost = () => {
   const [isSharing, setIsSharing] = useState(false);
 
   const APP_LINK = "https://yourapp.com/download";
-  const PROMO_BANNER_IMAGE = "https://via.placeholder.com/150x150.png"; // Replace with your actual banner URL
+  const BANNER_IMAGE = "https://yourapp.com/banner1.png"; // Update with actual banner URL
 
   const shareToFacebook = async (data: PostShareData) => {
     try {
@@ -23,8 +23,8 @@ export const useSharePost = () => {
       const content = data.body;
       const message = `${title}\n\n${content}\n\n🔗 Check out our app: ${APP_LINK}`;
 
-      // Try Facebook app URL scheme first
-      const facebookAppUrl = `fb://sharer?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}`;
+      // Try Facebook app URL scheme with image
+      const facebookAppUrl = `fb://sharer?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}&picture=${encodeURIComponent(BANNER_IMAGE)}`;
       console.log("Facebook app URL:", facebookAppUrl);
 
       try {
@@ -32,7 +32,7 @@ export const useSharePost = () => {
       } catch (appError) {
         // If Facebook app is not installed, fall back to web URL
         console.log("Facebook app not installed, using web URL");
-        const facebookWebUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}`;
+        const facebookWebUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(message)}&picture=${encodeURIComponent(BANNER_IMAGE)}`;
         await Linking.openURL(facebookWebUrl);
       }
     } catch (error) {
@@ -48,9 +48,13 @@ export const useSharePost = () => {
         data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
           ? data.title
           : "Confession";
+      const content = data.body;
+      const message = `${title}\n\n${content}\n\n🔗 Check out our app: ${APP_LINK}\n\n📸 Image: ${BANNER_IMAGE}`;
+
       await Share.share({
-        message: `${title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
+        message: message,
         title: title,
+        url: BANNER_IMAGE,
       });
     } catch (error) {
       console.error("Instagram share error:", error);
@@ -65,7 +69,8 @@ export const useSharePost = () => {
         data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
           ? data.title
           : "Confession";
-      const message = `${title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`;
+      const content = data.body;
+      const message = `${title}\n\n${content}\n\n🔗 Check out our app: ${APP_LINK}\n\n📸 Image: ${BANNER_IMAGE}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       await Linking.openURL(whatsappUrl);
     } catch (error) {
@@ -76,10 +81,18 @@ export const useSharePost = () => {
 
   const shareGeneric = async (data: PostShareData) => {
     try {
+      // Don't pass title if it's empty or "EMPTY"
+      const title =
+        data.title && !["EMPTY", "Empty", "empty"].includes(data.title.trim())
+          ? data.title
+          : "Confession";
+      const content = data.body;
+      const message = `${title}\n\n${content}\n\n🔗 Check out our app: ${APP_LINK}\n\n📸 Image: ${BANNER_IMAGE}`;
+
       const shareOptions = {
-        message: `${data.title}\n\n${data.body}\n\n🔗 Check out our app: ${APP_LINK}`,
-        url: APP_LINK,
-        title: data.title,
+        message: message,
+        url: BANNER_IMAGE,
+        title: title,
       };
 
       if (Platform.OS === "ios") {
