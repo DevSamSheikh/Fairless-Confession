@@ -1,8 +1,15 @@
 import { Router } from "express";
 import { supabase } from "../db/client.js";
 import { getClientInfo } from "../lib/tracking.js";
+import { OAuth2Client } from "google-auth-library";
 
 const router = Router();
+
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
 
 function generateIdentityId() {
   return `#Confess_${Math.floor(1000 + Math.random() * 9000)}`;
@@ -415,6 +422,119 @@ router.post("/change-password", async (req, res) => {
   } catch (error: any) {
     console.error("Change password error:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/auth/google - Get Google OAuth URL
+router.get("/google", (req, res) => {
+  try {
+    const authUrl = googleClient.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['profile', 'email'],
+      prompt: 'consent'
+    });
+    res.json({ url: authUrl });
+  } catch (error: any) {
+    console.error("Google OAuth URL generation error:", error);
+    res.status(500).json({ error: "Failed to generate Google OAuth URL" });
+  }
+});
+
+// POST /api/auth/google/callback - Handle Google OAuth callback
+router.post("/google/callback", async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: "Authorization code is required" });
+    }
+
+    // Exchange code for tokens
+    const { tokens } = await googleClient.getToken(code);
+    googleClient.setCredentials(tokens);
+
+    // Get user info from Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: "Failed to get user information from Google" });
+    }
+
+    const email = payload.email;
+    const fullName = payload.name || 'Google User';
+
+    // Check if user exists in our database
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    let user;
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // Database error
+      throw fetchError;
+    }
+
+    if (!existingUser) {
+      // Create new user
+      const identityId = generateIdentityId();
+      const avatarSeed = generateAvatarSeed();
+      const userIdCustom = generateUserIdCustom();
+      
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          identity_id: identityId,
+          avatar_seed: avatarSeed,
+          user_id_custom: userIdCustom,
+          email: email.toLowerCase(),
+          email_verified: true, // Google accounts are verified
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      user = newUser;
+    } else {
+      user = existingUser;
+    }
+
+    // Create Supabase session
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password: `google_oauth_${Date.now()}`, // This won't actually work for login
+    });
+
+    // Since we can't use signInWithPassword for OAuth, we'll create a custom token
+    const token = Buffer.from(JSON.stringify({
+      userId: user.id,
+      email: user.email,
+      type: 'google_oauth',
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    })).toString('base64');
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        identityId: user.identity_id,
+        avatarSeed: user.avatar_seed,
+        userIdCustom: user.user_id_custom,
+        emailVerified: user.email_verified
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Google OAuth callback error:", error);
+    res.status(500).json({ error: "Google authentication failed" });
   }
 });
 

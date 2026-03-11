@@ -106,3 +106,39 @@ export async function setNewPassword(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || 'Failed to update password');
 }
+
+export async function googleLogin(): Promise<{ url: string }> {
+  const baseUrl = await getApiUrl();
+  
+  // Get Google OAuth URL
+  const res = await authFetch(`${baseUrl}/api/auth/google`, {
+    method: 'GET',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || 'Failed to get Google OAuth URL');
+  }
+  
+  if (!data.url) {
+    throw new Error('Invalid response from Google OAuth endpoint');
+  }
+  
+  return { url: data.url };
+}
+
+export async function googleCallback(code: string): Promise<LoginResponse> {
+  const baseUrl = await getApiUrl();
+  const res = await authFetch(`${baseUrl}/api/auth/google/callback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || 'Google authentication failed');
+  }
+  if (!data.token || !data.user) {
+    throw new Error('Invalid response from Google authentication');
+  }
+  return { token: data.token, user: data.user };
+}

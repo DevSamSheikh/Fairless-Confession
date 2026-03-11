@@ -1,9 +1,67 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { useUserStore } from "../../store/user.store";
+import { showSuccessToast, showErrorToast } from "../../utils/toast";
+import { showAlert } from "../../utils/customAlert";
+import { googleLogin, googleCallback } from "../../api/auth";
 
 const { width } = Dimensions.get('window');
 
 export const WelcomeScreen: React.FC = ({ navigation }: any) => {
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const setAuth = useUserStore((s) => s.setAuth);
+
+  // Handle OAuth redirect
+  const handleOAuthRedirect = (event: any) => {
+    const { url } = event;
+    if (url && url.includes('google/callback')) {
+      WebBrowser.dismissBrowser();
+      const parsedUrl = Linking.parse(url);
+      const code = parsedUrl.queryParams?.code;
+      if (code && typeof code === 'string') {
+        handleGoogleCallback(code);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const subscription = Linking.addEventListener('url', handleOAuthRedirect);
+    return () => subscription?.remove();
+  }, []);
+
+  const handleGoogleCallback = async (code: string) => {
+    try {
+      setGoogleLoading(true);
+      const data = await googleCallback(code);
+      setAuth(data.token, data.user);
+      showSuccessToast("Welcome back!");
+    } catch (e: any) {
+      const errorMessage = e?.message || "Google login failed.";
+      showAlert("Google Login Failed", errorMessage);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const response = await googleLogin();
+      
+      // Open the Google OAuth URL in WebBrowser
+      await WebBrowser.openBrowserAsync(response.url, {
+        showInRecents: true,
+      });
+    } catch (e: any) {
+      const errorMessage = e?.message || "Google login failed.";
+      showAlert("Google Login Failed", errorMessage);
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -38,8 +96,16 @@ export const WelcomeScreen: React.FC = ({ navigation }: any) => {
         </View>
         
         <View style={styles.socialContainer}>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}>
-            <Text style={[styles.socialButtonText, { color: '#E57373' }]}>GOOGLE</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, { backgroundColor: '#3A1D1D' }]}
+            onPress={handleGoogleLogin}
+            disabled={googleLoading}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color="#E57373" />
+            ) : (
+              <Text style={[styles.socialButtonText, { color: '#E57373' }]}>GOOGLE</Text>
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#1D2A3A' }]}>
             <Text style={[styles.socialButtonText, { color: '#64B5F6' }]}>PHONE NUMBER</Text>
