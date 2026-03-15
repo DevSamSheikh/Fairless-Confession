@@ -16,6 +16,7 @@ import searchRoutes from './routes/search.js';
 import reportRoutes from './routes/report.js';
 import leaveSocietyRoutes from './routes/leaveSociety.js';
 import userRoutes from './routes/user.js';
+import hashtagRoutes from './routes/hashtags.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +72,12 @@ app.use('/api/report', reportRoutes);
 
 // User: GET /api/user/stats
 app.use('/api/user', userRoutes);
+
+// Hashtags: GET /api/hashtags/popular, GET /api/hashtags/search, POST /api/hashtags
+app.use('/api/hashtags', hashtagRoutes);
+
+// Post hashtags: GET /api/posts/:postId/hashtags  
+app.use('/api/posts', hashtagRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

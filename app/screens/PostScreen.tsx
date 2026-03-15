@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,16 @@ import { scanPostContent, softFilterInput } from "../utils/contentFilter";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
 import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 import { getUserRateLimit } from "../api/rateLimit";
+import { HashtagHighlightInput } from "../components/HashtagHighlightInput";
+import { HashtagSelect } from "../components/HashtagSelect";
+import { HashtagText } from "../components/HashtagText";
+import { AppHeader } from "../components/AppHeader";
+import { 
+  extractHashtags,
+  getCurrentHashtagBeingTyped
+} from "../utils/hashtags";
+import { getPopularHashtags } from "../api/hashtags";
+import { Hashtag } from "../../shared/schema";
 
 export const PostScreen: React.FC = () => {
   const [content, setContent] = useState("");
@@ -39,6 +49,14 @@ export const PostScreen: React.FC = () => {
     sanitizedTitle: string;
     sanitizedContent: string;
   } | null>(null);
+  
+  // Hashtag-related state
+  const [showHashtagSelect, setShowHashtagSelect] = useState(false);
+  const [availableHashtags, setAvailableHashtags] = useState<Hashtag[]>([]);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [currentHashtagQuery, setCurrentHashtagQuery] = useState("");
+  const contentInputRef = useRef<any>(null);
+  
   const userStore = useUserStore();
   const { triggerFeedback } = useInteractionFeedback();
 
@@ -46,7 +64,17 @@ export const PostScreen: React.FC = () => {
   useEffect(() => {
     loadJoinedSocieties();
     loadRateLimit();
+    loadPopularHashtags();
   }, []);
+
+  const loadPopularHashtags = async () => {
+    try {
+      const hashtags = await getPopularHashtags(20);
+      setAvailableHashtags(hashtags);
+    } catch (error) {
+      console.error("Failed to load popular hashtags:", error);
+    }
+  };
 
   // Refresh rate limit when user becomes authenticated
   useEffect(() => {
@@ -184,9 +212,13 @@ export const PostScreen: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // Use original content if no issues, otherwise use sanitized content
+      const finalTitle = title.trim() || null;
+      const finalContent = content.trim();
+      
       await createPost({
-        title: title.trim() || null, // Send null for empty titles, not empty string
-        content: content.trim(),
+        title: finalTitle,
+        content: finalContent,
         category: selectedCategory,
         societyId: selectedSociety?.id || null,
       });
@@ -244,47 +276,82 @@ export const PostScreen: React.FC = () => {
     await loadJoinedSocieties();
   };
 
+  // Hashtag-related functions
+  const handleContentChange = (text: string) => {
+    setContent(text);
+    
+    // Check if user is currently typing a hashtag
+    const currentHashtag = getCurrentHashtagBeingTyped(text, cursorPosition);
+    if (currentHashtag !== null && currentHashtag.length > 0) {
+      setCurrentHashtagQuery(currentHashtag); // This is the hashtag name without #
+      setShowHashtagSelect(true);
+    } else {
+      setCurrentHashtagQuery("");
+      setShowHashtagSelect(false);
+    }
+  };
+
+  const handleContentSelectionChange = (event: any) => {
+    setCursorPosition(event.nativeEvent.selection.start);
+  };
+
+  const handleSelectHashtag = (hashtagName: string) => {
+    // Replace the current hashtag being typed with the selected one
+    const currentHashtag = getCurrentHashtagBeingTyped(content, cursorPosition);
+    if (currentHashtag !== null) {
+      const hashtagText = `#${hashtagName}`;
+      const beforeHashtag = content.substring(0, cursorPosition - currentHashtag.length - 1);
+      const afterHashtag = content.substring(cursorPosition);
+      const newContent = beforeHashtag + hashtagText + afterHashtag;
+      setContent(newContent);
+      setCurrentHashtagQuery("");
+      setShowHashtagSelect(false);
+    }
+  };
+
   return (
-    <ScrollView
-      style={styles.container}
-      stickyHeaderIndices={[0]}
-      refreshControl={
-        <RefreshControl
-          refreshing={false}
-          onRefresh={refreshJoinedSocieties}
-          tintColor={COLORS.accent}
-          colors={[COLORS.accent]}
-        />
-      }
-    >
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>New Confession</Text>
-        <Text style={styles.subtitle}>Share your secret anonymously</Text>
-      </View>
+    <View style={styles.mainContainer}>
+      <AppHeader
+        title="New Confession"
+        showCloseButton={true}
+        statusBarStyle="light-content"
+      />
+      
+      <ScrollView style={styles.contentContainer}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Title (Optional)"
+            placeholderTextColor={COLORS.textSecondary}
+            value={title}
+            onChangeText={(text) => setTitle(softFilterInput(text))}
+            maxLength={25}
+          />
+          <HashtagHighlightInput
+            style={styles.contentInput}
+            placeholder="What's on your mind? #hashtag to add tags"
+            placeholderTextColor={COLORS.textSecondary}
+            multiline
+            numberOfLines={6}
+            value={content}
+            onChangeText={handleContentChange}
+            onSelectionChange={handleContentSelectionChange}
+            maxLength={500}
+            ref={contentInputRef}
+          />
+        </View>
+        <Text style={styles.charCount}>{content.length}/500</Text>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Title (Optional)"
-          placeholderTextColor={COLORS.textSecondary}
-          value={title}
-          onChangeText={(text) => setTitle(softFilterInput(text))}
-          maxLength={25}
+        {/* Hashtag Select Popup */}
+        <HashtagSelect
+          visible={showHashtagSelect}
+          hashtags={availableHashtags}
+          currentQuery={currentHashtagQuery}
+          onSelect={handleSelectHashtag}
+          onClose={() => setShowHashtagSelect(false)}
         />
-        <TextInput
-          style={styles.contentInput}
-          placeholder="What's on your mind?"
-          placeholderTextColor={COLORS.textSecondary}
-          multiline
-          numberOfLines={6}
-          value={content}
-          onChangeText={(text) => setContent(softFilterInput(text))}
-          maxLength={500}
-        />
-      </View>
-      <Text style={styles.charCount}>{content.length}/500</Text>
 
-      <Text style={styles.sectionTitle}>Select Category</Text>
+        <Text style={styles.sectionTitle}>Select Category</Text>
       <View style={styles.categories}>
         {CATEGORIES.map((category) => (
           <TouchableOpacity
@@ -516,55 +583,70 @@ export const PostScreen: React.FC = () => {
                       return;
                     }
                     if (!currentState.token || !currentState.isAuthenticated) {
-                      setModeration(null);
-                      showAlert(
-                        "Authentication Required",
-                        "You must be signed in to post. Please log in and try again.",
-                      );
-                      return;
-                    }
-
                     setSubmitting(true);
-                    try {
-                      await createPost({
-                        title: moderation.sanitizedTitle || null, // Send null for empty titles
-                        content: moderation.sanitizedContent,
-                        category: selectedCategory,
-                      });
+                    // Use the filtered content which should include hashtags
+                    createPost({
+                      title: moderation?.sanitizedTitle?.trim() || null,
+                      content: moderation?.sanitizedContent?.trim() || "",
+                      category: selectedCategory,
+                      societyId: selectedSociety?.id || null,
+                    }).then(() => {
+                      triggerFeedback("post");
                       showSuccessToast("Confession posted successfully!");
                       setTitle("");
                       setContent("");
                       setSelectedCategory(null);
+                      setSelectedSociety(null);
                       setModeration(null);
+                      userStore.incrementPosts();
+                      loadRateLimit();
                       showSuccessToast(
-                        "Your confession has been posted anonymously!",
+                        selectedSociety
+                          ? `Your confession has been posted to ${selectedSociety.name}!`
+                          : "Your confession has been posted anonymously!",
                       );
-                    } catch (postErr: any) {
-                      showErrorToast(
-                        postErr?.message || "Failed to post confession",
-                      );
-                    } finally {
+                    }).catch((e) => {
                       setSubmitting(false);
-                    }
+                      showAlert("Error", "Failed to post filtered content");
+                    });
+                  }}
+                  }>
+                  <Text style={styles.moderationButtonText}>Post Filtered</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.moderationButton, styles.cancelButton]}
+                  onPress={() => {
+                    setModeration(null);
+                    setSubmitting(false);
                   }}
                 >
-                  <Text style={styles.moderationButtonText}>Post Filtered</Text>
+                  <Text style={styles.moderationButtonText}>Cancel</Text>
                 </Pressable>
               </View>
             </View>
           </View>
         </Modal>
       )}
-    </ScrollView>
+
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 16,
     paddingTop: 40,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
   headerContainer: {
     backgroundColor: COLORS.background,
@@ -759,6 +841,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  cancelButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   moderationButtonTextSecondary: {
     color: COLORS.textSecondary,
     fontSize: 14,
@@ -769,7 +856,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#1E222B",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,

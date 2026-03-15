@@ -21,6 +21,7 @@ import {
 } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../utils/constants";
+import { AppHeader } from "../components/AppHeader";
 import {
   fetchUserActivities,
   deleteActivity,
@@ -469,10 +470,11 @@ export const InteractionsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A0B0D" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Interactions</Text>
-      </View>
+      <AppHeader
+        title="Interactions"
+        statusBarStyle="light-content"
+        backgroundColor="#0A0B0D"
+      />
 
       <View style={styles.filterContainer}>
         {filters.map((filter) => (

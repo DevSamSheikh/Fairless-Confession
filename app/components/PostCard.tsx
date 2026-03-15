@@ -39,6 +39,7 @@ import { softFilterInput, sanitizeText } from "../utils/contentFilter";
 import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 import { ReportModal } from "./ReportModal";
 import { useSharePost, type PostShareData } from "../hooks/useSharePost";
+import { parseHashtagsInText } from "../utils/hashtags";
 
 const { width } = Dimensions.get("window");
 
@@ -440,6 +441,20 @@ export const PostCard: React.FC<PostCardProps> = ({
     onReact("Like");
   };
 
+  const handleHashtagPress = (hashtag: string) => {
+    // For now, just show an alert. In the future, this could navigate to a hashtag filter page
+    showAlert("Hashtag", `You clicked on #${hashtag}\n\nThis could filter posts by hashtag in the future.`);
+  };
+
+  // Component to render content with hashtags
+  const ContentWithHashtags: React.FC<{ text: string; style?: any }> = ({ text, style }) => {
+    return (
+      <Text style={style}>
+        {parseHashtagsInText(text, handleHashtagPress)}
+      </Text>
+    );
+  };
+
   const contentPreview =
     post.content.length > 120
       ? post.content.substring(0, 120) + "..."
@@ -524,7 +539,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             !["Empty", "empty", "EMPTY"].includes(post.title.trim()) && (
               <Text style={styles.title}>{post.title}</Text>
             )}
-          <FormattedText text={contentPreview} style={styles.content} />
+          <ContentWithHashtags text={contentPreview} style={styles.content} />
           {isLongText && (
             <View style={styles.seeMoreContainer}>
               <Text style={styles.seeMore}>Read more</Text>
@@ -865,7 +880,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   !["Empty", "empty", "EMPTY"].includes(post.title.trim()) && (
                     <Text style={styles.fullTitle}>{post.title}</Text>
                   )}
-                <FormattedText text={post.content} style={styles.fullContent} />
+                <ContentWithHashtags text={post.content} style={styles.fullContent} />
 
                 <View style={styles.metaDivider} />
                 <View style={styles.statsRow}>
