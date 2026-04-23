@@ -40,6 +40,7 @@ import { useInteractionFeedback } from "../hooks/useInteractionFeedback";
 import { ReportModal } from "./ReportModal";
 import { useSharePost, type PostShareData } from "../hooks/useSharePost";
 import { parseHashtagsInText } from "../utils/hashtags";
+import { useReactionBar } from "../context/ReactionBarContext";
 
 const { width } = Dimensions.get("window");
 
@@ -105,7 +106,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const { save, remove, isSaved } = useSavedSecretsStore();
   const { triggerFeedback } = useInteractionFeedback();
   const { sharePost } = useSharePost();
-  const [showReactions, setShowReactions] = useState(false);
+  const { activeReactionPostId, showReactionBar, hideReactionBar } = useReactionBar();
   const [showFullView, setShowFullView] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -378,8 +379,10 @@ export const PostCard: React.FC<PostCardProps> = ({
     return ageMinutes <= 10;
   };
 
+  const showReactions = activeReactionPostId === post.id;
+
   const handleLongPress = () => {
-    setShowReactions(true);
+    showReactionBar(post.id);
   };
 
   const handleShareAction = async (platform: string, content: string) => {
@@ -431,7 +434,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       triggerFeedback("like");
     }
     onReact(reactionType);
-    setShowReactions(false);
+    hideReactionBar(post.id);
   };
 
   const toggleLike = () => {
@@ -462,7 +465,8 @@ export const PostCard: React.FC<PostCardProps> = ({
   const isLongText = post.content.length > 120;
 
   return (
-    <View style={styles.container}>
+    <TouchableWithoutFeedback onPress={() => hideReactionBar()}>
+      <View style={styles.container}>
       {pinned ? (
         <View style={styles.rankBadge}>
           <View style={styles.rankIconContainer}>
@@ -507,8 +511,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                 >
                   {post.societyName &&
                   post.societyName !== currentSocietyName ? (
-                    <View style={styles.societyBadge}>
-                      <Text style={styles.societyBadgeText}>
+                    <View>
+                      <Text style={styles.societyBadgeText} numberOfLines={1}>
                         {post.societyName}
                       </Text>
                     </View>
@@ -861,7 +865,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         >
                           {post.societyName &&
                           post.societyName !== currentSocietyName ? (
-                            <View style={styles.societyBadge}>
+                            <View>
                               <Text style={styles.societyBadgeText}>
                                 {post.societyName}
                               </Text>
@@ -1308,7 +1312,8 @@ export const PostCard: React.FC<PostCardProps> = ({
         postContent={post.content}
       />
     </View>
-  );
+  </TouchableWithoutFeedback>
+);
 };
 
 const styles = StyleSheet.create({
@@ -1420,7 +1425,7 @@ const styles = StyleSheet.create({
   reactionPickerContainer: {
     position: "absolute",
     bottom: "100%",
-    left: 0,
+    left: -20,
     marginBottom: 15,
     zIndex: 1000,
     backgroundColor: "#252A34",
@@ -1480,9 +1485,11 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   headerText: {
     marginLeft: 14,
+    flex: 1,
   },
   userNameRow: {
     flexDirection: "row",
@@ -1513,6 +1520,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 2,
+    flex: 1,
   },
   time: {
     color: COLORS.textSecondary,
@@ -1544,6 +1552,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
+    width: 80,
+    overflow: 'hidden',
   },
   clickableSocietyName: {
     textDecorationLine: "underline",
@@ -1634,7 +1644,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    paddingTop: 40,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.05)",
     backgroundColor: "#0f1115",

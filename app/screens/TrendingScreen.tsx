@@ -10,6 +10,7 @@ import {
   TextInput,
   Vibration,
   Dimensions,
+  Platform,
 } from "react-native";
 import { COLORS } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
@@ -241,8 +242,9 @@ export const TrendingScreen: React.FC = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
+      <View style={styles.container}>
 
       <View style={styles.headerContainer}>
         {!isSearchVisible ? (
@@ -369,11 +371,17 @@ export const TrendingScreen: React.FC = () => {
           ) : null
         }
       />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

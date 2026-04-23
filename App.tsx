@@ -54,6 +54,7 @@ import { createNavigationContainerRef } from "@react-navigation/native";
 import { useUserStore } from "./app/store/user.store";
 import { useFeedStore } from "./app/store/feed.store";
 import { CustomAlertProvider } from "./app/components/CustomAlertProvider";
+import { ReactionBarProvider } from "./app/context/ReactionBarContext";
 
 // Refresh context for global refresh functionality
 const RefreshContext = createContext<{
@@ -373,12 +374,13 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
-      <CustomAlertProvider>
-        <EmailVerificationGuard>
-          <NavigationContainer
-            ref={navigationRef as any}
-            onReady={() => setNavReady(true)}
-          >
+      <ReactionBarProvider>
+        <CustomAlertProvider>
+          <EmailVerificationGuard>
+            <NavigationContainer
+              ref={navigationRef as any}
+              onReady={() => setNavReady(true)}
+            >
             <StatusBar style="light" />
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               {!user ? (
@@ -454,6 +456,7 @@ export default function App() {
           </NavigationContainer>
         </EmailVerificationGuard>
       </CustomAlertProvider>
+      </ReactionBarProvider>
       <View
         style={{
           position: "absolute",

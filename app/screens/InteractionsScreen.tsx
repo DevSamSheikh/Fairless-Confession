@@ -12,6 +12,7 @@ import {
   PanResponder,
   Animated,
   ScrollView,
+  Platform,
 } from "react-native";
 import {
   useNavigation,
@@ -461,26 +462,29 @@ export const InteractionsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="#0A0B0D" />
-        {renderLoadingState()}
+        <View style={styles.container}>
+          {renderLoadingState()}
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <AppHeader
-        title="Interactions"
-        statusBarStyle="light-content"
-        backgroundColor="#0A0B0D"
-      />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0B0D" />
+      <View style={styles.container}>
+        <AppHeader
+          title="Interactions"
+          statusBarStyle="light-content"
+        />
 
-      <View style={styles.filterContainer}>
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter}
-            style={[
+        <View style={styles.filterContainer}>
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[
               styles.filterTab,
               activeFilter === filter && styles.activeFilterTab,
             ]}
@@ -519,11 +523,17 @@ export const InteractionsScreen: React.FC = () => {
           />
         )}
       </View>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    backgroundColor: "#0A0B0D",
+  },
   container: {
     flex: 1,
     backgroundColor: "#0A0B0D",
@@ -533,7 +543,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 20, // Reduced from 60
     paddingBottom: 20,
   },
   headerTitle: {

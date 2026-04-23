@@ -47,14 +47,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <>
-      <StatusBar
-        barStyle={statusBarStyle}
-        backgroundColor={backgroundColor}
-        translucent={false}
-      />
-      <View style={[styles.container, { backgroundColor }]}>
-        <View style={styles.leftSection}>
+    <View style={[styles.container, { backgroundColor }]}>
+      <View style={styles.leftSection}>
           {showBackButton && (
             <TouchableOpacity
               style={styles.iconButton}
@@ -85,7 +79,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {rightComponent}
         </View>
       </View>
-    </>
   );
 };
 

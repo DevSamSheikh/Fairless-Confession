@@ -10,8 +10,11 @@ import {
   ActivityIndicator,
   Modal,
   RefreshControl,
+  SafeAreaView,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from '@react-navigation/native';
 import { showAlert } from "../utils/customAlert";
 import { CATEGORIES, Category, COLORS, RATE_LIMITS } from "../utils/constants";
 import { useUserStore } from "../store/user.store";
@@ -59,6 +62,7 @@ export const PostScreen: React.FC = () => {
   
   const userStore = useUserStore();
   const { triggerFeedback } = useInteractionFeedback();
+  const navigation = useNavigation();
 
   // Load joined societies and rate limit on component mount
   useEffect(() => {
@@ -310,14 +314,20 @@ export const PostScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.mainContainer}>
-      <AppHeader
-        title="New Confession"
-        showCloseButton={true}
-        statusBarStyle="light-content"
-      />
+    <SafeAreaView style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.headerContainer}>
+        <View>
+          <Text style={styles.header}>New Confession</Text>
+          <Text style={styles.subHeader}>Share your thoughts anonymously</Text>
+        </View>
+      </View>
       
-      <ScrollView style={styles.contentContainer}>
+      <View style={styles.scrollContainer}>
+        <ScrollView 
+          style={styles.contentContainer}
+          contentContainerStyle={styles.scrollContent}
+        >
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.titleInput}
@@ -628,8 +638,9 @@ export const PostScreen: React.FC = () => {
         </Modal>
       )}
 
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -638,25 +649,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  // Header Styles
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    minHeight: 120,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    
+  },
+  header: {
+    color: COLORS.text,
+    fontSize: 26,
+    fontFamily: "Poppins_Bold",
+    fontWeight: "600",
+  },
+  subHeader: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+  },
+  scrollContainer: {
+    flex: 1, // Take remaining space after header
+    marginTop: 8, // Add spacing below header
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 16,
-    paddingTop: 40,
   },
+  
   contentContainer: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    backgroundColor: COLORS.background,
-    paddingBottom: 8,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+    flexGrow: 1,
   },
-  header: {
-    color: COLORS.text,
-    fontSize: 24,
-    fontWeight: "bold",
-  },
+  
   subtitle: {
     color: COLORS.textSecondary,
     fontSize: 14,

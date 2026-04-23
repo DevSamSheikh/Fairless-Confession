@@ -13,9 +13,9 @@ import { COLORS } from './constants';
 export const extractHashtags = (text: string): string[] => {
   if (!text) return [];
   
-  // Regex to match # followed by word characters (letters, numbers, underscore)
-  // \B ensures we don't match in the middle of words
-  const regex = /\B#(\w+)/g;
+  // Updated regex to properly handle hashtags and prevent concatenation
+  // Matches # followed by word characters, stops at non-word character or whitespace
+  const regex = /#(\w+)(?=\W|$)/g;
   const matches = text.match(regex);
   
   if (!matches) return [];
@@ -43,12 +43,14 @@ export const parseHashtagsInText = (
   
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
-  const regex = /\B#(\w+)/g;
+  // Updated regex to properly handle hashtags and prevent concatenation
+  // Matches # followed by word characters, stops at non-word character or whitespace
+  const regex = /#(\w+)(?=\W|$)/g;
   let match: RegExpExecArray | null;
   let key = 0;
   
   while ((match = regex.exec(text)) !== null) {
-    // Add text before the hashtag
+    // Add text before hashtag
     if (match.index > lastIndex) {
       const plainText = text.substring(lastIndex, match.index);
       if (plainText) {

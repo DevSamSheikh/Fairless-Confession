@@ -12,6 +12,7 @@ import { showSuccessToast } from '../utils/toast';
 import { showAlert } from '../utils/customAlert';
 import { useUserStore } from '../store/user.store';
 import { getJoinedSocieties, getUserSocieties, joinSociety } from '../api/societies';
+import { useReactionBar } from '../context/ReactionBarContext';
 
 interface SocietyConfession {
   id: string;
@@ -52,6 +53,9 @@ export const SocietyDetailScreen: React.FC = () => {
     description: '',
     icon_name: 'people'
   };
+  
+  const { user } = useUserStore();
+  const { hideAllReactionBars } = useReactionBar();
   
   // Debug log to check society data
   console.log('[SocietyDetailScreen] Society data:', society);
@@ -135,6 +139,7 @@ export const SocietyDetailScreen: React.FC = () => {
         .filter((post: SocietyPost) => post.society_id === society.id)
         .map((post: SocietyPost) => ({
           id: post.id,
+          title: '', // Society posts don't have titles, set to empty string
           content: post.content,
           category: 'Secrets', // Default category for society posts
           societyName: post.society?.name || society.name,
@@ -399,6 +404,8 @@ export const SocietyDetailScreen: React.FC = () => {
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
+        onScroll={() => hideAllReactionBars()}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -536,6 +543,7 @@ export const SocietyDetailScreen: React.FC = () => {
                       // Add the new post to society confessions
                       const newPost = {
                         id: `temp-${Date.now()}`, // Temporary ID, will be updated on refresh
+                        title: '', // Society posts don't have titles
                         content: trimmedContent,
                         category: 'Secrets',
                         societyName: society.name,
@@ -585,12 +593,18 @@ export const SocietyDetailScreen: React.FC = () => {
             {/* Society Feed */}
             <Text style={styles.feedTitle}>Society Confessions</Text>
             {societyConfessions.map((post, index) => (
-              <PostCard 
-                key={post.id} 
-                post={{ ...post, category: society.name } as any} 
-                rank={activeTab === "Trending" ? index + 1 : undefined}
-                onReact={(reactionType) => handleReact(post.id, reactionType)} 
-              />
+              <TouchableOpacity 
+                key={post.id}
+                onPressIn={() => hideAllReactionBars()}
+                activeOpacity={1}
+              >
+                <PostCard 
+                  post={{ ...post, category: society.name } as any} 
+                  rank={activeTab === "Trending" ? index + 1 : undefined}
+                  onReact={(reactionType) => handleReact(post.id, reactionType)} 
+                  currentSocietyName={society.name}
+                />
+              </TouchableOpacity>
             ))}
           </View>
         ) : (
@@ -680,6 +694,7 @@ export const SocietyDetailScreen: React.FC = () => {
                       // Add the new post to society confessions
                       const newPost = {
                         id: `temp-${Date.now()}`, // Temporary ID, will be updated on refresh
+                        title: '', // Society posts don't have titles
                         content: moderation.sanitizedContent,
                         category: 'Secrets',
                         societyName: society.name,

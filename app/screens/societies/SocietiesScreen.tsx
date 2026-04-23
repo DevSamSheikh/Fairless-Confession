@@ -8,6 +8,8 @@ import {
   StatusBar,
   ActivityIndicator,
   Modal,
+  SafeAreaView,
+  Platform,
 } from "react-native";
 import {
   useNavigation,
@@ -22,6 +24,7 @@ import { useUserStore } from "../../store/user.store";
 import { useFeedStore } from "../../store/feed.store";
 import { SearchBar } from "../../components/SearchBar";
 import { isServerPostId, reactToPost } from "../../api/interactions";
+import { useReactionBar } from "../../context/ReactionBarContext";
 import {
   getSocieties,
   getJoinedSocieties,
@@ -38,6 +41,7 @@ export const SocietiesScreen: React.FC = () => {
   const route = useRoute();
   const { posts, addReaction, syncReactionState } = useFeedStore();
   const userStore = useUserStore();
+  const { hideAllReactionBars } = useReactionBar();
 
   const [activeTab, setActiveTab] = useState("Joined");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
@@ -291,7 +295,8 @@ export const SocietiesScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.headerContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerContainer}>
         {!isSearchVisible ? (
           <>
             <View>
@@ -360,11 +365,15 @@ export const SocietiesScreen: React.FC = () => {
         <FlatList
           data={currentData}
           keyExtractor={(item) => item.id}
+          onScroll={() => hideAllReactionBars()}
+          scrollEventThrottle={16}
           renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onReact={(reactionType) => handleReact(item.id, reactionType)}
-            />
+            <TouchableOpacity onPressIn={() => hideAllReactionBars()} activeOpacity={1}>
+              <PostCard
+                post={item}
+                onReact={(reactionType) => handleReact(item.id, reactionType)}
+              />
+            </TouchableOpacity>
           )}
           contentContainerStyle={styles.list}
           ListEmptyComponent={() => (
@@ -467,6 +476,7 @@ export const SocietiesScreen: React.FC = () => {
           </View>
         </Modal>
       )}
+    </SafeAreaView>
     </View>
   );
 };
@@ -476,19 +486,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    backgroundColor: COLORS.background,
+  },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
     minHeight: 120,
   },
   header: {
     color: COLORS.text,
     fontSize: 28,
-    fontFamily: "Poppins_700Bold",
+    fontFamily: "Poppins_Bold",
+    fontWeight: "600",
   },
   subHeader: {
     color: COLORS.textSecondary,

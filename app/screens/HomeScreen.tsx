@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  Platform,
 } from "react-native";
 import {
   useNavigation,
@@ -31,6 +32,7 @@ import { isServerPostId, reactToPost } from "../api/interactions";
 import { deleteMyConfession } from "../api/myConfessions";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
 import { showAlert } from "../utils/customAlert";
+import { useReactionBar } from "../context/ReactionBarContext";
 import {
   addAuthErrorCallback,
   removeAuthErrorCallback,
@@ -63,6 +65,13 @@ export const HomeScreen: React.FC = () => {
   const hasAuthError = useRef<boolean>(false);
 
   const { onLayoutItem, onScroll, onMomentumScrollEnd } = useCenterHaptics();
+  const { hideAllReactionBars } = useReactionBar();
+
+  // Combined scroll handler that hides reaction bars
+  const handleScroll = (event: any) => {
+    hideAllReactionBars();
+    onScroll(event);
+  };
 
   // Register auth error callback
   useEffect(() => {
@@ -99,6 +108,14 @@ export const HomeScreen: React.FC = () => {
   // Listen for focus events with refresh parameter from bottom navbar
   useFocusEffect(
     React.useCallback(() => {
+      // Force layout recalculation to prevent header collapse
+      setTimeout(() => {
+        // This forces a re-render and layout calculation
+        if (flatListRef.current) {
+          flatListRef.current.scrollToOffset({ offset: 0, animated: false });
+        }
+      }, 100);
+
       if ((route.params as any)?.refresh) {
         refreshFeed();
       }
@@ -280,7 +297,11 @@ export const HomeScreen: React.FC = () => {
                   )
                 }
               >
-                <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap}>
+                <TouchableOpacity 
+                  activeOpacity={1} 
+                  onPress={handleDoubleTap}
+                  onPressIn={() => hideAllReactionBars()}
+                >
                   <PostCard
                     post={item}
                     rank={activeTab === "Trending" ? index + 1 : undefined}
@@ -293,7 +314,7 @@ export const HomeScreen: React.FC = () => {
               </View>
             );
           }}
-          onScroll={onScroll}
+          onScroll={handleScroll}
           onMomentumScrollEnd={onMomentumScrollEnd}
           onEndReached={activeTab === "Latest" ? loadMorePosts : undefined}
           onEndReachedThreshold={0.5}
@@ -333,17 +354,18 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20, // Proper status bar height
+    backgroundColor: COLORS.background,
   },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 10,
+    paddingTop: 25,
+    paddingBottom: 6,
     backgroundColor: COLORS.background,
-    height: 60,
+    minHeight: 60, // Use minHeight instead of fixed height
   },
   headerLeft: {
     flexDirection: "row",
@@ -414,8 +436,10 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 2,
     backgroundColor: COLORS.background,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   list: {
     paddingTop: 10,
