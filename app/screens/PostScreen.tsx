@@ -654,10 +654,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    minHeight: 120,
+    minHeight: 80,
+    paddingBottom: 10,
+    paddingTop:40,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    
   },
   header: {
     color: COLORS.text,

@@ -591,7 +591,6 @@ export const SocietyDetailScreen: React.FC = () => {
             )}
 
             {/* Society Feed */}
-            <Text style={styles.feedTitle}>Society Confessions</Text>
             {societyConfessions.map((post, index) => (
               <TouchableOpacity 
                 key={post.id}

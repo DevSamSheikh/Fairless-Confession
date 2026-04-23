@@ -548,13 +548,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   list: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingBottom: 100,
   },
   societyCard: {
     backgroundColor: "#1E222B",
     borderRadius: 20,
     padding: 20,
+    marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
